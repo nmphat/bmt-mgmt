@@ -1,0 +1,874 @@
+{
+  'swagger': '2.0',
+  'info': { 'description': '', 'title': 'standard public schema', 'version': '14.1' },
+  'host': 'bufpmpehugzysvmbjlub.supabase.co:443',
+  'basePath': '/',
+  'schemes': ['https'],
+  'consumes':
+    [
+      'application/json',
+      'application/vnd.pgrst.object+json;nulls=stripped',
+      'application/vnd.pgrst.object+json',
+      'text/csv',
+    ],
+  'produces':
+    [
+      'application/json',
+      'application/vnd.pgrst.object+json;nulls=stripped',
+      'application/vnd.pgrst.object+json',
+      'text/csv',
+    ],
+  'paths':
+    {
+      '/':
+        {
+          'get':
+            {
+              'produces': ['application/openapi+json', 'application/json'],
+              'responses': { '200': { 'description': 'OK' } },
+              'summary': 'OpenAPI description (this document)',
+              'tags': ['Introspection'],
+            },
+        },
+      '/session_registrations':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_registrations.id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
+                  {
+                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
+                  },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/session_registrations' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_registrations'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_registrations' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_registrations'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_registrations.id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
+                  {
+                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
+                  },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_registrations'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_registrations.id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
+                  {
+                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
+                  },
+                  { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
+                  { '$ref': '#/parameters/body.session_registrations' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_registrations'],
+            },
+        },
+      '/session_intervals':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_intervals.id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        { 'items': { '$ref': '#/definitions/session_intervals' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_intervals'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_intervals' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_intervals'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_intervals.id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_intervals'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_intervals.id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/body.session_intervals' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_intervals'],
+            },
+        },
+      '/sessions':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.sessions.id' },
+                  { '$ref': '#/parameters/rowFilter.sessions.title' },
+                  { '$ref': '#/parameters/rowFilter.sessions.start_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.end_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.status' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_by' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema': { 'items': { '$ref': '#/definitions/sessions' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['sessions'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.sessions' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['sessions'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.sessions.id' },
+                  { '$ref': '#/parameters/rowFilter.sessions.title' },
+                  { '$ref': '#/parameters/rowFilter.sessions.start_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.end_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.status' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_by' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['sessions'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.sessions.id' },
+                  { '$ref': '#/parameters/rowFilter.sessions.title' },
+                  { '$ref': '#/parameters/rowFilter.sessions.start_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.end_time' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.status' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_by' },
+                  { '$ref': '#/parameters/rowFilter.sessions.created_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/body.sessions' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['sessions'],
+            },
+        },
+      '/members':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.members.id' },
+                  { '$ref': '#/parameters/rowFilter.members.user_id' },
+                  { '$ref': '#/parameters/rowFilter.members.display_name' },
+                  { '$ref': '#/parameters/rowFilter.members.role' },
+                  { '$ref': '#/parameters/rowFilter.members.is_active' },
+                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
+                  { '$ref': '#/parameters/rowFilter.members.created_at' },
+                  { '$ref': '#/parameters/rowFilter.members.updated_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema': { 'items': { '$ref': '#/definitions/members' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['members'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.members' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['members'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.members.id' },
+                  { '$ref': '#/parameters/rowFilter.members.user_id' },
+                  { '$ref': '#/parameters/rowFilter.members.display_name' },
+                  { '$ref': '#/parameters/rowFilter.members.role' },
+                  { '$ref': '#/parameters/rowFilter.members.is_active' },
+                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
+                  { '$ref': '#/parameters/rowFilter.members.created_at' },
+                  { '$ref': '#/parameters/rowFilter.members.updated_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['members'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.members.id' },
+                  { '$ref': '#/parameters/rowFilter.members.user_id' },
+                  { '$ref': '#/parameters/rowFilter.members.display_name' },
+                  { '$ref': '#/parameters/rowFilter.members.role' },
+                  { '$ref': '#/parameters/rowFilter.members.is_active' },
+                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
+                  { '$ref': '#/parameters/rowFilter.members.created_at' },
+                  { '$ref': '#/parameters/rowFilter.members.updated_at' },
+                  { '$ref': '#/parameters/body.members' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['members'],
+            },
+        },
+      '/interval_presence':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.interval_presence.id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.interval_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.member_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.is_present' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        { 'items': { '$ref': '#/definitions/interval_presence' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['interval_presence'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.interval_presence' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['interval_presence'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.interval_presence.id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.interval_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.member_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.is_present' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.created_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['interval_presence'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.interval_presence.id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.interval_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.member_id' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.is_present' },
+                  { '$ref': '#/parameters/rowFilter.interval_presence.created_at' },
+                  { '$ref': '#/parameters/body.interval_presence' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['interval_presence'],
+            },
+        },
+      '/rpc/create_session_with_intervals':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_court_fee': { 'format': 'numeric', 'type': 'number' },
+                            'p_created_by': { 'format': 'uuid', 'type': 'string' },
+                            'p_end_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                            'p_shuttle_fee': { 'format': 'numeric', 'type': 'number' },
+                            'p_start_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                            'p_title': { 'format': 'text', 'type': 'string' },
+                          },
+                        'required':
+                          [
+                            'p_title',
+                            'p_start_time',
+                            'p_end_time',
+                            'p_court_fee',
+                            'p_shuttle_fee',
+                            'p_created_by',
+                          ],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) create_session_with_intervals'],
+            },
+        },
+      '/rpc/calculate_session_costs':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_session_id': { 'format': 'uuid', 'type': 'string' } },
+                        'required': ['p_session_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) calculate_session_costs'],
+            },
+        },
+    },
+  'definitions':
+    {
+      'session_registrations':
+        {
+          'required': ['id'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'is_registered_not_attended':
+                { 'default': false, 'format': 'boolean', 'type': 'boolean' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'session_intervals':
+        {
+          'required': ['id', 'start_time', 'end_time', 'idx'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'end_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'idx': { 'format': 'integer', 'type': 'integer' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'sessions':
+        {
+          'required': ['id', 'title', 'start_time', 'end_time'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'title': { 'format': 'text', 'type': 'string' },
+              'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'end_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'court_fee_total': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'shuttle_fee_total': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'status':
+                {
+                  'default': 'draft',
+                  'enum': ['draft', 'active', 'closed'],
+                  'format': 'public.session_status',
+                  'type': 'string',
+                },
+              'created_by': { 'format': 'uuid', 'type': 'string' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'updated_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'members':
+        {
+          'required': ['id', 'display_name'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'user_id': { 'format': 'uuid', 'type': 'string' },
+              'display_name': { 'format': 'text', 'type': 'string' },
+              'role':
+                {
+                  'default': 'member',
+                  'enum': ['admin', 'member'],
+                  'format': 'public.user_role',
+                  'type': 'string',
+                },
+              'is_active': { 'default': true, 'format': 'boolean', 'type': 'boolean' },
+              'is_permanent': { 'default': false, 'format': 'boolean', 'type': 'boolean' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'updated_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'interval_presence':
+        {
+          'required': ['id'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'interval_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'is_present': { 'default': true, 'format': 'boolean', 'type': 'boolean' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+    },
+  'parameters':
+    {
+      'preferParams':
+        {
+          'name': 'Prefer',
+          'description': 'Preference',
+          'required': false,
+          'in': 'header',
+          'type': 'string',
+        },
+      'preferReturn':
+        {
+          'name': 'Prefer',
+          'description': 'Preference',
+          'required': false,
+          'enum': ['return=representation', 'return=minimal', 'return=none'],
+          'in': 'header',
+          'type': 'string',
+        },
+      'preferCount':
+        {
+          'name': 'Prefer',
+          'description': 'Preference',
+          'required': false,
+          'enum': ['count=none'],
+          'in': 'header',
+          'type': 'string',
+        },
+      'preferPost':
+        {
+          'name': 'Prefer',
+          'description': 'Preference',
+          'required': false,
+          'enum':
+            [
+              'return=representation',
+              'return=minimal',
+              'return=none',
+              'resolution=ignore-duplicates',
+              'resolution=merge-duplicates',
+            ],
+          'in': 'header',
+          'type': 'string',
+        },
+      'select':
+        {
+          'name': 'select',
+          'description': 'Filtering Columns',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'on_conflict':
+        {
+          'name': 'on_conflict',
+          'description': 'On Conflict',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'order':
+        {
+          'name': 'order',
+          'description': 'Ordering',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'range':
+        {
+          'name': 'Range',
+          'description': 'Limiting and Pagination',
+          'required': false,
+          'in': 'header',
+          'type': 'string',
+        },
+      'rangeUnit':
+        {
+          'name': 'Range-Unit',
+          'description': 'Limiting and Pagination',
+          'required': false,
+          'default': 'items',
+          'in': 'header',
+          'type': 'string',
+        },
+      'offset':
+        {
+          'name': 'offset',
+          'description': 'Limiting and Pagination',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'limit':
+        {
+          'name': 'limit',
+          'description': 'Limiting and Pagination',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'body.session_registrations':
+        {
+          'name': 'session_registrations',
+          'description': 'session_registrations',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_registrations' },
+        },
+      'rowFilter.session_registrations.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_registrations.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_registrations.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_registrations.is_registered_not_attended':
+        {
+          'name': 'is_registered_not_attended',
+          'required': false,
+          'in': 'query',
+          'type': 'string',
+        },
+      'rowFilter.session_registrations.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.session_intervals':
+        {
+          'name': 'session_intervals',
+          'description': 'session_intervals',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_intervals' },
+        },
+      'rowFilter.session_intervals.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.start_time':
+        { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.end_time':
+        { 'name': 'end_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.idx':
+        { 'name': 'idx', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.sessions':
+        {
+          'name': 'sessions',
+          'description': 'sessions',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/sessions' },
+        },
+      'rowFilter.sessions.id': { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.title':
+        { 'name': 'title', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.start_time':
+        { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.end_time':
+        { 'name': 'end_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.court_fee_total':
+        { 'name': 'court_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.shuttle_fee_total':
+        { 'name': 'shuttle_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.status':
+        { 'name': 'status', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.created_by':
+        { 'name': 'created_by', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.updated_at':
+        { 'name': 'updated_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.members':
+        {
+          'name': 'members',
+          'description': 'members',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/members' },
+        },
+      'rowFilter.members.id': { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.user_id':
+        { 'name': 'user_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.display_name':
+        { 'name': 'display_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.role':
+        { 'name': 'role', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.is_active':
+        { 'name': 'is_active', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.is_permanent':
+        { 'name': 'is_permanent', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.members.updated_at':
+        { 'name': 'updated_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.interval_presence':
+        {
+          'name': 'interval_presence',
+          'description': 'interval_presence',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/interval_presence' },
+        },
+      'rowFilter.interval_presence.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.interval_presence.interval_id':
+        { 'name': 'interval_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.interval_presence.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.interval_presence.is_present':
+        { 'name': 'is_present', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.interval_presence.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+    },
+  'externalDocs':
+    {
+      'description': 'PostgREST Documentation',
+      'url': 'https://postgrest.org/en/v14/references/api.html',
+    },
+}

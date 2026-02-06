@@ -23,6 +23,8 @@ The **Badminton Session Manager** is a Single Page Application (SPA) designed to
 
 ## Database & API Context (Supabase)
 
+Detailed technical API specifications can be found in `docs/api.yaml`.
+
 ### Tables & Views
 
 - **Tables**: `sessions`, `members`, `session_intervals`, `session_registrations`, `interval_presence`.
@@ -31,7 +33,7 @@ The **Badminton Session Manager** is a Single Page Application (SPA) designed to
 ### Key RPC Functions
 
 - `calculate_session_costs(p_session_id)`: Returns cost breakdown per member.
-- `create_session_with_intervals(p_title, p_start_time, p_end_time, ...)`: Creates session and auto-generates intervals.
+- `create_session_with_intervals(p_title, p_start_time, p_end_time, p_court_fee, p_shuttle_fee, p_created_by)`: Creates session and auto-generates intervals.
 
 ## Key Features
 
@@ -65,3 +67,4 @@ The **Badminton Session Manager** is a Single Page Application (SPA) designed to
 - `src/router/`: App routes.
 - `src/stores/`: Pinia stores (Auth, etc.).
 - `docs/summary.md`: Primary requirements and reference document.
+- `docs/api.yaml`: Technical API specification (Swagger/OpenAPI).
