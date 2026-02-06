@@ -114,3 +114,46 @@ interface Interval {
   idx: number;
 }
 ```
+
+## 6. Implementation Rules
+
+1. **NO Business Logic in JS**: Do not attempt to calculate "price per person" in Frontend. Always display what the RPC returns.
+2. **Date Formatting**: Use `date-fns` or `Intl.DateTimeFormat` to show times in 'HH:mm' and dates in 'DD/MM/YYYY'.
+3. **Currency Formatting**: Format numbers as Vietnamese Dong (e.g., "54.000 ₫").
+4. **Error Handling**: Show toast notifications (e.g., using `vue-toastification` or simple alert) for API errors.
+5. **Mobile Responsive**: The Matrix table must be horizontal scrollable on mobile devices.
+
+## 7. Example API Calls
+
+**Fetch Costs:**
+
+```javascript
+const { data, error } = await supabase
+  .rpc('calculate_session_costs', { p_session_id: route.params.id })
+```
+
+**Toggle Presence (Upsert):**
+
+```javascript
+const { error } = await supabase
+  .from('interval_presence')
+  .upsert({ 
+    interval_id: intervalId, 
+    member_id: memberId, 
+    is_present: newValue 
+  }, { onConflict: 'interval_id, member_id' })
+```
+
+**Create Session (RPC):**
+
+```javascript
+const { data, error } = await supabase
+  .rpc('create_session_with_intervals', {
+    p_title: form.title,
+    p_start_time: form.startTime, // ISO String
+    p_end_time: form.endTime,     // ISO String
+    p_court_fee: form.courtFee,
+    p_shuttle_fee: form.shuttleFee,
+    p_created_by: authStore.user.id
+  })
+```
