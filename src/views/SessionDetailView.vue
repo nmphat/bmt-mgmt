@@ -14,10 +14,15 @@ import {
   X,
   Edit,
   Save,
+  Lock,
+  CreditCard,
 } from 'lucide-vue-next'
+import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
+import type { CostSnapshot } from '@/types'
+import { BANK_INFO } from '@/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -34,7 +39,19 @@ const showMemberDropdown = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const presence = ref<Record<string, Record<string, boolean>>>({}) // memberId -> intervalId -> isPresent
 const costs = ref<MemberCost[]>([])
+const getBreakdown = (memberId: string) => {
+  return costs.value.find((c) => c.member_id === memberId)
+}
+const snapshots = ref<(CostSnapshot & { display_name: string })[]>([])
 const loading = ref(true)
+const finalizeLoading = ref(false)
+const showQRModal = ref(false)
+const selectedMemberId = ref<string | null>(null)
+const selectedSnapshot = computed(() => {
+  if (!selectedMemberId.value) return null
+  return snapshots.value.find((s) => s.member_id === selectedMemberId.value) || null
+})
+const selectedSnapshotMemberName = ref('')
 const isEditingSession = ref(false)
 const isSavingSession = ref(false)
 const sessionForm = ref({
@@ -44,6 +61,7 @@ const sessionForm = ref({
   shuttle_fee_total: 0,
 })
 let realtimeChannel: RealtimeChannel | null = null
+let pollTimer: any = null
 
 const availableMembers = computed(() => {
   const registeredIds = new Set(registrations.value.map((r) => r.member_id))
@@ -62,24 +80,26 @@ async function fetchData(refreshCostsOnly = false) {
   try {
     if (!refreshCostsOnly) loading.value = true
 
-    // Fetch session summary
-    if (!refreshCostsOnly) {
-      const { data: sessionData } = await supabase
-        .from('view_session_summary')
-        .select('*')
-        .eq('id', sessionId)
-        .single()
-      session.value = sessionData
+    // Fetch session summary (Always fetch this now to detect status changes)
+    const { data: sessionData, error: sessionError } = await supabase
+      .from('view_session_summary')
+      .select('*')
+      .eq('id', sessionId)
+      .single()
 
-      if (sessionData) {
-        sessionForm.value = {
-          title: sessionData.title,
-          status: sessionData.status,
-          court_fee_total: sessionData.court_fee_total,
-          shuttle_fee_total: sessionData.shuttle_fee_total,
-        }
+    if (sessionError) throw sessionError
+    session.value = sessionData
+
+    if (sessionData) {
+      sessionForm.value = {
+        title: sessionData.title,
+        status: sessionData.status,
+        court_fee_total: sessionData.court_fee_total,
+        shuttle_fee_total: sessionData.shuttle_fee_total,
       }
+    }
 
+    if (!refreshCostsOnly) {
       // Fetch intervals
       const { data: intervalsData } = await supabase
         .from('session_intervals')
@@ -137,12 +157,62 @@ async function fetchData(refreshCostsOnly = false) {
     }
     presence.value = matrix
 
+    if (session.value?.status === 'closed') {
+      await fetchSnapshotData()
+    }
+    // Always fetch costs for breakdown/reference
     await fetchCosts()
   } catch (error) {
     console.error('Error fetching session details:', error)
   } finally {
     loading.value = false
   }
+}
+
+async function fetchSnapshotData() {
+  const { data, error } = await supabase
+    .from('session_costs_snapshot')
+    .select('*, member:members(display_name)')
+    .eq('session_id', sessionId)
+
+  if (error) {
+    console.error('Error fetching snapshots:', error)
+    return
+  }
+
+  const sortedSnapshots = (data || []).map((s: any) => ({
+    ...s,
+    display_name: s.member?.display_name || 'Unknown',
+  })) as (CostSnapshot & { display_name: string })[]
+
+  sortedSnapshots.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+  snapshots.value = sortedSnapshots
+}
+
+async function finalizeSession() {
+  if (!authStore.isAuthenticated || !session.value) return
+  if (!confirm('Bạn có chắc muốn chốt sổ? Hành động này không thể hoàn tác.')) return
+
+  try {
+    finalizeLoading.value = true
+    const { error } = await supabase.rpc('finalize_session', { p_session_id: sessionId })
+
+    if (error) throw error
+
+    toast.success('Session finalized successfully')
+    await fetchData()
+  } catch (error: any) {
+    console.error('Error finalizing session:', error)
+    toast.error(error.message || 'Failed to finalize session')
+  } finally {
+    finalizeLoading.value = false
+  }
+}
+
+function openPaymentQR(snapshot: CostSnapshot, name: string) {
+  selectedMemberId.value = snapshot.member_id
+  selectedSnapshotMemberName.value = name
+  showQRModal.value = true
 }
 
 async function saveSession() {
@@ -308,6 +378,20 @@ const surplus = computed(() => {
   return totalCollected - totalCost
 })
 
+function startPolling() {
+  if (pollTimer) return
+  pollTimer = setInterval(() => {
+    fetchData(true)
+  }, 10_000) // Poll every 10 seconds
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
 onMounted(() => {
   fetchData()
   document.addEventListener('click', handleClickOutside)
@@ -327,10 +411,35 @@ onMounted(() => {
       },
       () => fetchData(true),
     )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'session_costs_snapshot',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => {
+        const updatedSnapshot = payload.new as CostSnapshot
+        const index = snapshots.value.findIndex((s) => s.id === updatedSnapshot.id)
+        if (index !== -1 && snapshots.value[index]) {
+          // Preserve display_name since it's not in the update payload
+          const oldDisplayName = snapshots.value[index].display_name
+          snapshots.value[index] = {
+            ...snapshots.value[index],
+            ...updatedSnapshot,
+            display_name: oldDisplayName,
+          }
+        }
+      },
+    )
     .subscribe()
+
+  startPolling()
 })
 
 onUnmounted(() => {
+  stopPolling()
   document.removeEventListener('click', handleClickOutside)
   if (realtimeChannel) {
     supabase.removeChannel(realtimeChannel)
@@ -431,7 +540,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-3 mb-2">
               <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
               <button
-                v-if="authStore.isAuthenticated"
+                v-if="authStore.isAuthenticated && session.status !== 'closed'"
                 @click="isEditingSession = true"
                 class="p-1 text-gray-400 hover:text-indigo-600 transition"
                 title="Edit session"
@@ -455,15 +564,186 @@ onUnmounted(() => {
                   formatCurrency(session.shuttle_fee_total)
                 }}</span>
               </div>
+              <div v-if="session.status === 'closed'">
+                <span class="text-gray-500 block mb-1 font-bold text-indigo-600"
+                  >Total Collected</span
+                >
+                <span class="font-bold text-indigo-700">{{
+                  formatCurrency(
+                    costs.length > 0
+                      ? costs.reduce((sum, c) => sum + c.final_total, 0)
+                      : snapshots.reduce((sum, s) => sum + s.final_amount, 0),
+                  )
+                }}</span>
+              </div>
               <div>
                 <span class="text-gray-500 block mb-1">Status</span>
                 <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize"
-                  >{{ session.status }}</span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+                  :class="
+                    session.status === 'closed'
+                      ? 'bg-gray-100 text-gray-800'
+                      : 'bg-green-100 text-green-800'
+                  "
                 >
+                  {{ session.status }}
+                </span>
               </div>
             </div>
           </div>
+
+          <div
+            v-if="authStore.isAuthenticated && session.status === 'active'"
+            class="flex items-center"
+          >
+            <button
+              @click="finalizeSession"
+              :disabled="finalizeLoading"
+              class="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition shadow-sm font-medium"
+            >
+              <Lock v-if="!finalizeLoading" class="w-4 h-4 mr-2" />
+              <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
+              Chốt Sổ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snapshot View (Closed mode) -->
+      <div
+        v-if="session.status === 'closed'"
+        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 mb-8"
+      >
+        <div
+          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
+        >
+          <h2 class="text-xl font-semibold text-gray-900">Bảng Thanh Toán (Đã Chốt)</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Thành viên
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
+                >
+                  Phải đóng
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Ca
+                </th>
+                <th
+                  scope="col"
+                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Tiền sân
+                </th>
+                <th
+                  scope="col"
+                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Tiền cầu
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Đã đóng
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Trạng thái
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Thanh toán
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="snapshot in snapshots" :key="snapshot.id">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
+                >
+                  {{ snapshot.display_name }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-indigo-700"
+                >
+                  {{ formatCurrency(snapshot.final_amount) }}
+                </td>
+                <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
+                >
+                  {{ formatCurrency(snapshot.paid_amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-green-100 text-green-800': snapshot.status === 'paid',
+                      'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
+                      'bg-gray-100 text-gray-800': snapshot.status === 'pending',
+                    }"
+                  >
+                    {{
+                      snapshot.status === 'paid'
+                        ? 'Đã đóng'
+                        : snapshot.status === 'partial'
+                          ? 'Chưa đủ'
+                          : 'Chưa đóng'
+                    }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <button
+                    v-if="snapshot.status !== 'paid'"
+                    @click="openPaymentQR(snapshot, snapshot.display_name)"
+                    class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium"
+                  >
+                    <CreditCard class="w-4 h-4 mr-1.5" />
+                    QR Pay
+                  </button>
+                  <span v-else class="text-green-500 flex items-center justify-center">
+                    <Check class="w-5 h-5 mr-1" />
+                    <span class="text-sm font-medium">Đã xong</span>
+                  </span>
+                </td>
+              </tr>
+              <!-- Surplus Row -->
+              <tr class="bg-gray-50 border-t-2 border-gray-100">
+                <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-700">
+                  Thặng dư (Quỹ)
+                </td>
+                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
+                  {{ formatCurrency(surplus) }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -480,7 +760,7 @@ onUnmounted(() => {
           </div>
           <!-- Add Members to Session -->
           <div
-            v-if="authStore.isAuthenticated"
+            v-if="authStore.isAuthenticated && session.status !== 'closed'"
             class="flex items-center gap-2 w-full sm:w-auto relative"
             ref="dropdownRef"
           >
@@ -548,14 +828,14 @@ onUnmounted(() => {
                   Member
                 </th>
                 <th
-                  v-if="authStore.isAuthenticated"
+                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
                 >
                   <span class="sr-only">Actions</span>
                 </th>
                 <th
-                  v-if="authStore.isAuthenticated"
+                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
                 >
@@ -578,7 +858,7 @@ onUnmounted(() => {
                 :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
               >
                 <td
-                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5_rgba(0,0,0,0.05)]"
+                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
                 >
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}
@@ -590,7 +870,7 @@ onUnmounted(() => {
                   </div>
                 </td>
                 <td
-                  v-if="authStore.isAuthenticated"
+                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -602,7 +882,7 @@ onUnmounted(() => {
                   </button>
                 </td>
                 <td
-                  v-if="authStore.isAuthenticated"
+                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -624,7 +904,11 @@ onUnmounted(() => {
                       type="checkbox"
                       :checked="presence[reg.member_id]?.[interval.id] || false"
                       @change="togglePresence(reg.member_id, interval.id)"
-                      :disabled="!authStore.isAuthenticated || reg.is_registered_not_attended"
+                      :disabled="
+                        !authStore.isAuthenticated ||
+                        reg.is_registered_not_attended ||
+                        session.status === 'closed'
+                      "
                       class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
@@ -635,10 +919,13 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Cost Summary -->
-      <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+      <!-- Cost Summary (Live mode) -->
+      <div
+        v-if="session.status !== 'closed'"
+        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
+      >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-900">Cost Summary</h2>
+          <h2 class="text-xl font-semibold text-gray-900">Cost Summary (Live)</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -711,4 +998,11 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <PaymentQRModal
+    :show="showQRModal"
+    :snapshot="selectedSnapshot"
+    :memberName="selectedSnapshotMemberName"
+    @close="showQRModal = false"
+  />
 </template>
