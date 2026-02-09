@@ -149,7 +149,7 @@ onMounted(fetchMembers)
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">Member Management</h1>
+      <h1 class="text-3xl font-bold text-gray-900">Member Management</h1>
       <button
         v-if="authStore.isAuthenticated && !showAddForm"
         @click="showAddForm = true"
@@ -166,34 +166,34 @@ onMounted(fetchMembers)
       class="bg-white shadow-sm rounded-lg border border-indigo-100 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300"
     >
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-gray-900">Add New Member</h2>
+        <h2 class="text-xl font-semibold text-gray-900">Add New Member</h2>
         <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-600">
           <X class="w-5 h-5" />
         </button>
       </div>
       <form @submit.prevent="addMember" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+          <label class="block text-base font-medium text-gray-700 mb-1">Display Name</label>
           <input
             v-model="newMember.display_name"
             type="text"
             required
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
             placeholder="Enter name"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+          <label class="block text-base font-medium text-gray-700 mb-1">Role</label>
           <select
             v-model="newMember.role"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
           >
             <option value="member">Member</option>
             <option value="admin">Admin</option>
           </select>
         </div>
         <div class="flex flex-wrap gap-4 mb-2 md:mb-0">
-          <label class="flex items-center text-sm text-gray-700 cursor-pointer">
+          <label class="flex items-center text-base text-gray-700 cursor-pointer">
             <input
               v-model="newMember.is_active"
               type="checkbox"
@@ -201,7 +201,7 @@ onMounted(fetchMembers)
             />
             Active
           </label>
-          <label class="flex items-center text-sm text-gray-700 cursor-pointer">
+          <label class="flex items-center text-base text-gray-700 cursor-pointer">
             <input
               v-model="newMember.is_permanent"
               type="checkbox"
@@ -210,7 +210,7 @@ onMounted(fetchMembers)
             Permanent
           </label>
           <label
-            class="flex items-center text-sm text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
+            class="flex items-center text-base text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
           >
             <input
               v-model="createAnother"
@@ -224,7 +224,7 @@ onMounted(fetchMembers)
           <button
             type="submit"
             :disabled="actionLoading"
-            class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-50 flex justify-center items-center"
+            class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-50 flex justify-center items-center text-base"
           >
             <Loader2 v-if="actionLoading" class="w-4 h-4 mr-2 animate-spin" />
             Create
@@ -232,7 +232,7 @@ onMounted(fetchMembers)
           <button
             type="button"
             @click="showAddForm = false"
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition text-base"
           >
             Cancel
           </button>
@@ -251,32 +251,32 @@ onMounted(fetchMembers)
             <tr>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
                 Name
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
                 Role
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
                 Active
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
                 Permanent
               </th>
               <th
                 v-if="authStore.isAuthenticated"
                 scope="col"
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
                 Actions
               </th>
@@ -289,22 +289,22 @@ onMounted(fetchMembers)
               :class="{ 'bg-gray-50': editingMemberId === member.id }"
             >
               <!-- Name -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                 <input
                   v-if="editingMemberId === member.id"
                   v-model="editForm.display_name"
                   type="text"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-2 py-1"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                 />
                 <span v-else class="font-medium">{{ member.display_name }}</span>
               </td>
 
               <!-- Role -->
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500">
                 <select
                   v-if="editingMemberId === member.id"
                   v-model="editForm.role"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-2 py-1"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                 >
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
@@ -312,7 +312,7 @@ onMounted(fetchMembers)
                 <span
                   v-else
                   :class="[
-                    'px-2 py-1 text-xs font-medium rounded-full',
+                    'px-2 py-1 text-sm font-medium rounded-full',
                     member.role === 'admin'
                       ? 'bg-indigo-100 text-indigo-800'
                       : 'bg-gray-100 text-gray-800',
@@ -323,7 +323,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Is Active -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+              <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-500">
                 <div v-if="editingMemberId === member.id" class="flex justify-center">
                   <input
                     v-model="editForm.is_active"
@@ -338,7 +338,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Is Permanent -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+              <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-500">
                 <div v-if="editingMemberId === member.id" class="flex justify-center">
                   <input
                     v-model="editForm.is_permanent"
@@ -355,7 +355,7 @@ onMounted(fetchMembers)
               <!-- Actions -->
               <td
                 v-if="authStore.isAuthenticated"
-                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                class="px-6 py-4 whitespace-nowrap text-right text-base font-medium"
               >
                 <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
                   <button

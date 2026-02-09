@@ -101,9 +101,11 @@ async function fetchData(refreshCostsOnly = false) {
       .from('session_registrations')
       .select('*, member:members(*)')
       .eq('session_id', sessionId)
-    
+
     const sortedRegs = (regsData || []) as SessionRegistration[]
-    sortedRegs.sort((a, b) => (a.member?.display_name || '').localeCompare(b.member?.display_name || '', 'vi'))
+    sortedRegs.sort((a, b) =>
+      (a.member?.display_name || '').localeCompare(b.member?.display_name || '', 'vi'),
+    )
     registrations.value = sortedRegs
 
     // Fetch presence
@@ -360,7 +362,7 @@ onUnmounted(() => {
         <!-- Edit Mode -->
         <div v-if="isEditingSession && authStore.isAuthenticated" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-lg font-bold text-gray-900">Edit Session</h2>
+            <h2 class="text-xl font-bold text-gray-900">Edit Session</h2>
             <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
               <X class="w-5 h-5" />
             </button>
@@ -427,7 +429,7 @@ onUnmounted(() => {
         <div v-else class="flex justify-between items-start">
           <div>
             <div class="flex items-center gap-3 mb-2">
-              <h1 class="text-2xl font-bold text-gray-900">{{ session.title }}</h1>
+              <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
               <button
                 v-if="authStore.isAuthenticated"
                 @click="isEditingSession = true"
@@ -440,7 +442,7 @@ onUnmounted(() => {
             <p class="text-gray-600 mb-4">
               {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy') }}
             </p>
-            <div class="flex flex-wrap gap-6 text-sm">
+            <div class="flex flex-wrap gap-6 text-base">
               <div>
                 <span class="text-gray-500 block mb-1">Court Fee</span>
                 <span class="font-semibold text-gray-900">{{
@@ -471,7 +473,7 @@ onUnmounted(() => {
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div class="flex items-center gap-2">
-            <h2 class="text-lg font-semibold text-gray-900">Attendance Matrix</h2>
+            <h2 class="text-xl font-semibold text-gray-900">Attendance Matrix</h2>
             <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-500 italic"
               >(Read-only)</span
             >
@@ -505,7 +507,7 @@ onUnmounted(() => {
               >
                 <div
                   v-if="availableMembers.length === 0"
-                  class="p-3 text-sm text-gray-500 italic text-center"
+                  class="p-3 text-base text-gray-500 italic text-center"
                 >
                   No more active members
                 </div>
@@ -520,14 +522,14 @@ onUnmounted(() => {
                     v-model="selectedMemberIds"
                     class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-3"
                   />
-                  <span class="text-sm text-gray-700">{{ m.display_name }}</span>
+                  <span class="text-base text-gray-700">{{ m.display_name }}</span>
                 </label>
               </div>
             </div>
             <button
               @click="registerMembers"
               :disabled="selectedMemberIds.length === 0 || isRegistering"
-              class="flex items-center px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50 whitespace-nowrap text-sm font-medium shadow-sm"
+              class="flex items-center px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50 whitespace-nowrap text-base font-medium shadow-sm"
             >
               <UserPlus v-if="!isRegistering" class="w-4 h-4 mr-1.5" />
               <Loader2 v-else class="w-4 h-4 mr-1.5 animate-spin" />
@@ -541,21 +543,21 @@ onUnmounted(() => {
               <tr>
                 <th
                   scope="col"
-                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
+                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
                 >
                   Member
                 </th>
                 <th
                   v-if="authStore.isAuthenticated"
                   scope="col"
-                  class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
+                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
                 >
                   <span class="sr-only">Actions</span>
                 </th>
                 <th
                   v-if="authStore.isAuthenticated"
                   scope="col"
-                  class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
                 >
                   Absent
                 </th>
@@ -563,7 +565,7 @@ onUnmounted(() => {
                   v-for="interval in intervals"
                   :key="interval.id"
                   scope="col"
-                  class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]"
+                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider min-w-[100px]"
                 >
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
                 </th>
@@ -576,13 +578,13 @@ onUnmounted(() => {
                 :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
               >
                 <td
-                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
+                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5_rgba(0,0,0,0.05)]"
                 >
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}
                     <span
                       v-if="reg.is_registered_not_attended"
-                      class="ml-2 text-xs text-red-500 font-normal italic"
+                      class="ml-2 text-sm text-red-500 font-normal italic"
                       >(Absent)</span
                     >
                   </div>
@@ -636,7 +638,7 @@ onUnmounted(() => {
       <!-- Cost Summary -->
       <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-lg font-semibold text-gray-900">Cost Summary</h2>
+          <h2 class="text-xl font-semibold text-gray-900">Cost Summary</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -644,60 +646,62 @@ onUnmounted(() => {
               <tr>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Member
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
+                >
+                  Total
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Intervals
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Court Fee
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Shuttle Fee
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider font-bold"
-                >
-                  Total
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="cost in costs" :key="cost.member_id">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
                   {{ cost.display_name }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-gray-900"
+                >
+                  {{ formatCurrency(cost.final_total) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-base text-center text-gray-500">
                   {{ cost.intervals_count }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
                   {{ formatCurrency(cost.total_court_fee) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
                   {{ formatCurrency(cost.total_shuttle_fee) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
-                  {{ formatCurrency(cost.final_total) }}
                 </td>
               </tr>
               <!-- Surplus Row -->
               <tr class="bg-gray-50">
-                <td colspan="4" class="px-6 py-4 text-right text-sm font-bold text-gray-700">
+                <td colspan="4" class="px-6 py-4 text-right text-base font-bold text-gray-700">
                   Surplus Fund
                 </td>
-                <td class="px-6 py-4 text-right text-sm font-bold text-green-600">
+                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
                   {{ formatCurrency(surplus) }}
                 </td>
               </tr>
