@@ -21,12 +21,16 @@ export interface MemberCost {
 export interface Interval {
   id: string;
   start_time: string;
+  end_time: string;
   idx: number;
 }
 
 export interface Member {
   id: string;
   display_name: string;
+  role: 'admin' | 'member';
+  is_active: boolean;
+  is_permanent: boolean;
 }
 
 export interface SessionRegistration {

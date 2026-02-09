@@ -24,6 +24,11 @@ const router = createRouter({
       name: 'create-session',
       component: () => import('../views/CreateSessionView.vue'),
     },
+    {
+      path: '/members',
+      name: 'members',
+      component: () => import('../views/MemberView.vue'),
+    },
   ],
 })
 

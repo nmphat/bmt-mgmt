@@ -44,7 +44,7 @@ onMounted(fetchSessions)
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900">Badminton Sessions</h1>
       <router-link
-        v-if="authStore.isAdmin"
+        v-if="authStore.isAuthenticated"
         to="/create-session"
         class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
       >

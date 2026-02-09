@@ -36,6 +36,19 @@ function handleLogin() {
         <span class="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition">Badminton Mgmt</span>
       </router-link>
 
+      <!-- Navigation -->
+      <nav v-if="authStore.isAuthenticated" class="hidden md:flex items-center gap-6 mx-6">
+        <router-link to="/" active-class="text-indigo-600" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition">
+          Sessions
+        </router-link>
+        <router-link to="/create-session" active-class="text-indigo-600" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition">
+          Create Session
+        </router-link>
+        <router-link to="/members" active-class="text-indigo-600" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition">
+          Members
+        </router-link>
+      </nav>
+
       <!-- Right Side Actions -->
       <div class="flex items-center gap-4">
         <template v-if="authStore.isAuthenticated">
