@@ -2,7 +2,14 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
-import type { SessionSummary, Interval, SessionRegistration, MemberCost, Member } from '@/types'
+import type {
+  SessionSummary,
+  Interval,
+  SessionRegistration,
+  MemberCost,
+  Member,
+  GroupPaymentData,
+} from '@/types'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
 import { useLangStore } from '@/stores/lang'
@@ -62,6 +69,9 @@ const selectedSnapshot = computed(() => {
 const selectedSnapshotMemberName = ref('')
 const isEditingSession = ref(false)
 const isSavingSession = ref(false)
+const selectedSnapshotIds = ref<string[]>([])
+const groupPaymentData = ref<GroupPaymentData | null>(null)
+const isCreatingGroupPayment = ref(false)
 const sessionForm = ref({
   title: '',
   status: 'draft' as 'draft' | 'active' | 'closed',
@@ -406,6 +416,51 @@ const surplus = computed(() => {
   return totalCollected - totalCost
 })
 
+const totalSelectedAmount = computed(() => {
+  return snapshots.value
+    .filter((s) => selectedSnapshotIds.value.includes(s.id))
+    .reduce((sum, s) => sum + (s.final_amount - s.paid_amount), 0)
+})
+
+async function handleCreateGroupPayment() {
+  if (selectedSnapshotIds.value.length === 0) return
+
+  try {
+    isCreatingGroupPayment.value = true
+    const { data, error } = await supabase.rpc('create_group_payment', {
+      p_snapshot_ids: selectedSnapshotIds.value,
+    })
+
+    if (error) throw error
+
+    groupPaymentData.value = {
+      group_code: data.group_code,
+      total_amount: data.total_amount,
+      member_count: selectedSnapshotIds.value.length,
+      members: snapshots.value
+        .filter((s) => selectedSnapshotIds.value.includes(s.id))
+        .map((s) => ({
+          name: s.display_name,
+          amount: s.final_amount - s.paid_amount,
+        })),
+    }
+
+    selectedMemberId.value = null
+    showQRModal.value = true
+  } catch (error: any) {
+    console.error('Error creating group payment:', error)
+    toast.error(error.message || t.value('session.finalizeError'))
+  } finally {
+    isCreatingGroupPayment.value = false
+  }
+}
+
+function handleCloseQR() {
+  showQRModal.value = false
+  groupPaymentData.value = null
+  selectedSnapshotIds.value = []
+}
+
 function startPolling() {
   if (pollTimer) return
   pollTimer = setInterval(() => {
@@ -659,6 +714,7 @@ onUnmounted(() => {
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
+                <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
@@ -711,6 +767,16 @@ onUnmounted(() => {
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="snapshot in snapshots" :key="snapshot.id">
+                <td v-if="authStore.isAuthenticated" class="px-3 py-4 text-center">
+                  <input
+                    v-if="snapshot.status !== 'paid'"
+                    type="checkbox"
+                    :value="snapshot.id"
+                    v-model="selectedSnapshotIds"
+                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
+                </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
                 >
@@ -782,7 +848,10 @@ onUnmounted(() => {
               </tr>
               <!-- Surplus Row -->
               <tr class="bg-gray-50 border-t-2 border-gray-100">
-                <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-700">
+                <td
+                  :colspan="authStore.isAuthenticated ? 6 : 5"
+                  class="px-6 py-4 text-right text-sm font-bold text-gray-700"
+                >
                   {{ t('session.surplusFund') }}
                 </td>
                 <td class="px-6 py-4 text-right text-base font-bold text-green-600">
@@ -1045,13 +1114,51 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Floating Action Bar for Group Payment -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="transform translate-y-full opacity-0"
+      enter-to-class="transform translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="transform translate-y-0 opacity-100"
+      leave-to-class="transform translate-y-full opacity-0"
+    >
+      <div
+        v-if="selectedSnapshotIds.length > 0"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl"
+      >
+        <div
+          class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between border border-indigo-500/50 backdrop-blur-md"
+        >
+          <div class="flex flex-col">
+            <span class="text-sm font-medium opacity-90">{{
+              t('session.payGroup', { count: selectedSnapshotIds.length })
+            }}</span>
+            <span class="text-xl font-extrabold">{{
+              t('session.totalSelected', { amount: formatCurrency(totalSelectedAmount) })
+            }}</span>
+          </div>
+          <button
+            @click="handleCreateGroupPayment"
+            :disabled="isCreatingGroupPayment"
+            class="flex items-center px-6 py-2.5 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition active:scale-95 disabled:opacity-50 shadow-sm"
+          >
+            <Loader2 v-if="isCreatingGroupPayment" class="w-5 h-5 mr-2 animate-spin" />
+            <CreditCard v-else class="w-5 h-5 mr-2" />
+            {{ t('session.groupPayButton') }}
+          </button>
+        </div>
+      </div>
+    </Transition>
   </div>
 
   <PaymentQRModal
     :show="showQRModal"
     :snapshot="selectedSnapshot"
     :memberName="selectedSnapshotMemberName"
-    @close="showQRModal = false"
+    :groupData="groupPaymentData"
+    @close="handleCloseQR"
   />
 
   <ManualPaymentModal

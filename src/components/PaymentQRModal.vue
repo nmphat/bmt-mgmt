@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { X, Copy, Check } from 'lucide-vue-next'
 import { BANK_INFO } from '@/types'
-import type { CostSnapshot } from '@/types'
+import type { CostSnapshot, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
 
 const langStore = useLangStore()
@@ -12,6 +12,7 @@ const props = defineProps<{
   show: boolean
   snapshot: CostSnapshot | null
   memberName: string
+  groupData?: GroupPaymentData | null
 }>()
 
 const emit = defineEmits<{
@@ -21,25 +22,28 @@ const emit = defineEmits<{
 const copied = ref(false)
 
 const remainingAmount = computed(() => {
+  if (props.groupData) return props.groupData.total_amount
   if (!props.snapshot) return 0
   return props.snapshot.final_amount - props.snapshot.paid_amount
 })
 
 const paymentInfo = computed(() => {
+  if (props.groupData) return props.groupData.group_code
   if (!props.snapshot) return ''
   return `${props.snapshot.payment_code} ${props.memberName}`
 })
 
 const qrUrl = computed(() => {
-  if (!props.snapshot) return ''
+  if (!props.snapshot && !props.groupData) return ''
   const amount = remainingAmount.value
   const addInfo = encodeURIComponent(paymentInfo.value)
   return `https://img.vietqr.io/image/${BANK_INFO.BANK_ID}-${BANK_INFO.ACCOUNT_NO}-${BANK_INFO.TEMPLATE}.png?amount=${amount}&addInfo=${addInfo}`
 })
 
 async function copyPaymentCode() {
-  if (!props.snapshot) return
-  await navigator.clipboard.writeText(props.snapshot.payment_code)
+  const code = props.groupData ? props.groupData.group_code : props.snapshot?.payment_code
+  if (!code) return
+  await navigator.clipboard.writeText(code)
   copied.value = true
   setTimeout(() => {
     copied.value = false
@@ -81,9 +85,11 @@ const formatCurrency = (value: number) => {
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-gray-900" id="modal-title">
               {{
-                snapshot?.status === 'paid'
-                  ? t('payment.paymentSuccess')
-                  : t('payment.paymentFor', { name: memberName })
+                props.groupData
+                  ? t('payment.groupPaymentFor', { count: props.groupData.member_count })
+                  : snapshot?.status === 'paid'
+                    ? t('payment.paymentSuccess')
+                    : t('payment.paymentFor', { name: memberName })
               }}
             </h3>
             <button
@@ -94,9 +100,9 @@ const formatCurrency = (value: number) => {
             </button>
           </div>
 
-          <div v-if="snapshot" class="mt-4 flex flex-col items-center">
+          <div v-if="snapshot || groupData" class="mt-4 flex flex-col items-center">
             <!-- Paid State -->
-            <div v-if="snapshot.status === 'paid'" class="py-8 flex flex-col items-center">
+            <div v-if="snapshot?.status === 'paid'" class="py-8 flex flex-col items-center">
               <div
                 class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce"
               >
@@ -123,7 +129,7 @@ const formatCurrency = (value: number) => {
               >
                 <img
                   :src="qrUrl"
-                  :alt="'QR Payment for ' + memberName"
+                  :alt="props.groupData ? t('payment.scanQR') : 'QR Payment for ' + memberName"
                   class="w-64 h-64 object-contain"
                 />
                 <div
@@ -155,11 +161,47 @@ const formatCurrency = (value: number) => {
                     </button>
                   </div>
                   <p class="text-xl font-mono font-bold text-indigo-900 break-all">
-                    {{ snapshot.payment_code }}
+                    {{ groupData ? groupData.group_code : snapshot?.payment_code }}
                   </p>
                   <p class="text-sm text-indigo-700 mt-2 italic">
-                    {{ t('payment.keepCodeNote') }}
+                    <template v-if="props.groupData">
+                      <span
+                        v-html="
+                          t('payment.groupInstructions', {
+                            count: props.groupData.member_count,
+                            code: props.groupData.group_code,
+                          })
+                        "
+                      ></span>
+                    </template>
+                    <template v-else>
+                      {{ t('payment.keepCodeNote') }}
+                    </template>
                   </p>
+                </div>
+
+                <!-- Group Members Breakdown -->
+                <div
+                  v-if="props.groupData"
+                  class="bg-gray-50 border border-gray-100 rounded-lg p-3"
+                >
+                  <p
+                    class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1"
+                  >
+                    {{ t('session.memberBreakdown') }}
+                  </p>
+                  <div class="space-y-1 max-h-40 overflow-y-auto">
+                    <div
+                      v-for="m in props.groupData.members"
+                      :key="m.name"
+                      class="flex justify-between items-center text-sm px-1"
+                    >
+                      <span class="text-gray-600 font-medium">{{ m.name }}</span>
+                      <span class="text-gray-900 font-bold tabular-nums">{{
+                        formatCurrency(m.amount)
+                      }}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="text-sm text-gray-500 text-center">

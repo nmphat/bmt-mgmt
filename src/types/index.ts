@@ -69,6 +69,16 @@ export interface SessionPayment {
   created_at: string
 }
 
+export interface GroupPaymentData {
+  group_code: string
+  total_amount: number
+  member_count: number
+  members: {
+    name: string
+    amount: number
+  }[]
+}
+
 // Bank Config (Hardcode for now or fetch from DB)
 export const BANK_INFO = {
   BANK_ID: 'MB', // Example: MB, VCB, ACB
