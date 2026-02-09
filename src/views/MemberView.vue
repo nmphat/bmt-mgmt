@@ -3,11 +3,15 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import type { Member } from '@/types'
 import { useAuthStore } from '@/stores/auth'
+import { useLangStore } from '@/stores/lang'
 import { Check, X, Edit, Save, Trash2, UserPlus, Loader2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
+import { computed } from 'vue'
 
 const authStore = useAuthStore()
+const langStore = useLangStore()
 const toast = useToast()
+const t = computed(() => langStore.t)
 const members = ref<Member[]>([])
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -33,11 +37,12 @@ async function fetchMembers() {
 
     if (error) throw error
     const sortedMembers = (data || []) as Member[]
-    sortedMembers.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+    const locale = langStore.currentLang
+    sortedMembers.sort((a, b) => a.display_name.localeCompare(b.display_name, locale))
     members.value = sortedMembers
   } catch (error) {
     console.error('Error fetching members:', error)
-    toast.error('Failed to load members')
+    toast.error(t.value('member.fetchError'))
   } finally {
     loading.value = false
   }
@@ -46,7 +51,7 @@ async function fetchMembers() {
 async function addMember() {
   if (!authStore.isAuthenticated) return
   if (!newMember.value.display_name.trim()) {
-    toast.error('Display name is required')
+    toast.error(t.value('member.nameRequired'))
     return
   }
 
@@ -58,10 +63,11 @@ async function addMember() {
 
     if (data) {
       members.value.push(data[0])
-      members.value.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+      const locale = langStore.currentLang
+      members.value.sort((a, b) => a.display_name.localeCompare(b.display_name, locale))
     }
 
-    toast.success('Member added successfully')
+    toast.success(t.value('toast.memberAdded'))
 
     if (!createAnother.value) {
       showAddForm.value = false
@@ -75,7 +81,7 @@ async function addMember() {
     }
   } catch (error: any) {
     console.error('Error adding member:', error)
-    toast.error(error.message || 'Failed to add member')
+    toast.error(error.message || t.value('toast.error', { message: error.message }))
   } finally {
     actionLoading.value = false
   }
@@ -83,7 +89,7 @@ async function addMember() {
 
 async function deleteMember(id: string, name: string) {
   if (!authStore.isAuthenticated) return
-  if (!confirm(`Are you sure you want to delete member "${name}"? This action cannot be undone.`)) {
+  if (!confirm(t.value('member.deleteConfirm', { name }))) {
     return
   }
 
@@ -94,10 +100,10 @@ async function deleteMember(id: string, name: string) {
     if (error) throw error
 
     members.value = members.value.filter((m) => m.id !== id)
-    toast.success('Member deleted successfully')
+    toast.success(t.value('toast.memberDeleted'))
   } catch (error: any) {
     console.error('Error deleting member:', error)
-    toast.error(error.message || 'Failed to delete member')
+    toast.error(error.message || t.value('toast.error', { message: error.message }))
   } finally {
     actionLoading.value = false
   }
@@ -135,11 +141,11 @@ async function saveEdit(id: string) {
       members.value[index] = { ...members.value[index], ...updates } as Member
     }
 
-    toast.success('Member updated successfully')
+    toast.success(t.value('toast.memberUpdated'))
     cancelEdit()
   } catch (error) {
     console.error('Error updating member:', error)
-    toast.error('Failed to update member')
+    toast.error(t.value('toast.error', { message: (error as any).message }))
   }
 }
 
@@ -149,14 +155,14 @@ onMounted(fetchMembers)
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Member Management</h1>
+      <h1 class="text-3xl font-bold text-gray-900">{{ t('member.title') }}</h1>
       <button
         v-if="authStore.isAuthenticated && !showAddForm"
         @click="showAddForm = true"
         class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm"
       >
         <UserPlus class="w-5 h-5 mr-2" />
-        New Member
+        {{ t('member.newName') }}
       </button>
     </div>
 
@@ -166,30 +172,34 @@ onMounted(fetchMembers)
       class="bg-white shadow-sm rounded-lg border border-indigo-100 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300"
     >
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">Add New Member</h2>
+        <h2 class="text-xl font-semibold text-gray-900">{{ t('member.addTitle') }}</h2>
         <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-600">
           <X class="w-5 h-5" />
         </button>
       </div>
       <form @submit.prevent="addMember" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div>
-          <label class="block text-base font-medium text-gray-700 mb-1">Display Name</label>
+          <label class="block text-base font-medium text-gray-700 mb-1">{{
+            t('member.displayName')
+          }}</label>
           <input
             v-model="newMember.display_name"
             type="text"
             required
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
-            placeholder="Enter name"
+            :placeholder="t('member.namePlaceholder')"
           />
         </div>
         <div>
-          <label class="block text-base font-medium text-gray-700 mb-1">Role</label>
+          <label class="block text-base font-medium text-gray-700 mb-1">{{
+            t('member.role')
+          }}</label>
           <select
             v-model="newMember.role"
             class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
           >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+            <option value="member">{{ t('member.memberRole') }}</option>
+            <option value="admin">{{ t('member.adminRole') }}</option>
           </select>
         </div>
         <div class="flex flex-wrap gap-4 mb-2 md:mb-0">
@@ -199,7 +209,7 @@ onMounted(fetchMembers)
               type="checkbox"
               class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-2"
             />
-            Active
+            {{ t('member.active') }}
           </label>
           <label class="flex items-center text-base text-gray-700 cursor-pointer">
             <input
@@ -207,7 +217,7 @@ onMounted(fetchMembers)
               type="checkbox"
               class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-2"
             />
-            Permanent
+            {{ t('member.permanent') }}
           </label>
           <label
             class="flex items-center text-base text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
@@ -217,7 +227,7 @@ onMounted(fetchMembers)
               type="checkbox"
               class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-2"
             />
-            Create another
+            {{ t('member.createAnother') }}
           </label>
         </div>
         <div class="flex gap-2">
@@ -227,14 +237,14 @@ onMounted(fetchMembers)
             class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-50 flex justify-center items-center text-base"
           >
             <Loader2 v-if="actionLoading" class="w-4 h-4 mr-2 animate-spin" />
-            Create
+            {{ t('member.create') }}
           </button>
           <button
             type="button"
             @click="showAddForm = false"
             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition text-base"
           >
-            Cancel
+            {{ t('common.cancel') }}
           </button>
         </div>
       </form>
@@ -253,32 +263,32 @@ onMounted(fetchMembers)
                 scope="col"
                 class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
-                Name
+                {{ t('member.name') }}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
-                Role
+                {{ t('member.role') }}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
-                Active
+                {{ t('member.active') }}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
-                Permanent
+                {{ t('member.permanent') }}
               </th>
               <th
                 v-if="authStore.isAuthenticated"
                 scope="col"
                 class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
-                Actions
+                {{ t('common.actions') }}
               </th>
             </tr>
           </thead>
@@ -306,8 +316,8 @@ onMounted(fetchMembers)
                   v-model="editForm.role"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                 >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
+                  <option value="member">{{ t('member.memberRole') }}</option>
+                  <option value="admin">{{ t('member.adminRole') }}</option>
                 </select>
                 <span
                   v-else
@@ -318,7 +328,7 @@ onMounted(fetchMembers)
                       : 'bg-gray-100 text-gray-800',
                   ]"
                 >
-                  {{ member.role }}
+                  {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
                 </span>
               </td>
 
@@ -361,14 +371,14 @@ onMounted(fetchMembers)
                   <button
                     @click="saveEdit(member.id)"
                     class="text-green-600 hover:text-green-900"
-                    title="Save"
+                    :title="t('common.save')"
                   >
                     <Save class="w-5 h-5" />
                   </button>
                   <button
                     @click="cancelEdit"
                     class="text-red-600 hover:text-red-900"
-                    title="Cancel"
+                    :title="t('common.cancel')"
                   >
                     <X class="w-5 h-5" />
                   </button>
@@ -377,14 +387,14 @@ onMounted(fetchMembers)
                   <button
                     @click="startEdit(member)"
                     class="text-indigo-600 hover:text-indigo-900"
-                    title="Edit"
+                    :title="t('common.edit')"
                   >
                     <Edit class="w-5 h-5" />
                   </button>
                   <button
                     @click="deleteMember(member.id, member.display_name)"
                     class="text-gray-400 hover:text-red-600"
-                    title="Delete"
+                    :title="t('common.delete')"
                   >
                     <Trash2 class="w-5 h-5" />
                   </button>

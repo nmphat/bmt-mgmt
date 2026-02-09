@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { X, Copy, Check } from 'lucide-vue-next'
-import { ref } from 'vue'
 import { BANK_INFO } from '@/types'
 import type { CostSnapshot } from '@/types'
+import { useLangStore } from '@/stores/lang'
+
+const langStore = useLangStore()
+const t = computed(() => langStore.t)
 
 const props = defineProps<{
   show: boolean
@@ -44,7 +47,11 @@ async function copyPaymentCode() {
 }
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+  return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 </script>
 
@@ -75,8 +82,8 @@ const formatCurrency = (value: number) => {
             <h3 class="text-xl font-bold text-gray-900" id="modal-title">
               {{
                 snapshot?.status === 'paid'
-                  ? 'Thanh toán thành công'
-                  : 'Thanh toán cho ' + memberName
+                  ? t('payment.paymentSuccess')
+                  : t('payment.paymentFor', { name: memberName })
               }}
             </h3>
             <button
@@ -95,16 +102,17 @@ const formatCurrency = (value: number) => {
               >
                 <Check class="w-12 h-12 text-green-600 stroke-[3px]" />
               </div>
-              <p class="text-2xl font-bold text-gray-900 mb-2">Cảm ơn bạn!</p>
-              <p class="text-gray-600 text-center">
-                Giao dịch của <strong>{{ memberName }}</strong> đã được ghi nhận thành công.
-              </p>
+              <p class="text-2xl font-bold text-gray-900 mb-2">{{ t('payment.thanks') }}</p>
+              <p
+                class="text-gray-600 text-center"
+                v-html="t('payment.recordingSuccess', { name: memberName })"
+              ></p>
             </div>
 
             <!-- Pending State -->
             <template v-else>
               <div class="mb-6 p-4 bg-gray-50 rounded-lg w-full text-center">
-                <span class="text-gray-500 text-sm block mb-1">Số tiền cần thanh toán</span>
+                <span class="text-gray-500 text-sm block mb-1">{{ t('payment.amountToPay') }}</span>
                 <span class="text-2xl font-bold text-indigo-600">{{
                   formatCurrency(remainingAmount)
                 }}</span>
@@ -123,7 +131,7 @@ const formatCurrency = (value: number) => {
                 >
                   <span
                     class="bg-white/90 px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm border border-gray-100"
-                    >Scan to Pay</span
+                    >{{ t('payment.scanToPayManual') }}</span
                   >
                 </div>
               </div>
@@ -131,27 +139,31 @@ const formatCurrency = (value: number) => {
               <div class="w-full space-y-4">
                 <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                   <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wider"
-                      >Nội dung chuyển khoản</span
-                    >
+                    <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wider">{{
+                      t('payment.transferContent')
+                    }}</span>
                     <button
                       @click="copyPaymentCode"
                       class="text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 text-xs font-medium"
                     >
-                      <template v-if="!copied"> <Copy class="w-3 h-3" /> Copy Mã </template>
-                      <template v-else> <Check class="w-3 h-3 text-green-600" /> Copied! </template>
+                      <template v-if="!copied">
+                        <Copy class="w-3 h-3" /> {{ t('payment.copyCode') }}
+                      </template>
+                      <template v-else>
+                        <Check class="w-3 h-3 text-green-600" /> {{ t('payment.copied') }}
+                      </template>
                     </button>
                   </div>
                   <p class="text-xl font-mono font-bold text-indigo-900 break-all">
                     {{ snapshot.payment_code }}
                   </p>
                   <p class="text-sm text-indigo-700 mt-2 italic">
-                    * Vui lòng giữ đúng mã này để hệ thống tự động xác nhận.
+                    {{ t('payment.keepCodeNote') }}
                   </p>
                 </div>
 
                 <div class="text-sm text-gray-500 text-center">
-                  <p>Hệ thống sẽ tự động cập nhật trạng thái ngay khi nhận được tiền.</p>
+                  <p>{{ t('payment.autoUpdateNote') }}</p>
                 </div>
               </div>
             </template>
@@ -168,7 +180,9 @@ const formatCurrency = (value: number) => {
             "
             @click="emit('close')"
           >
-            {{ snapshot?.status === 'paid' ? 'Xác nhận & Đóng' : 'Đã xong' }}
+            {{
+              snapshot?.status === 'paid' ? t('payment.confirmAndClose') : t('payment.doneButton')
+            }}
           </button>
         </div>
       </div>

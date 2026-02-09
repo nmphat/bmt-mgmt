@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { X, Loader2, DollarSign, CheckCircle, Info } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 import type { CostSnapshot } from '@/types'
 import { useToast } from 'vue-toastification'
+import { useLangStore } from '@/stores/lang'
 
 const props = defineProps<{
   show: boolean
@@ -12,11 +13,24 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['close', 'success'])
+const langStore = useLangStore()
 const toast = useToast()
+const t = computed(() => langStore.t)
 
 const amount = ref(0)
-const note = ref('Tiền mặt')
+const note = ref('')
 const isSubmitting = ref(false)
+
+// Initialize note based on language
+watch(
+  () => langStore.currentLang,
+  (lang) => {
+    if (!isSubmitting.value && !note.value) {
+      note.value = lang === 'vi' ? 'Tiền mặt' : 'Cash'
+    }
+  },
+  { immediate: true },
+)
 
 // Reset form when snapshot changes
 watch(
@@ -24,20 +38,24 @@ watch(
   (newVal) => {
     if (newVal) {
       amount.value = newVal.final_amount - newVal.paid_amount
-      note.value = 'Tiền mặt'
+      note.value = langStore.currentLang === 'vi' ? 'Tiền mặt' : 'Cash'
     }
   },
   { immediate: true },
 )
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+  return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 async function handleConfirm() {
   if (!props.snapshot) return
   if (amount.value <= 0) {
-    toast.error('Số tiền phải lớn hơn 0')
+    toast.error(t.value('payment.amountPositiveError'))
     return
   }
 
@@ -51,12 +69,12 @@ async function handleConfirm() {
 
     if (error) throw error
 
-    toast.success('Ghi nhận thanh toán tiền mặt thành công!')
+    toast.success(t.value('payment.manualPaymentSuccess'))
     emit('success')
     emit('close')
   } catch (error: any) {
     console.error('Error adding manual payment:', error)
-    toast.error('Lỗi khi ghi nhận: ' + error.message)
+    toast.error(t.value('toast.error', { message: error.message }))
   } finally {
     isSubmitting.value = false
   }
@@ -92,7 +110,7 @@ async function handleConfirm() {
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2" id="modal-title">
               <DollarSign class="w-6 h-6 text-green-600" />
-              Thu tiền mặt
+              {{ t('payment.manualTitle') }}
             </h3>
             <button
               @click="emit('close')"
@@ -105,15 +123,17 @@ async function handleConfirm() {
           <div v-if="snapshot" class="space-y-4">
             <div class="p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start gap-3">
               <Info class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div class="text-sm text-blue-800">
-                Ghi nhận số tiền mặt nhận được từ <strong>{{ memberName }}</strong
-                >. Hệ thống sẽ cập nhật trạng thái đã đóng ngay lập tức.
-              </div>
+              <div
+                class="text-sm text-blue-800"
+                v-html="t('payment.amountReceived', { name: memberName })"
+              ></div>
             </div>
 
             <div class="space-y-4 pt-2">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Thành viên</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{
+                  t('member.memberRole')
+                }}</label>
                 <div
                   class="px-3 py-2 bg-gray-100 rounded-md text-gray-900 font-semibold border border-gray-200 uppercase"
                 >
@@ -122,9 +142,9 @@ async function handleConfirm() {
               </div>
 
               <div>
-                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1"
-                  >Số tiền thu (₫)</label
-                >
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">{{
+                  t('payment.amountCollected')
+                }}</label>
                 <div class="relative rounded-md shadow-sm">
                   <input
                     id="amount"
@@ -133,7 +153,7 @@ async function handleConfirm() {
                     step="1000"
                     min="0"
                     class="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border py-2 font-bold text-indigo-700 text-lg"
-                    placeholder="Nhập số tiền..."
+                    :placeholder="t('payment.amountToPay') + '...'"
                     @keyup.enter="handleConfirm"
                   />
                   <div
@@ -143,7 +163,7 @@ async function handleConfirm() {
                   </div>
                 </div>
                 <p class="mt-1 text-xs text-gray-500">
-                  Còn nợ:
+                  {{ t('payment.debtLabel') }}
                   <span class="font-medium">{{
                     formatCurrency(snapshot.final_amount - snapshot.paid_amount)
                   }}</span>
@@ -151,15 +171,15 @@ async function handleConfirm() {
               </div>
 
               <div>
-                <label for="note" class="block text-sm font-medium text-gray-700 mb-1"
-                  >Ghi chú</label
-                >
+                <label for="note" class="block text-sm font-medium text-gray-700 mb-1">{{
+                  t('payment.note')
+                }}</label>
                 <input
                   id="note"
                   v-model="note"
                   type="text"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-                  placeholder="Ghi chú thêm..."
+                  :placeholder="t('payment.note') + '...'"
                 />
               </div>
             </div>
@@ -175,7 +195,7 @@ async function handleConfirm() {
           >
             <Loader2 v-if="isSubmitting" class="w-4 h-4 mr-2 animate-spin" />
             <CheckCircle v-else class="w-4 h-4 mr-2" />
-            Xác nhận đã nhận
+            {{ t('payment.confirmPayment') }}
           </button>
           <button
             @click="emit('close')"
@@ -183,7 +203,7 @@ async function handleConfirm() {
             type="button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            Hủy
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>

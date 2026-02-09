@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type { SessionSummary, Interval, SessionRegistration, MemberCost, Member } from '@/types'
 import { format } from 'date-fns'
+import { vi, enUS } from 'date-fns/locale'
+import { useLangStore } from '@/stores/lang'
 import {
   ChevronLeft,
   RefreshCcw,
@@ -28,7 +30,10 @@ import { BANK_INFO } from '@/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const langStore = useLangStore()
 const toast = useToast()
+const t = computed(() => langStore.t)
+const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 const sessionId = route.params.id as string
 
 const session = ref<SessionSummary | null>(null)
@@ -185,7 +190,7 @@ async function fetchSnapshotData() {
 
   const sortedSnapshots = (data || []).map((s: any) => ({
     ...s,
-    display_name: s.member?.display_name || 'Unknown',
+    display_name: s.member?.display_name || t.value('common.unknown'), // Need to add 'unknown' to messages.ts
   })) as (CostSnapshot & { display_name: string })[]
 
   sortedSnapshots.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
@@ -194,7 +199,7 @@ async function fetchSnapshotData() {
 
 async function finalizeSession() {
   if (!authStore.isAuthenticated || !session.value) return
-  if (!confirm('Bạn có chắc muốn chốt sổ? Hành động này không thể hoàn tác.')) return
+  if (!confirm(t.value('session.finalizeConfirm'))) return
 
   try {
     finalizeLoading.value = true
@@ -202,11 +207,11 @@ async function finalizeSession() {
 
     if (error) throw error
 
-    toast.success('Session finalized successfully')
+    toast.success(t.value('toast.sessionFinalized'))
     await fetchData()
   } catch (error: any) {
     console.error('Error finalizing session:', error)
-    toast.error(error.message || 'Failed to finalize session')
+    toast.error(error.message || t.value('session.finalizeError'))
   } finally {
     finalizeLoading.value = false
   }
@@ -242,12 +247,12 @@ async function saveSession() {
 
     if (error) throw error
 
-    toast.success('Session updated successfully')
+    toast.success(t.value('toast.sessionUpdated'))
     isEditingSession.value = false
     await fetchData()
   } catch (error: any) {
     console.error('Error updating session:', error)
-    toast.error(error.message || 'Failed to update session')
+    toast.error(error.message || t.value('session.updateError'))
   } finally {
     isSavingSession.value = false
   }
@@ -272,33 +277,35 @@ async function registerMembers() {
 
     if (errors.length > 0) {
       console.error('Some registrations failed:', errors)
-      toast.error('Some registrations failed. Check console for details.')
+      toast.error(t.value('toast.registrationPartialFailure'))
     } else {
-      toast.success(`${selectedMemberIds.value.length} member(s) registered successfully`)
+      toast.success(t.value('toast.memberRegistered', { count: selectedMemberIds.value.length }))
     }
 
     selectedMemberIds.value = []
     showMemberDropdown.value = false
     await fetchData(true)
   } catch (error: any) {
-    toast.error(error.message || 'Failed to register members')
+    toast.error(
+      error.message || t.value('toast.error', { message: t.value('session.registerError') }),
+    )
   } finally {
     isRegistering.value = false
   }
 }
 
 async function removeRegistration(regId: string, name: string) {
-  if (!confirm(`Remove ${name} from this session?`)) return
+  if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
     const { error } = await supabase.from('session_registrations').delete().eq('id', regId)
 
     if (error) throw error
 
-    toast.success('Registration removed')
+    toast.success(t.value('toast.registrationRemoved'))
     await fetchData(true)
   } catch (error: any) {
-    toast.error(error.message || 'Failed to remove registration')
+    toast.error(error.message || t.value('session.removeError'))
   }
 }
 
@@ -370,11 +377,23 @@ async function toggleAbsent(reg: SessionRegistration) {
 }
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+  return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 const formatTime = (isoString: string) => {
   return format(new Date(isoString), 'HH:mm')
+}
+
+const formatSessionDate = (isoString: string) => {
+  return format(new Date(isoString), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
+}
+
+const getStatusLabel = (status: string) => {
+  return t.value(`common.${status}`)
 }
 
 const surplus = computed(() => {
@@ -464,7 +483,7 @@ onUnmounted(() => {
         class="flex items-center text-indigo-600 hover:text-indigo-800 transition"
       >
         <ChevronLeft class="w-5 h-5 mr-1" />
-        Back to Dashboard
+        {{ t('common.backToHome') }}
       </router-link>
       <button @click="() => fetchData()" class="p-2 text-gray-500 hover:text-indigo-600 transition">
         <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': loading }" />
@@ -480,14 +499,16 @@ onUnmounted(() => {
         <!-- Edit Mode -->
         <div v-if="isEditingSession && authStore.isAuthenticated" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xl font-bold text-gray-900">Edit Session</h2>
+            <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
             <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
               <X class="w-5 h-5" />
             </button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">Title</label>
+              <label class="block text-sm font-medium text-gray-700">{{
+                t('session.title')
+              }}</label>
               <input
                 v-model="sessionForm.title"
                 type="text"
@@ -495,18 +516,22 @@ onUnmounted(() => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Status</label>
+              <label class="block text-sm font-medium text-gray-700">{{
+                t('common.status')
+              }}</label>
               <select
                 v-model="sessionForm.status"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="closed">Closed</option>
+                <option value="draft">{{ t('common.draft') }}</option>
+                <option value="active">{{ t('common.active') }}</option>
+                <option value="closed">{{ t('common.closed') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Court Fee (Total)</label>
+              <label class="block text-sm font-medium text-gray-700">{{
+                t('session.courtFee')
+              }}</label>
               <input
                 v-model.number="sessionForm.court_fee_total"
                 type="number"
@@ -515,7 +540,9 @@ onUnmounted(() => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">Shuttle Fee (Total)</label>
+              <label class="block text-sm font-medium text-gray-700">{{
+                t('session.shuttleFee')
+              }}</label>
               <input
                 v-model.number="sessionForm.shuttle_fee_total"
                 type="number"
@@ -529,7 +556,7 @@ onUnmounted(() => {
               @click="isEditingSession = false"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
             >
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button
               @click="saveSession"
@@ -538,7 +565,7 @@ onUnmounted(() => {
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
-              Save Changes
+              {{ t('common.save') }}
             </button>
           </div>
         </div>
@@ -552,31 +579,31 @@ onUnmounted(() => {
                 v-if="authStore.isAuthenticated && session.status !== 'closed'"
                 @click="isEditingSession = true"
                 class="p-1 text-gray-400 hover:text-indigo-600 transition"
-                title="Edit session"
+                :title="t('session.editSession')"
               >
                 <Edit class="w-5 h-5" />
               </button>
             </div>
-            <p class="text-gray-600 mb-4">
-              {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy') }}
+            <p class="text-gray-600 mb-4 capitalize">
+              {{ formatSessionDate(session.session_date) }}
             </p>
             <div class="flex flex-wrap gap-6 text-base">
               <div>
-                <span class="text-gray-500 block mb-1">Court Fee</span>
+                <span class="text-gray-500 block mb-1">{{ t('session.courtFee') }}</span>
                 <span class="font-semibold text-gray-900">{{
                   formatCurrency(session.court_fee_total)
                 }}</span>
               </div>
               <div>
-                <span class="text-gray-500 block mb-1">Shuttle Fee</span>
+                <span class="text-gray-500 block mb-1">{{ t('session.shuttleFee') }}</span>
                 <span class="font-semibold text-gray-900">{{
                   formatCurrency(session.shuttle_fee_total)
                 }}</span>
               </div>
               <div v-if="session.status === 'closed'">
-                <span class="text-gray-500 block mb-1 font-bold text-indigo-600"
-                  >Total Collected</span
-                >
+                <span class="text-gray-500 block mb-1 font-bold text-indigo-600">{{
+                  t('session.totalCollected')
+                }}</span>
                 <span class="font-bold text-indigo-700">{{
                   formatCurrency(
                     costs.length > 0
@@ -586,7 +613,7 @@ onUnmounted(() => {
                 }}</span>
               </div>
               <div>
-                <span class="text-gray-500 block mb-1">Status</span>
+                <span class="text-gray-500 block mb-1">{{ t('common.status') }}</span>
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
                   :class="
@@ -595,7 +622,7 @@ onUnmounted(() => {
                       : 'bg-green-100 text-green-800'
                   "
                 >
-                  {{ session.status }}
+                  {{ getStatusLabel(session.status) }}
                 </span>
               </div>
             </div>
@@ -612,7 +639,7 @@ onUnmounted(() => {
             >
               <Lock v-if="!finalizeLoading" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
-              Chốt Sổ
+              {{ t('session.finalize') }}
             </button>
           </div>
         </div>
@@ -626,7 +653,7 @@ onUnmounted(() => {
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
         >
-          <h2 class="text-xl font-semibold text-gray-900">Bảng Thanh Toán (Đã Chốt)</h2>
+          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -636,49 +663,49 @@ onUnmounted(() => {
                   scope="col"
                   class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Thành viên
+                  {{ t('common.member') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
                 >
-                  Phải đóng
+                  {{ t('session.mustPay') }}
                 </th>
                 <th
                   scope="col"
                   class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Ca
+                  {{ t('session.intervalsAbbr') }}
                 </th>
                 <th
                   scope="col"
                   class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Tiền sân
+                  {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
                   class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Tiền cầu
+                  {{ t('session.shuttleFee') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Đã đóng
+                  {{ t('payment.paid') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Trạng thái
+                  {{ t('common.status') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Thanh toán
+                  {{ t('session.pay') }}
                 </th>
               </tr>
             </thead>
@@ -719,10 +746,10 @@ onUnmounted(() => {
                   >
                     {{
                       snapshot.status === 'paid'
-                        ? 'Đã đóng'
+                        ? t('payment.paid')
                         : snapshot.status === 'partial'
-                          ? 'Chưa đủ'
-                          : 'Chưa đóng'
+                          ? t('payment.partial')
+                          : t('payment.pending')
                     }}
                   </span>
                 </td>
@@ -734,21 +761,21 @@ onUnmounted(() => {
                       class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
                     >
                       <CreditCard class="w-4 h-4 mr-1.5" />
-                      QR Pay
+                      {{ t('payment.qrPay') }}
                     </button>
                     <button
                       v-if="snapshot.status !== 'paid' && authStore.isAdmin"
                       @click="openCashPayment(snapshot, snapshot.display_name)"
                       class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
                     >
-                      💵 Cash
+                      {{ t('payment.cashPay') }}
                     </button>
                     <span
                       v-else-if="snapshot.status === 'paid'"
                       class="text-green-500 flex items-center justify-center"
                     >
                       <Check class="w-5 h-5 mr-1" />
-                      <span class="text-sm font-medium">Đã xong</span>
+                      <span class="text-sm font-medium">{{ t('payment.done') }}</span>
                     </span>
                   </div>
                 </td>
@@ -756,7 +783,7 @@ onUnmounted(() => {
               <!-- Surplus Row -->
               <tr class="bg-gray-50 border-t-2 border-gray-100">
                 <td colspan="5" class="px-6 py-4 text-right text-sm font-bold text-gray-700">
-                  Thặng dư (Quỹ)
+                  {{ t('session.surplusFund') }}
                 </td>
                 <td class="px-6 py-4 text-right text-base font-bold text-green-600">
                   {{ formatCurrency(surplus) }}
@@ -774,10 +801,10 @@ onUnmounted(() => {
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div class="flex items-center gap-2">
-            <h2 class="text-xl font-semibold text-gray-900">Attendance Matrix</h2>
-            <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-500 italic"
-              >(Read-only)</span
-            >
+            <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendanceMatrix') }}</h2>
+            <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-500 italic">{{
+              t('session.readOnly')
+            }}</span>
           </div>
           <!-- Add Members to Session -->
           <div
@@ -790,12 +817,12 @@ onUnmounted(() => {
                 @click="showMemberDropdown = !showMemberDropdown"
                 class="flex items-center justify-between w-full rounded-md border-gray-300 shadow-sm bg-white border px-3 py-1.5 text-sm cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               >
-                <span v-if="selectedMemberIds.length === 0" class="text-gray-500"
-                  >Select members...</span
-                >
-                <span v-else class="text-gray-900 font-medium"
-                  >{{ selectedMemberIds.length }} selected</span
-                >
+                <span v-if="selectedMemberIds.length === 0" class="text-gray-500">{{
+                  t('session.selectMembers')
+                }}</span>
+                <span v-else class="text-gray-900 font-medium">{{
+                  t('session.selectedCount', { count: selectedMemberIds.length })
+                }}</span>
                 <ChevronLeft
                   class="w-4 h-4 text-gray-400 transition-transform duration-200"
                   :class="showMemberDropdown ? 'rotate-90' : '-rotate-90'"
@@ -810,7 +837,7 @@ onUnmounted(() => {
                   v-if="availableMembers.length === 0"
                   class="p-3 text-base text-gray-500 italic text-center"
                 >
-                  No more active members
+                  {{ t('session.noMoreMembers') }}
                 </div>
                 <label
                   v-for="m in availableMembers"
@@ -834,7 +861,7 @@ onUnmounted(() => {
             >
               <UserPlus v-if="!isRegistering" class="w-4 h-4 mr-1.5" />
               <Loader2 v-else class="w-4 h-4 mr-1.5 animate-spin" />
-              Register
+              {{ isRegistering ? t('common.loading') : t('session.register') }}
             </button>
           </div>
         </div>
@@ -846,7 +873,7 @@ onUnmounted(() => {
                   scope="col"
                   class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
                 >
-                  Member
+                  {{ t('common.member') }}
                 </th>
                 <th
                   v-if="authStore.isAuthenticated && session.status !== 'closed'"
@@ -860,7 +887,7 @@ onUnmounted(() => {
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
                 >
-                  Absent
+                  {{ t('session.absent') }}
                 </th>
                 <th
                   v-for="interval in intervals"
@@ -886,7 +913,7 @@ onUnmounted(() => {
                     <span
                       v-if="reg.is_registered_not_attended"
                       class="ml-2 text-sm text-red-500 font-normal italic"
-                      >(Absent)</span
+                      >({{ t('session.absent') }})</span
                     >
                   </div>
                 </td>
@@ -897,7 +924,7 @@ onUnmounted(() => {
                   <button
                     @click="removeRegistration(reg.id, reg.member?.display_name || '')"
                     class="text-gray-300 hover:text-red-500 transition focus:outline-none"
-                    title="Remove member from session"
+                    :title="t('session.removeRegistrationTooltip')"
                   >
                     <Trash2 class="w-4 h-4 mx-auto" />
                   </button>
@@ -910,7 +937,7 @@ onUnmounted(() => {
                     @click="toggleAbsent(reg)"
                     class="text-gray-400 hover:text-red-600 transition focus:outline-none"
                     :class="{ 'text-red-600': reg.is_registered_not_attended }"
-                    title="Mark as Registered but Absent"
+                    :title="t('session.markAbsentTooltip')"
                   >
                     <UserX class="w-5 h-5 mx-auto" />
                   </button>
@@ -946,7 +973,7 @@ onUnmounted(() => {
         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-900">Cost Summary (Live)</h2>
+          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.costSummary') }} (Live)</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -956,31 +983,31 @@ onUnmounted(() => {
                   scope="col"
                   class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Member
+                  {{ t('common.member') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
                 >
-                  Total
+                  {{ t('session.total') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Intervals
+                  {{ t('session.numIntervals') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Court Fee
+                  {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Shuttle Fee
+                  {{ t('session.shuttleFee') }}
                 </th>
               </tr>
             </thead>
@@ -1007,7 +1034,7 @@ onUnmounted(() => {
               <!-- Surplus Row -->
               <tr class="bg-gray-50">
                 <td colspan="4" class="px-6 py-4 text-right text-base font-bold text-gray-700">
-                  Surplus Fund
+                  {{ t('session.surplusFund') }}
                 </td>
                 <td class="px-6 py-4 text-right text-base font-bold text-green-600">
                   {{ formatCurrency(surplus) }}
