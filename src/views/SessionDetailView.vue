@@ -16,6 +16,7 @@ import {
   Save,
   Lock,
   CreditCard,
+  Check,
 } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
