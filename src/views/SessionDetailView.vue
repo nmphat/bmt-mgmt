@@ -18,6 +18,7 @@ import {
   CreditCard,
 } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
+import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -46,6 +47,7 @@ const snapshots = ref<(CostSnapshot & { display_name: string })[]>([])
 const loading = ref(true)
 const finalizeLoading = ref(false)
 const showQRModal = ref(false)
+const showCashModal = ref(false)
 const selectedMemberId = ref<string | null>(null)
 const selectedSnapshot = computed(() => {
   if (!selectedMemberId.value) return null
@@ -213,6 +215,12 @@ function openPaymentQR(snapshot: CostSnapshot, name: string) {
   selectedMemberId.value = snapshot.member_id
   selectedSnapshotMemberName.value = name
   showQRModal.value = true
+}
+
+function openCashPayment(snapshot: CostSnapshot, name: string) {
+  selectedMemberId.value = snapshot.member_id
+  selectedSnapshotMemberName.value = name
+  showCashModal.value = true
 }
 
 async function saveSession() {
@@ -718,18 +726,30 @@ onUnmounted(() => {
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <button
-                    v-if="snapshot.status !== 'paid'"
-                    @click="openPaymentQR(snapshot, snapshot.display_name)"
-                    class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium"
-                  >
-                    <CreditCard class="w-4 h-4 mr-1.5" />
-                    QR Pay
-                  </button>
-                  <span v-else class="text-green-500 flex items-center justify-center">
-                    <Check class="w-5 h-5 mr-1" />
-                    <span class="text-sm font-medium">Đã xong</span>
-                  </span>
+                  <div class="flex flex-col gap-1.5 items-center">
+                    <button
+                      v-if="snapshot.status !== 'paid'"
+                      @click="openPaymentQR(snapshot, snapshot.display_name)"
+                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
+                    >
+                      <CreditCard class="w-4 h-4 mr-1.5" />
+                      QR Pay
+                    </button>
+                    <button
+                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                      @click="openCashPayment(snapshot, snapshot.display_name)"
+                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
+                    >
+                      💵 Cash
+                    </button>
+                    <span
+                      v-else-if="snapshot.status === 'paid'"
+                      class="text-green-500 flex items-center justify-center"
+                    >
+                      <Check class="w-5 h-5 mr-1" />
+                      <span class="text-sm font-medium">Đã xong</span>
+                    </span>
+                  </div>
                 </td>
               </tr>
               <!-- Surplus Row -->
@@ -1004,5 +1024,13 @@ onUnmounted(() => {
     :snapshot="selectedSnapshot"
     :memberName="selectedSnapshotMemberName"
     @close="showQRModal = false"
+  />
+
+  <ManualPaymentModal
+    :show="showCashModal"
+    :snapshot="selectedSnapshot"
+    :memberName="selectedSnapshotMemberName"
+    @close="showCashModal = false"
+    @success="fetchSnapshotData"
   />
 </template>
