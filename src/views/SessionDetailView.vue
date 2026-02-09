@@ -66,12 +66,38 @@ const selectedSnapshot = computed(() => {
   if (!selectedMemberId.value) return null
   return snapshots.value.find((s) => s.member_id === selectedMemberId.value) || null
 })
+const isPaymentSuccess = computed(() => {
+  if (groupPaymentData.value) {
+    // Check if all selected members in the group are paid
+    const selectedSnapshots = snapshots.value.filter((s) =>
+      selectedSnapshotIds.value.includes(s.id),
+    )
+    return selectedSnapshots.length > 0 && selectedSnapshots.every((s) => s.status === 'paid')
+  }
+  return selectedSnapshot.value?.status === 'paid'
+})
 const selectedSnapshotMemberName = ref('')
 const isEditingSession = ref(false)
 const isSavingSession = ref(false)
 const selectedSnapshotIds = ref<string[]>([])
 const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
+const isFetching = ref(false)
+
+// Cache formatters for performance
+const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
+  vi: new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }),
+  en: new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }),
+}
+
 const sessionForm = ref({
   title: '',
   status: 'draft' as 'draft' | 'active' | 'closed',
@@ -95,7 +121,9 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 async function fetchData(refreshCostsOnly = false) {
+  if (isFetching.value) return
   try {
+    isFetching.value = true
     if (!refreshCostsOnly) loading.value = true
 
     // Fetch session summary (Always fetch this now to detect status changes)
@@ -183,6 +211,7 @@ async function fetchData(refreshCostsOnly = false) {
   } catch (error) {
     console.error('Error fetching session details:', error)
   } finally {
+    isFetching.value = false
     loading.value = false
   }
 }
@@ -387,11 +416,8 @@ async function toggleAbsent(reg: SessionRegistration) {
 }
 
 const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value)
+  const formatter = currencyFormatters[langStore.currentLang] || currencyFormatters.vi
+  return formatter!.format(value)
 }
 
 const formatTime = (isoString: string) => {
@@ -475,14 +501,25 @@ function stopPolling() {
   }
 }
 
-onMounted(() => {
-  fetchData()
-  document.addEventListener('click', handleClickOutside)
+function initRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel)
+  }
+
+  const intervalIds = intervals.value.map((i) => i.id)
+  if (intervalIds.length === 0) return
 
   realtimeChannel = supabase
     .channel(`session-${sessionId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'interval_presence' }, () =>
-      fetchData(true),
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'interval_presence',
+        filter: `interval_id=in.(${intervalIds.join(',')})`,
+      },
+      () => fetchData(true),
     )
     .on(
       'postgres_changes',
@@ -506,7 +543,6 @@ onMounted(() => {
         const updatedSnapshot = payload.new as CostSnapshot
         const index = snapshots.value.findIndex((s) => s.id === updatedSnapshot.id)
         if (index !== -1 && snapshots.value[index]) {
-          // Preserve display_name since it's not in the update payload
           const oldDisplayName = snapshots.value[index].display_name
           snapshots.value[index] = {
             ...snapshots.value[index],
@@ -517,7 +553,12 @@ onMounted(() => {
       },
     )
     .subscribe()
+}
 
+onMounted(async () => {
+  await fetchData()
+  initRealtime()
+  document.addEventListener('click', handleClickOutside)
   startPolling()
 })
 
@@ -1158,6 +1199,7 @@ onUnmounted(() => {
     :snapshot="selectedSnapshot"
     :memberName="selectedSnapshotMemberName"
     :groupData="groupPaymentData"
+    :isPaid="isPaymentSuccess"
     @close="handleCloseQR"
   />
 

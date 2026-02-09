@@ -13,6 +13,7 @@ const props = defineProps<{
   snapshot: CostSnapshot | null
   memberName: string
   groupData?: GroupPaymentData | null
+  isPaid?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -85,10 +86,10 @@ const formatCurrency = (value: number) => {
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-gray-900" id="modal-title">
               {{
-                props.groupData
-                  ? t('payment.groupPaymentFor', { count: props.groupData.member_count })
-                  : snapshot?.status === 'paid'
-                    ? t('payment.paymentSuccess')
+                isPaid
+                  ? t('payment.paymentSuccess')
+                  : props.groupData
+                    ? t('payment.groupPaymentFor', { count: props.groupData.member_count })
                     : t('payment.paymentFor', { name: memberName })
               }}
             </h3>
@@ -102,7 +103,7 @@ const formatCurrency = (value: number) => {
 
           <div v-if="snapshot || groupData" class="mt-4 flex flex-col items-center">
             <!-- Paid State -->
-            <div v-if="snapshot?.status === 'paid'" class="py-8 flex flex-col items-center">
+            <div v-if="isPaid" class="py-8 flex flex-col items-center">
               <div
                 class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce"
               >
@@ -111,7 +112,11 @@ const formatCurrency = (value: number) => {
               <p class="text-2xl font-bold text-gray-900 mb-2">{{ t('payment.thanks') }}</p>
               <p
                 class="text-gray-600 text-center"
-                v-html="t('payment.recordingSuccess', { name: memberName })"
+                v-html="
+                  props.groupData
+                    ? t('payment.manualPaymentSuccess')
+                    : t('payment.recordingSuccess', { name: memberName })
+                "
               ></p>
             </div>
 
@@ -216,15 +221,13 @@ const formatCurrency = (value: number) => {
             type="button"
             class="inline-flex justify-center w-full px-6 py-2 text-base font-bold text-white rounded-md shadow-sm transition sm:ml-3 sm:w-auto sm:text-sm"
             :class="
-              snapshot?.status === 'paid'
-                ? 'bg-green-600 hover:bg-green-700'
+              isPaid
+                ? 'bg-green-600 hover:bg-green-700 font-bold'
                 : 'bg-indigo-600 hover:bg-indigo-700 font-medium'
             "
             @click="emit('close')"
           >
-            {{
-              snapshot?.status === 'paid' ? t('payment.confirmAndClose') : t('payment.doneButton')
-            }}
+            {{ isPaid ? t('payment.confirmAndClose') : t('payment.doneButton') }}
           </button>
         </div>
       </div>
