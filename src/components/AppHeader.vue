@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, LogIn, User, Languages, ChevronDown } from 'lucide-vue-next'
+import { LogOut, LogIn, User, Languages, ChevronDown, Wallet } from 'lucide-vue-next'
+import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -11,6 +12,8 @@ const router = useRouter()
 
 const isLangOpen = ref(false)
 const langRef = ref<HTMLElement | null>(null)
+const myDebt = ref(0)
+const loadingDebt = ref(false)
 
 const displayName = computed(() => {
   if (authStore.profile?.display_name) {
@@ -20,6 +23,31 @@ const displayName = computed(() => {
 })
 
 const t = computed(() => langStore.t)
+
+async function fetchMyDebt() {
+  if (!authStore.profile?.id) return
+
+  try {
+    loadingDebt.value = true
+    const { data, error } = await supabase
+      .from('view_member_debt_summary')
+      .select('total_debt')
+      .eq('member_id', authStore.profile.id)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is 'not found' which is fine
+      console.warn('Error fetching debt:', error)
+      return
+    }
+
+    myDebt.value = data?.total_debt || 0
+  } catch (e) {
+    console.error('Exception fetching debt:', e)
+  } finally {
+    loadingDebt.value = false
+  }
+}
 
 async function handleLogout() {
   await authStore.signOut()
@@ -41,8 +69,31 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+watch(
+  () => authStore.profile?.id,
+  (newId) => {
+    if (newId) {
+      fetchMyDebt()
+    } else {
+      myDebt.value = 0
+    }
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  if (authStore.profile?.id) {
+    fetchMyDebt()
+  }
 })
 
 onUnmounted(() => {
@@ -56,7 +107,6 @@ onUnmounted(() => {
       <!-- Logo / Title -->
       <router-link to="/" class="flex items-center gap-2 group">
         <div class="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:bg-indigo-700 transition">
-          <!-- Simple Shuttlecock icon representation or similar -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -84,42 +134,38 @@ onUnmounted(() => {
           active-class="text-indigo-600"
           class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
         >
-          {{ t('dashboard.title') }}
+          {{ t('nav.home') }}
         </router-link>
         <router-link
-          to="/create-session"
+          to="/sessions"
           active-class="text-indigo-600"
           class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
         >
-          {{ t('dashboard.newSession') }}
+          {{ t('nav.sessions') }}
         </router-link>
         <router-link
           to="/members"
           active-class="text-indigo-600"
           class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
         >
-          {{ t('common.member') }}
+          {{ t('nav.members') }}
         </router-link>
       </nav>
 
       <!-- Right Side Actions -->
       <div class="flex items-center gap-2 sm:gap-4">
-        <!-- Language Dropdown -->
+        <!-- 1. Language Switcher -->
         <div class="relative" ref="langRef">
           <button
             @click="isLangOpen = !isLangOpen"
-            class="flex items-center gap-1.5 px-2 py-1.5 text-xs font-bold rounded-md border transition-all duration-200 shadow-sm"
-            :class="
-              langStore.currentLang === 'vi'
-                ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-            "
+            class="flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition-all duration-200 shadow-sm bg-white hover:bg-gray-50"
             :title="langStore.currentLang === 'vi' ? t('nav.switchEn') : t('nav.switchVi')"
           >
-            <Languages class="w-4 h-4" />
-            <span class="uppercase w-4 text-center">{{ langStore.currentLang }}</span>
+            <span class="text-xl leading-none">{{
+              langStore.currentLang === 'vi' ? '🇻🇳' : '🇺🇸'
+            }}</span>
             <ChevronDown
-              class="w-3 h-3 transition-transform duration-200"
+              class="w-3 h-3 text-gray-400 transition-transform duration-200"
               :class="{ 'rotate-180': isLangOpen }"
             />
           </button>
@@ -154,33 +200,73 @@ onUnmounted(() => {
           </transition>
         </div>
 
-        <template v-if="authStore.isAuthenticated">
-          <div
-            class="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200"
-          >
-            <User class="w-4 h-4 text-gray-500" />
-            <span class="font-medium max-w-[150px] truncate">{{ displayName }}</span>
-            <span
-              v-if="authStore.isAdmin"
-              class="text-[10px] bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded ml-1 font-bold uppercase tracking-wider"
-              >{{ t('common.admin') }}</span
-            >
-          </div>
+        <!-- 2. Debt Badge (Logged in only) -->
+        <div
+          v-if="authStore.isAuthenticated"
+          class="hidden sm:flex items-center px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors cursor-default"
+          :class="
+            myDebt > 0
+              ? 'bg-red-50 text-red-700 border-red-200'
+              : 'bg-green-50 text-green-700 border-green-200'
+          "
+        >
+          <Wallet class="w-3.5 h-3.5 mr-1.5" />
+          <span v-if="myDebt > 0">{{ t('debt.prefix') }}: {{ formatCurrency(myDebt) }}</span>
+          <span v-else>{{ t('debt.clean') }}</span>
+        </div>
 
-          <button
-            @click="handleLogout"
-            class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition"
-            :title="t('auth.logout')"
-          >
-            <LogOut class="w-4 h-4" />
-            <span class="hidden sm:inline">{{ t('auth.logout') }}</span>
-          </button>
+        <!-- 3. User Menu / Login -->
+        <template v-if="authStore.isAuthenticated">
+          <div class="relative group">
+            <button
+              class="flex items-center gap-2 text-sm text-gray-700 hover:text-indigo-600 transition-colors focus:outline-none"
+            >
+              <div
+                class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 font-bold"
+              >
+                {{ displayName.charAt(0).toUpperCase() }}
+              </div>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div
+              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]"
+            >
+              <div class="px-4 py-2 border-b border-gray-100">
+                <p class="text-sm font-medium text-gray-900 truncate">{{ displayName }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ authStore.user?.email }}</p>
+              </div>
+
+              <router-link
+                to="/profile"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                {{ t('auth.profile') }}
+              </router-link>
+
+              <router-link
+                v-if="authStore.isAdmin"
+                to="/admin"
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                {{ t('auth.admin_settings') }}
+              </router-link>
+
+              <button
+                @click="handleLogout"
+                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+              >
+                <LogOut class="w-4 h-4 mr-2" />
+                {{ t('auth.logout') }}
+              </button>
+            </div>
+          </div>
         </template>
 
         <template v-else>
           <button
             @click="handleLogin"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm transition hover:shadow-md"
           >
             <LogIn class="w-4 h-4" />
             <span>{{ t('auth.login') }}</span>
