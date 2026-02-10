@@ -140,7 +140,11 @@ const groupMemberCount = computed(() => {
               >
                 <img
                   :src="qrUrl"
-                  :alt="props.groupData ? t('payment.scanQR') : 'QR Payment for ' + memberName"
+                  :alt="
+                    props.groupData
+                      ? t('payment.scanQR')
+                      : t('payment.paymentFor', { name: memberName })
+                  "
                   class="w-64 h-64 object-contain"
                 />
                 <div

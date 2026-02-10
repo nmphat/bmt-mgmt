@@ -147,7 +147,7 @@ const handlePayGroup = () => {
                 class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition inline-flex items-center"
               >
                 <CreditCard class="w-4 h-4 mr-1" />
-                {{ t('payment.pay') }}
+                {{ t('payment.qrPay') }}
               </button>
             </td>
           </tr>

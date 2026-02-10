@@ -1049,7 +1049,7 @@ onUnmounted(() => {
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
                 >
-                  <span class="sr-only">Actions</span>
+                  <span class="sr-only">{{ t('common.actions') }}</span>
                 </th>
                 <th
                   v-if="
@@ -1155,7 +1155,10 @@ onUnmounted(() => {
         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.costSummary') }} (Live)</h2>
+          <h2 class="text-xl font-semibold text-gray-900">
+            {{ t('session.costSummary') }}
+            <span class="text-xs font-normal text-gray-500">({{ t('session.live') }})</span>
+          </h2>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">

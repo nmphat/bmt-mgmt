@@ -26,7 +26,7 @@ watch(
   () => langStore.currentLang,
   (lang) => {
     if (!isSubmitting.value && !note.value) {
-      note.value = lang === 'vi' ? 'Tiền mặt' : 'Cash'
+      note.value = t.value('payment.cash')
     }
   },
   { immediate: true },
@@ -38,7 +38,7 @@ watch(
   (newVal) => {
     if (newVal) {
       amount.value = newVal.final_amount - newVal.paid_amount
-      note.value = langStore.currentLang === 'vi' ? 'Tiền mặt' : 'Cash'
+      note.value = t.value('payment.cash')
     }
   },
   { immediate: true },
