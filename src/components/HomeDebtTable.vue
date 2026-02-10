@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { MemberDebtSummary } from '@/types'
 import { useLangStore } from '@/stores/lang'
-import { CreditCard, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { QrCode, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import { getShortName } from '@/utils/formatters'
 
 const props = defineProps<{
@@ -121,9 +121,10 @@ const handlePayGroup = () => {
           <div class="flex items-center gap-2">
             <button
               @click.stop="emit('pay-single', member.member_id)"
-              class="p-2 text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 active:scale-95 transition"
+              class="flex items-center gap-1 px-2 py-1.5 text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 active:scale-95 transition text-sm font-medium whitespace-nowrap"
             >
-              <CreditCard class="w-5 h-5" />
+              <QrCode class="w-4 h-4" />
+              <span>{{ t('payment.qrPay') }}</span>
             </button>
             <button class="text-gray-400">
               <ChevronUp v-if="expandedRowId === member.member_id" class="w-5 h-5" />
@@ -241,7 +242,7 @@ const handlePayGroup = () => {
                 @click="emit('pay-single', member.member_id)"
                 class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition inline-flex items-center"
               >
-                <CreditCard class="w-4 h-4 mr-1" />
+                <QrCode class="w-4 h-4 mr-1" />
                 {{ t('payment.qrPay') }}
               </button>
             </td>
@@ -264,13 +265,13 @@ const handlePayGroup = () => {
     <!-- Floating Action Bar -->
     <div
       v-if="selectedMemberIds.length > 0"
-      class="fixed bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-gray-900 text-white px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-50 animate-fade-in-up safe-area-pb"
+      class="fixed bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-indigo-100 text-indigo-600 px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-50 animate-fade-in-up safe-area-pb"
     >
       <div class="flex flex-col">
-        <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-          {{ t('payment.paymentFor', { count: selectedMemberIds.length }) }}
+        <span class="text-xs text-indigo-400 uppercase tracking-wider font-semibold">
+          {{ t('payment.groupPaymentFor', { count: selectedMemberIds.length }) }}
         </span>
-        <span class="font-bold text-lg text-green-400">
+        <span class="font-bold text-lg text-indigo-900">
           {{ formatCurrency(totalSelectedDebt) }}
         </span>
       </div>
@@ -278,7 +279,7 @@ const handlePayGroup = () => {
         @click="handlePayGroup"
         class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg md:rounded-full font-medium transition shadow-md flex items-center whitespace-nowrap"
       >
-        <CreditCard class="w-4 h-4 mr-2" />
+        <QrCode class="w-4 h-4 mr-2" />
         {{ t('payment.createGroupQR') }}
       </button>
     </div>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { X, Copy, Check } from 'lucide-vue-next'
 import { BANK_INFO } from '@/types'
 import type { CostSnapshot, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
+import { supabase } from '@/lib/supabase'
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
@@ -18,9 +19,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'payment-complete'): void
 }>()
 
 const copied = ref(false)
+const pollTimer = ref<number | null>(null)
+const isPaymentComplete = ref(false)
 
 const remainingAmount = computed(() => {
   if (props.groupData) return props.groupData.total_amount
@@ -64,6 +68,82 @@ const groupMemberCount = computed(() => {
   // Fallback to members.length if member_count is missing from RPC response
   return props.groupData.member_count ?? props.groupData.members?.length ?? 0
 })
+
+async function checkPaymentStatus(): Promise<boolean> {
+  try {
+    if (props.groupData) {
+      // For group payment, check all snapshots with the group_code
+      const { data, error } = await supabase
+        .from('session_costs_snapshot')
+        .select('paid_amount, final_amount')
+        .eq('payment_code', props.groupData.group_code)
+
+      if (error) {
+        console.error('Error checking group payment status:', error)
+        return false
+      }
+
+      // Check if all snapshots are fully paid
+      return data?.every((snapshot) => snapshot.paid_amount >= snapshot.final_amount) ?? false
+    } else if (props.snapshot) {
+      // For single payment, check the specific snapshot
+      const { data, error } = await supabase
+        .from('session_costs_snapshot')
+        .select('paid_amount, final_amount')
+        .eq('id', props.snapshot.id)
+        .single()
+
+      if (error) {
+        console.error('Error checking payment status:', error)
+        return false
+      }
+
+      return data ? data.paid_amount >= data.final_amount : false
+    }
+    return false
+  } catch (error) {
+    console.error('Exception checking payment status:', error)
+    return false
+  }
+}
+
+function startPolling() {
+  if (pollTimer.value) return
+  if (props.isPaid || isPaymentComplete.value) return
+
+  pollTimer.value = window.setInterval(async () => {
+    const isPaid = await checkPaymentStatus()
+    if (isPaid) {
+      isPaymentComplete.value = true
+      stopPolling()
+      emit('payment-complete')
+    }
+  }, 5000) // Poll every 5 seconds
+}
+
+function stopPolling() {
+  if (pollTimer.value) {
+    clearInterval(pollTimer.value)
+    pollTimer.value = null
+  }
+}
+
+// Watch for modal show/hide to start/stop polling
+watch(
+  () => props.show,
+  (newShow) => {
+    if (newShow && !props.isPaid) {
+      startPolling()
+    } else {
+      stopPolling()
+    }
+  },
+)
+
+// Cleanup on unmount
+onUnmounted(() => {
+  stopPolling()
+})
 </script>
 
 <template>
@@ -92,7 +172,7 @@ const groupMemberCount = computed(() => {
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-gray-900" id="modal-title">
               {{
-                isPaid
+                isPaid || isPaymentComplete
                   ? t('payment.paymentSuccess')
                   : props.groupData
                     ? t('payment.groupPaymentFor', { count: groupMemberCount })
@@ -109,7 +189,7 @@ const groupMemberCount = computed(() => {
 
           <div v-if="snapshot || groupData" class="mt-4 flex flex-col items-center">
             <!-- Paid State -->
-            <div v-if="isPaid" class="py-8 flex flex-col items-center">
+            <div v-if="isPaid || isPaymentComplete" class="py-8 flex flex-col items-center">
               <div
                 class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce"
               >
@@ -231,13 +311,15 @@ const groupMemberCount = computed(() => {
             type="button"
             class="inline-flex justify-center w-full px-6 py-2 text-base font-bold text-white rounded-md shadow-sm transition sm:ml-3 sm:w-auto sm:text-sm"
             :class="
-              isPaid
+              isPaid || isPaymentComplete
                 ? 'bg-green-600 hover:bg-green-700 font-bold'
                 : 'bg-indigo-600 hover:bg-indigo-700 font-medium'
             "
             @click="emit('close')"
           >
-            {{ isPaid ? t('payment.confirmAndClose') : t('payment.doneButton') }}
+            {{
+              isPaid || isPaymentComplete ? t('payment.confirmAndClose') : t('payment.doneButton')
+            }}
           </button>
         </div>
       </div>

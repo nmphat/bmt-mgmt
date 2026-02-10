@@ -142,6 +142,13 @@ async function createPaymentForMembers(memberIds: string[]) {
   }
 }
 
+function handlePaymentComplete() {
+  // Refresh debt data after payment completes
+  currentPage.value = 1
+  fetchDebts()
+  showPaymentModal.value = false
+}
+
 onMounted(fetchDebts)
 </script>
 
@@ -166,6 +173,7 @@ onMounted(fetchDebts)
       :group-data="selectedGroupPayment"
       member-name=""
       @close="showPaymentModal = false"
+      @payment-complete="handlePaymentComplete"
     />
   </div>
 </template>

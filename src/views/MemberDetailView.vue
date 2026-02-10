@@ -380,6 +380,7 @@ onMounted(fetchMemberDetails)
       :group-data="selectedGroupPayment"
       :member-name="memberName"
       @close="showPaymentModal = false"
+      @payment-complete="fetchMemberDetails"
     />
   </div>
 </template>
