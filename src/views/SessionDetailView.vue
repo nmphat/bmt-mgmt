@@ -100,7 +100,7 @@ const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
 
 const sessionForm = ref({
   title: '',
-  status: 'draft' as 'draft' | 'active' | 'closed',
+  status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
   court_fee_total: 0,
   shuttle_fee_total: 0,
 })
@@ -203,7 +203,7 @@ async function fetchData(refreshCostsOnly = false) {
     }
     presence.value = matrix
 
-    if (session.value?.status === 'closed') {
+    if (session.value?.status === 'waiting_for_payment' || session.value?.status === 'done') {
       await fetchSnapshotData()
     }
     // Always fetch costs for breakdown/reference
@@ -253,6 +253,25 @@ async function finalizeSession() {
     toast.error(error.message || t.value('session.finalizeError'))
   } finally {
     finalizeLoading.value = false
+  }
+}
+
+async function cancelSession() {
+  if (!authStore.isAuthenticated || !session.value) return
+  if (!confirm(t.value('session.cancelConfirm'))) return
+
+  try {
+    const { error } = await supabase
+      .from('sessions')
+      .update({ status: 'cancelled' })
+      .eq('id', sessionId)
+
+    if (error) throw error
+    toast.success(t.value('toast.sessionCancelled'))
+    await fetchData()
+  } catch (error: any) {
+    console.error('Error cancelling session:', error)
+    toast.error(error.message || t.value('session.cancelError'))
   }
 }
 
@@ -619,9 +638,10 @@ onUnmounted(() => {
                 v-model="sessionForm.status"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               >
-                <option value="draft">{{ t('common.draft') }}</option>
-                <option value="active">{{ t('common.active') }}</option>
-                <option value="closed">{{ t('common.closed') }}</option>
+                <option value="open">{{ t('common.open') }}</option>
+                <option value="waiting_for_payment">{{ t('common.waiting_for_payment') }}</option>
+                <option value="done">{{ t('common.done') }}</option>
+                <option value="cancelled">{{ t('common.cancelled') }}</option>
               </select>
             </div>
             <div>
@@ -672,7 +692,12 @@ onUnmounted(() => {
             <div class="flex items-center gap-3 mb-2">
               <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
               <button
-                v-if="authStore.isAuthenticated && session.status !== 'closed'"
+                v-if="
+                  authStore.isAuthenticated &&
+                  session.status !== 'done' &&
+                  session.status !== 'cancelled' &&
+                  session.status !== 'waiting_for_payment'
+                "
                 @click="isEditingSession = true"
                 class="p-1 text-gray-400 hover:text-indigo-600 transition"
                 :title="t('session.editSession')"
@@ -696,7 +721,7 @@ onUnmounted(() => {
                   formatCurrency(session.shuttle_fee_total)
                 }}</span>
               </div>
-              <div v-if="session.status === 'closed'">
+              <div v-if="session.status === 'waiting_for_payment' || session.status === 'done'">
                 <span class="text-gray-500 block mb-1 font-bold text-indigo-600">{{
                   t('session.totalCollected')
                 }}</span>
@@ -713,9 +738,13 @@ onUnmounted(() => {
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
                   :class="
-                    session.status === 'closed'
-                      ? 'bg-gray-100 text-gray-800'
-                      : 'bg-green-100 text-green-800'
+                    session.status === 'done'
+                      ? 'bg-green-100 text-green-800'
+                      : session.status === 'waiting_for_payment'
+                        ? 'bg-orange-100 text-orange-800'
+                        : session.status === 'cancelled'
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-blue-100 text-blue-800'
                   "
                 >
                   {{ getStatusLabel(session.status) }}
@@ -725,13 +754,19 @@ onUnmounted(() => {
           </div>
 
           <div
-            v-if="authStore.isAuthenticated && session.status === 'active'"
-            class="flex items-center"
+            v-if="authStore.isAuthenticated && session.status === 'open'"
+            class="flex items-center gap-2"
           >
+            <button
+              @click="cancelSession"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition shadow-sm font-medium"
+            >
+              🚫 {{ t('session.cancelSession') }}
+            </button>
             <button
               @click="finalizeSession"
               :disabled="finalizeLoading"
-              class="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition shadow-sm font-medium"
+              class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm font-medium"
             >
               <Lock v-if="!finalizeLoading" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
@@ -740,10 +775,26 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
-
-      <!-- Snapshot View (Closed mode) -->
+      <!-- Cancelled Banner -->
       <div
-        v-if="session.status === 'closed'"
+        v-if="session.status === 'cancelled'"
+        class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-8"
+      >
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <X class="h-5 w-5 text-gray-400" aria-hidden="true" />
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-gray-700">
+              {{ t('session.cancelledMessage') }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snapshot View (Waiting/Done mode) -->
+      <div
+        v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 mb-8"
       >
         <div
@@ -918,7 +969,11 @@ onUnmounted(() => {
           </div>
           <!-- Add Members to Session -->
           <div
-            v-if="authStore.isAuthenticated && session.status !== 'closed'"
+            v-if="
+              authStore.isAuthenticated &&
+              session.status !== 'waiting_for_payment' &&
+              session.status !== 'done'
+            "
             class="flex items-center gap-2 w-full sm:w-auto relative"
             ref="dropdownRef"
           >
@@ -986,14 +1041,22 @@ onUnmounted(() => {
                   {{ t('common.member') }}
                 </th>
                 <th
-                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
+                  v-if="
+                    authStore.isAuthenticated &&
+                    session.status !== 'waiting_for_payment' &&
+                    session.status !== 'done'
+                  "
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
                 >
                   <span class="sr-only">Actions</span>
                 </th>
                 <th
-                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
+                  v-if="
+                    authStore.isAuthenticated &&
+                    session.status !== 'waiting_for_payment' &&
+                    session.status !== 'done'
+                  "
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
                 >
@@ -1028,7 +1091,11 @@ onUnmounted(() => {
                   </div>
                 </td>
                 <td
-                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
+                  v-if="
+                    authStore.isAuthenticated &&
+                    session.status !== 'waiting_for_payment' &&
+                    session.status !== 'done'
+                  "
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -1040,7 +1107,11 @@ onUnmounted(() => {
                   </button>
                 </td>
                 <td
-                  v-if="authStore.isAuthenticated && session.status !== 'closed'"
+                  v-if="
+                    authStore.isAuthenticated &&
+                    session.status !== 'waiting_for_payment' &&
+                    session.status !== 'done'
+                  "
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -1065,7 +1136,8 @@ onUnmounted(() => {
                       :disabled="
                         !authStore.isAuthenticated ||
                         reg.is_registered_not_attended ||
-                        session.status === 'closed'
+                        session.status === 'waiting_for_payment' ||
+                        session.status === 'done'
                       "
                       class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     />
@@ -1079,7 +1151,7 @@ onUnmounted(() => {
 
       <!-- Cost Summary (Live mode) -->
       <div
-        v-if="session.status !== 'closed'"
+        v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'"
         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">

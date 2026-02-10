@@ -6,8 +6,19 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'home',
+      component: () => import('../views/HomePage.vue'),
+    },
+    {
+      path: '/sessions',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/member/:id',
+      name: 'member-detail',
+      component: () => import('../views/MemberDetailView.vue'),
     },
     {
       path: '/login',
@@ -23,6 +34,7 @@ const router = createRouter({
       path: '/create-session',
       name: 'create-session',
       component: () => import('../views/CreateSessionView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/members',
@@ -32,14 +44,29 @@ const router = createRouter({
   ],
 })
 
-// Optional: Add navigation guards if needed
-// router.beforeEach((to, from, next) => {
-//   const authStore = useAuthStore()
-//   if (to.name !== 'login' && !authStore.isAuthenticated && to.meta.requiresAuth) {
-//     next({ name: 'login' })
-//   } else {
-//     next()
-//   }
-// })
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+
+  // Wait for auth to initialize if refreshing
+  if (authStore.loading) {
+    await authStore.initialize()
+  }
+
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
+  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin)
+
+  if (requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'login' })
+    return
+  }
+
+  if (requiresAdmin && !authStore.isAdmin) {
+    // Redirect non-admins to home if they try to access admin pages
+    next({ name: 'home' })
+    return
+  }
+
+  next()
+})
 
 export default router

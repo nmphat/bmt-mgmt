@@ -1,7 +1,7 @@
 export interface SessionSummary {
   id: string
   title: string
-  status: 'draft' | 'active' | 'closed'
+  status: 'open' | 'waiting_for_payment' | 'done' | 'cancelled'
   session_date: string // ISO string
   court_fee_total: number
   shuttle_fee_total: number
@@ -16,6 +16,27 @@ export interface MemberCost {
   total_shuttle_fee: number
   final_total: number // Rounded amount
   intervals_count: number
+}
+
+// View: view_member_debt_summary
+export interface MemberDebtSummary {
+  member_id: string
+  display_name: string
+  total_debt: number
+  unpaid_session_count: number
+}
+
+// View: view_member_session_details
+export interface MemberSessionDetail {
+  snapshot_id: string
+  session_id: string
+  session_title: string
+  start_time: string
+  final_amount: number
+  paid_amount: number
+  remaining_amount: number // Calculated or from view
+  status: 'pending' | 'partial' | 'paid'
+  payment_code: string
 }
 
 export interface Interval {
