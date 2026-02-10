@@ -3,15 +3,13 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, LogIn, User, Languages, ChevronDown, Wallet } from 'lucide-vue-next'
+import { LogOut, LogIn, User, Languages, Wallet } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
 const router = useRouter()
 
-const isLangOpen = ref(false)
-const langRef = ref<HTMLElement | null>(null)
 const myDebt = ref(0)
 const loadingDebt = ref(false)
 
@@ -58,13 +56,6 @@ function handleLogin() {
 
 function selectLang(lang: 'vi' | 'en') {
   langStore.setLang(lang)
-  isLangOpen.value = false
-}
-
-function handleClickOutside(event: MouseEvent) {
-  if (langRef.value && !langRef.value.contains(event.target as Node)) {
-    isLangOpen.value = false
-  }
 }
 
 const formatCurrency = (value: number) => {
@@ -88,14 +79,9 @@ watch(
 )
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
   if (authStore.profile?.id) {
     fetchMyDebt()
   }
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -153,50 +139,15 @@ onUnmounted(() => {
       <!-- Right Side Actions -->
       <div class="flex items-center gap-2 sm:gap-4">
         <!-- 1. Language Switcher -->
-        <div class="relative" ref="langRef">
-          <button
-            @click="isLangOpen = !isLangOpen"
-            class="flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition-all duration-200 shadow-sm bg-white hover:bg-gray-50"
-            :title="langStore.currentLang === 'vi' ? t('nav.switchEn') : t('nav.switchVi')"
-          >
-            <span class="text-xl leading-none">{{
-              langStore.currentLang === 'vi' ? '🇻🇳' : '🇺🇸'
-            }}</span>
-            <ChevronDown
-              class="w-3 h-3 text-gray-400 transition-transform duration-200"
-              :class="{ 'rotate-180': isLangOpen }"
-            />
-          </button>
-
-          <transition
-            enter-active-class="transition ease-out duration-100"
-            enter-from-class="transform opacity-0 scale-95"
-            enter-to-class="transform opacity-100 scale-100"
-            leave-active-class="transition ease-in duration-75"
-            leave-from-class="transform opacity-100 scale-100"
-            leave-to-class="transform opacity-0 scale-95"
-          >
-            <div
-              v-if="isLangOpen"
-              class="absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[60] py-1 focus:outline-none"
-            >
-              <button
-                @click="selectLang('vi')"
-                class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                :class="{ 'bg-gray-50 font-bold text-indigo-600': langStore.currentLang === 'vi' }"
-              >
-                <span class="mr-3 text-base">🇻🇳</span> {{ t('nav.vietnamese') }}
-              </button>
-              <button
-                @click="selectLang('en')"
-                class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                :class="{ 'bg-gray-50 font-bold text-indigo-600': langStore.currentLang === 'en' }"
-              >
-                <span class="mr-3 text-base">🇺🇸</span> {{ t('nav.english') }}
-              </button>
-            </div>
-          </transition>
-        </div>
+        <button
+          @click="selectLang(langStore.currentLang === 'vi' ? 'en' : 'vi')"
+          class="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-gray-100 transition text-sm"
+          :title="langStore.currentLang === 'vi' ? t('nav.switchEn') : t('nav.switchVi')"
+        >
+          <span class="text-base leading-none">{{
+            langStore.currentLang === 'vi' ? '🇻🇳' : '🇺🇸'
+          }}</span>
+        </button>
 
         <!-- 2. Debt Badge (Logged in only) -->
         <div
