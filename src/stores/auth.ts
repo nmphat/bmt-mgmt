@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
         .select('id, role, display_name')
         .eq('user_id', userId)
         .single()
-      
+
       if (error) {
         console.warn('Error fetching member profile:', error)
         return
@@ -37,13 +37,15 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function initialize() {
     loading.value = true
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     user.value = session?.user ?? null
-    
+
     if (user.value) {
       await fetchProfile(user.value.id)
     }
-    
+
     loading.value = false
 
     supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -69,6 +71,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     initialize,
-    signOut
+    signOut,
   }
 })
