@@ -33,15 +33,13 @@ async function fetchMyDebt() {
       .from('view_member_debt_summary')
       .select('total_debt')
       .eq('member_id', authStore.profile.id)
-      .single()
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 is 'not found' which is fine
+    if (error) {
       console.warn('Error fetching debt:', error)
       return
     }
 
-    myDebt.value = data?.total_debt || 0
+    myDebt.value = data?.[0]?.total_debt || 0
   } catch (e) {
     console.error('Exception fetching debt:', e)
   } finally {

@@ -37,7 +37,7 @@ async function fetchMemberDetails() {
       .from('view_member_debt_summary')
       .select('*')
       .eq('member_id', memberId)
-      .single()
+    // .single() removed to avoid 406
 
     if (memberError) {
       // Handle case where member has no debt (might not be in view?)
@@ -52,8 +52,21 @@ async function fetchMemberDetails() {
       memberName.value = profile.display_name
       totalDebt.value = 0
     } else {
-      memberName.value = memberData.display_name
-      totalDebt.value = memberData.total_debt
+      const data = memberData && memberData.length > 0 ? memberData[0] : null
+      if (data) {
+        memberName.value = data.display_name
+        totalDebt.value = data.total_debt
+      } else {
+        // Fallback if array is empty
+        const { data: profile, error: profileError } = await supabase
+          .from('members')
+          .select('display_name')
+          .eq('id', memberId)
+          .single()
+        if (profileError) throw profileError
+        memberName.value = profile.display_name
+        totalDebt.value = 0
+      }
     }
 
     // 2. Get Session History

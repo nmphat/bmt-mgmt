@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import type { MemberDebtSummary } from '@/types'
 import { useLangStore } from '@/stores/lang'
-import { CreditCard } from 'lucide-vue-next'
+import { CreditCard, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { getShortName } from '@/utils/formatters'
 
 const props = defineProps<{
   members: MemberDebtSummary[]
@@ -20,6 +21,15 @@ const langStore = useLangStore()
 const t = computed(() => langStore.t)
 
 const selectedMemberIds = ref<string[]>([])
+const expandedRowId = ref<string | null>(null)
+
+const toggleExpand = (memberId: string) => {
+  if (expandedRowId.value === memberId) {
+    expandedRowId.value = null
+  } else {
+    expandedRowId.value = memberId
+  }
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
@@ -58,7 +68,92 @@ const handlePayGroup = () => {
 
 <template>
   <div>
-    <div class="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
+    <!-- Mobile View (Card Layout) -->
+    <div class="block md:hidden space-y-3 mb-20">
+      <div v-if="loading && members.length === 0" class="text-center py-8">
+        <div class="flex justify-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+      <div v-else-if="members.length === 0" class="text-center py-8 text-gray-500">
+        {{ t('debt.noDebt') }}
+      </div>
+
+      <div
+        v-for="member in members"
+        :key="member.member_id"
+        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <div class="p-3 flex items-center gap-3" @click="toggleExpand(member.member_id)">
+          <!-- Checkbox -->
+          <div class="flex-shrink-0" @click.stop>
+            <input
+              type="checkbox"
+              :checked="selectedMemberIds.includes(member.member_id)"
+              @change="toggleSelection(member.member_id)"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-6 w-6 cursor-pointer"
+            />
+          </div>
+
+          <!-- Name & Debt -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <div
+                class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold"
+              >
+                {{ member.display_name.charAt(0).toUpperCase() }}
+              </div>
+              <span class="font-medium text-gray-900 truncate">
+                {{ getShortName(member.display_name) }}
+              </span>
+            </div>
+            <div class="mt-1 flex items-center gap-2">
+              <span class="text-red-600 font-bold text-sm">
+                {{ formatCurrency(member.total_debt) }}
+              </span>
+              <span class="text-xs text-gray-500 bg-gray-100 px-1.5 rounded">
+                {{ member.unpaid_session_count }} {{ t('dashboard.intervals') }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <button
+              @click.stop="emit('pay-single', member.member_id)"
+              class="p-2 text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 active:scale-95 transition"
+            >
+              <CreditCard class="w-5 h-5" />
+            </button>
+            <button class="text-gray-400">
+              <ChevronUp v-if="expandedRowId === member.member_id" class="w-5 h-5" />
+              <ChevronDown v-else class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Expanded Details -->
+        <div
+          v-if="expandedRowId === member.member_id"
+          class="bg-gray-50 border-t border-gray-100 p-3 text-sm animate-in slide-in-from-top-2 duration-200"
+        >
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            {{ t('debt.unpaidSessions') }}
+          </div>
+          <!-- Placeholder for session details (needs RPC update to support detailed breakdown) -->
+          <div class="text-gray-600 italic text-xs">
+            {{ t('debt.viewDetails') }}
+          </div>
+          <router-link
+            :to="`/member/${member.member_id}`"
+            class="mt-2 inline-flex items-center text-xs text-indigo-600 font-medium hover:text-indigo-800"
+          >
+            {{ t('common.view') }} {{ t('member.title') }} &rarr;
+          </router-link>
+        </div>
+      </div>
+    </div>
+    <div class="overflow-x-auto bg-white rounded-lg shadow border border-gray-200 hidden md:block">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
@@ -169,7 +264,7 @@ const handlePayGroup = () => {
     <!-- Floating Action Bar -->
     <div
       v-if="selectedMemberIds.length > 0"
-      class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-6 z-50 animate-fade-in-up"
+      class="fixed bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-gray-900 text-white px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-50 animate-fade-in-up safe-area-pb"
     >
       <div class="flex flex-col">
         <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">
@@ -181,7 +276,7 @@ const handlePayGroup = () => {
       </div>
       <button
         @click="handlePayGroup"
-        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-full font-medium transition shadow-md flex items-center"
+        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg md:rounded-full font-medium transition shadow-md flex items-center whitespace-nowrap"
       >
         <CreditCard class="w-4 h-4 mr-2" />
         {{ t('payment.createGroupQR') }}
@@ -191,6 +286,10 @@ const handlePayGroup = () => {
 </template>
 
 <style scoped>
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.3s ease-out;
 }
