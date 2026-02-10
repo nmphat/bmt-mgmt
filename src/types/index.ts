@@ -35,7 +35,9 @@ export interface MemberSessionDetail {
   final_amount: number
   paid_amount: number
   remaining_amount: number // Calculated or from view
-  status: 'pending' | 'partial' | 'paid'
+  court_fee_amount: number
+  shuttle_fee_amount: number
+  status: 'paid' | 'partial' | 'pending'
   payment_code: string
 }
 

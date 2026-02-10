@@ -87,6 +87,8 @@ export const messages = {
         'Bạn có chắc muốn hủy buổi tập này? Các dữ liệu sẽ được giữ lại nhưng không thể chỉnh sửa.',
       cancelledMessage: 'Buổi tập này đã bị hủy. Các thông tin chỉ mang tính chất tham khảo.',
       cancelError: 'Lỗi khi hủy buổi tập',
+      time: 'Thời gian',
+      intervalFee: 'Phí mỗi 30p',
     },
     toast: {
       sessionFinalized: 'Đã chốt sổ thành công',
@@ -147,7 +149,7 @@ export const messages = {
       qrPay: 'QR Pay',
       cashPay: '💵 Cash',
       done: 'Đã xong',
-      paymentFor: 'Thanh toán cho {name}',
+      paymentFor: 'Thanh toán cho {count} người',
       paymentSuccess: 'Thanh toán thành công',
       thanks: 'Cảm ơn bạn!',
       recordingSuccess: 'Giao dịch của <strong>{name}</strong> đã được ghi nhận thành công.',
@@ -168,6 +170,7 @@ export const messages = {
       amountPositiveError: 'Số tiền phải lớn hơn 0',
       groupPaymentFor: 'Thanh toán Gộp ({count} người)',
       groupInstructions: 'Quét mã để thanh toán cho {count} người. Nội dung CK: **{code}**',
+      createGroupQR: 'Tạo QR Nhóm',
     },
     debt: {
       title: 'Công Nợ Thành Viên',
@@ -184,6 +187,7 @@ export const messages = {
       action: 'Thao tác',
       noDebt: 'Không có khoản nợ nào',
       history: 'Lịch sử tham gia',
+      unpaidSessions: 'Buổi chưa đóng',
     },
   },
   en: {
@@ -274,6 +278,8 @@ export const messages = {
         'Are you sure you want to cancel this session? Data will be preserved but read-only.',
       cancelledMessage: 'This session has been cancelled. Information is for reference only.',
       cancelError: 'Failed to cancel session',
+      time: 'Time',
+      intervalFee: 'Fee per 30m',
     },
     toast: {
       sessionFinalized: 'Session finalized successfully',
@@ -361,6 +367,7 @@ export const messages = {
     amountPositiveError: 'Amount must be greater than 0',
     groupPaymentFor: 'Group Payment ({count} members)',
     groupInstructions: 'Scan to pay for {count} members. Transfer content: **{code}**',
+    createGroupQR: 'Create Group QR',
   },
   debt: {
     title: 'Member Debts',
@@ -377,6 +384,7 @@ export const messages = {
     action: 'Action',
     noDebt: 'No debts found',
     history: 'Participation History',
+    unpaidSessions: 'Unpaid Sessions',
   },
 } as const
 

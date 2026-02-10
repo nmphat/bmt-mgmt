@@ -58,6 +58,12 @@ const formatCurrency = (value: number) => {
     maximumFractionDigits: 0,
   }).format(value)
 }
+
+const groupMemberCount = computed(() => {
+  if (!props.groupData) return 0
+  // Fallback to members.length if member_count is missing from RPC response
+  return props.groupData.member_count ?? props.groupData.members?.length ?? 0
+})
 </script>
 
 <template>
@@ -89,7 +95,7 @@ const formatCurrency = (value: number) => {
                 isPaid
                   ? t('payment.paymentSuccess')
                   : props.groupData
-                    ? t('payment.groupPaymentFor', { count: props.groupData.member_count })
+                    ? t('payment.groupPaymentFor', { count: groupMemberCount })
                     : t('payment.paymentFor', { name: memberName })
               }}
             </h3>
@@ -173,7 +179,7 @@ const formatCurrency = (value: number) => {
                       <span
                         v-html="
                           t('payment.groupInstructions', {
-                            count: props.groupData.member_count,
+                            count: groupMemberCount,
                             code: props.groupData.group_code,
                           })
                         "

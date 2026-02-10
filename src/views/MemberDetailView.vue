@@ -9,6 +9,7 @@ import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import { useToast } from 'vue-toastification'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
+import { mergeTimeIntervals } from '@/utils/time'
 
 const route = useRoute()
 const router = useRouter()
@@ -25,6 +26,7 @@ const loading = ref(true)
 const showPaymentModal = ref(false)
 const selectedSnapshot = ref<any>(null) // using any to bypass type mismatch if needed, or cast
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
+const sessionIntervalsMap = ref<Record<string, string>>({}) // snapshot_id -> time string
 
 async function fetchMemberDetails() {
   try {
@@ -63,12 +65,78 @@ async function fetchMemberDetails() {
 
     if (sessionError) throw sessionError
     sessions.value = sessionData || []
+
+    // 3. Fetch Intervals for these sessions
+    await fetchIntervalsForSessions(sessions.value)
   } catch (error: any) {
     console.error('Error fetching member details:', error)
     toast.error(t.value('toast.error', { message: error.message }))
   } finally {
     loading.value = false
   }
+}
+
+async function fetchIntervalsForSessions(sessionsList: MemberSessionDetail[]) {
+  if (sessionsList.length === 0) return
+
+  // Ideally, we should have a view or RPC for this to avoid N+1 or complex joins
+  // For now, let's fetch interval_presence joined with session_intervals for ALL relevant session IDs and this member
+  // But wait, we need the specific intervals the USER attended in those sessions.
+
+  const sessionIds = sessionsList.map((s) => s.session_id)
+
+  const { data, error } = await supabase
+    .from('interval_presence')
+    .select('interval_id, is_present, session_intervals!inner(session_id, start_time, end_time)')
+    .eq('member_id', memberId)
+    .eq('is_present', true)
+    .in('session_intervals.session_id', sessionIds)
+
+  if (error) {
+    console.error('Error fetching intervals:', error)
+    return
+  }
+
+  // Group by session_id
+  const grouped: Record<string, { start_time: string; end_time: string }[]> = {}
+
+  interface PresenceInterval {
+    interval_id: string
+    is_present: boolean
+    session_intervals: {
+      session_id: string
+      start_time: string
+      end_time: string
+    }
+  }
+
+  const presenceData = (data || []) as unknown as PresenceInterval[]
+
+  presenceData.forEach((row) => {
+    const sessionId = row.session_intervals.session_id
+    if (!grouped[sessionId]) grouped[sessionId] = []
+
+    grouped[sessionId].push({
+      start_time: row.session_intervals.start_time,
+      end_time: row.session_intervals.end_time,
+    })
+  })
+
+  // Merge and map map to snapshot_id (which correlates to session_id indirectly,
+  // but here we can just use session_id to lookup since we display per session)
+  // Actually, sessionsList has session_id, so we can map easily.
+
+  const map: Record<string, string> = {}
+  sessionsList.forEach((s) => {
+    const sessionIntervals = grouped[s.session_id]
+    if (sessionIntervals && sessionIntervals.length > 0) {
+      map[s.snapshot_id] = mergeTimeIntervals(sessionIntervals)
+    } else {
+      map[s.snapshot_id] = '-'
+    }
+  })
+
+  sessionIntervalsMap.value = map
 }
 
 async function handlePayAll() {
@@ -129,6 +197,11 @@ function getStatusColor(status: string) {
 
 function getStatusLabel(status: string) {
   return t.value(`payment.${status}`)
+}
+
+function getTranslation(key: string, params: any = {}) {
+  // Safe wrapper if needed, or just use t.value
+  return t.value(key, params)
 }
 
 onMounted(fetchMemberDetails)
@@ -200,6 +273,24 @@ onMounted(fetchMemberDetails)
               </th>
               <th
                 scope="col"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {{ t('session.time') }}
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {{ t('session.courtFee') }}
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {{ t('session.shuttleFee') }}
+              </th>
+              <th
+                scope="col"
                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.remaining') }}
@@ -230,6 +321,15 @@ onMounted(fetchMemberDetails)
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                 {{ formatCurrency(session.final_amount) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500">
+                {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                {{ formatCurrency(session.court_fee_amount) }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                {{ formatCurrency(session.shuttle_fee_amount) }}
               </td>
               <td
                 class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
