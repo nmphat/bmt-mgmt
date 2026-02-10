@@ -187,7 +187,8 @@ onMounted(() => {
               </div>
 
               <router-link
-                to="/profile"
+                v-if="authStore.profile?.id"
+                :to="'/member/' + authStore.profile.id"
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 {{ t('auth.profile') }}
@@ -195,7 +196,7 @@ onMounted(() => {
 
               <router-link
                 v-if="authStore.isAdmin"
-                to="/admin"
+                to="/sessions"
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 {{ t('auth.admin_settings') }}

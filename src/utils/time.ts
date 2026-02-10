@@ -17,7 +17,8 @@ export function mergeTimeIntervals(intervals: TimeInterval[]): string {
   const formatTime = (time: string) => {
     if (!time) return ''
     if (time.includes('T')) {
-      return time.split('T')[1].substring(0, 5)
+      const timePart = time.split('T')[1]
+      return timePart ? timePart.substring(0, 5) : ''
     }
     return time.substring(0, 5)
   }
