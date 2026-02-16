@@ -33,6 +33,8 @@ export const messages = {
       members: 'Thành Viên',
       switchEn: 'Chuyển sang Tiếng Anh',
       switchVi: 'Chuyển sang Tiếng Việt',
+      language: 'Ngôn ngữ',
+      languague: 'Ngôn ngữ',
     },
     auth: {
       login: 'Đăng nhập',
@@ -247,6 +249,8 @@ export const messages = {
       members: 'Members',
       switchEn: 'Switch to English',
       switchVi: 'Switch to Vietnamese',
+      language: 'Language',
+      languague: 'Language',
     },
     auth: {
       login: 'Login',

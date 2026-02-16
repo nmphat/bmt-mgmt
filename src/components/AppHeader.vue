@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, LogIn, User, Languages, Wallet } from 'lucide-vue-next'
+import { LogOut, LogIn, User, Languages, Wallet, Menu, X } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
@@ -12,6 +12,15 @@ const router = useRouter()
 
 const myDebt = ref(0)
 const loadingDebt = ref(false)
+const isMobileMenuOpen = ref(false)
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false
+}
 
 const displayName = computed(() => {
   if (authStore.profile?.display_name) {
@@ -106,7 +115,8 @@ onMounted(() => {
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
         </div>
-        <span class="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition"
+        <span
+          class="hidden sm:block text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition"
           >Badminton Mgmt</span
         >
       </router-link>
@@ -166,7 +176,7 @@ onMounted(() => {
 
         <!-- 3. User Menu / Login -->
         <template v-if="authStore.isAuthenticated">
-          <div class="relative group">
+          <div class="relative group hidden md:block">
             <button
               class="flex items-center gap-2 text-sm text-gray-700 hover:text-indigo-600 transition-colors focus:outline-none"
             >
@@ -216,12 +226,114 @@ onMounted(() => {
         <template v-else>
           <button
             @click="handleLogin"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm transition hover:shadow-md"
+            class="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm transition hover:shadow-md"
           >
             <LogIn class="w-4 h-4" />
             <span>{{ t('auth.login') }}</span>
           </button>
         </template>
+
+        <!-- Hamburger Button (Mobile Only) -->
+        <button
+          @click="toggleMobileMenu"
+          class="inline-flex md:hidden items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 transition focus:outline-none"
+        >
+          <Menu v-if="!isMobileMenuOpen" class="w-6 h-6" />
+          <X v-else class="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div v-if="isMobileMenuOpen" class="md:hidden border-t border-gray-100 bg-white">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <span class="text-sm font-medium text-gray-500">{{
+          t('nav.languague') || 'Language'
+        }}</span>
+        <button
+          @click="selectLang(langStore.currentLang === 'vi' ? 'en' : 'vi')"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100 transition text-sm font-medium"
+        >
+          <span class="text-lg">{{ langStore.currentLang === 'vi' ? '🇻🇳' : '🇺🇸' }}</span>
+          <span>{{ langStore.currentLang === 'vi' ? 'Tiếng Việt' : 'English' }}</span>
+        </button>
+      </div>
+      <div class="px-4 pt-2 pb-6 space-y-1">
+        <template v-if="authStore.isAuthenticated">
+          <router-link
+            to="/"
+            @click="closeMobileMenu"
+            active-class="bg-indigo-50 text-indigo-600"
+            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition"
+          >
+            {{ t('nav.home') }}
+          </router-link>
+          <router-link
+            to="/sessions"
+            @click="closeMobileMenu"
+            active-class="bg-indigo-50 text-indigo-600"
+            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition"
+          >
+            {{ t('nav.sessions') }}
+          </router-link>
+          <router-link
+            to="/members"
+            @click="closeMobileMenu"
+            active-class="bg-indigo-50 text-indigo-600"
+            class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition"
+          >
+            {{ t('nav.members') }}
+          </router-link>
+        </template>
+        <template v-else>
+          <button
+            @click="handleLogin"
+            class="w-full flex items-center justify-center gap-2 px-4 py-3 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition"
+          >
+            <LogIn class="w-5 h-5" />
+            <span>{{ t('auth.login') }}</span>
+          </button>
+        </template>
+
+        <!-- Debt Badge in Mobile Menu -->
+        <div
+          v-if="authStore.isAuthenticated"
+          class="flex items-center px-3 py-3 mt-4 rounded-lg border text-sm font-semibold shadow-sm transition-colors cursor-default"
+          :class="
+            myDebt > 0
+              ? 'bg-red-50 text-red-700 border-red-200'
+              : 'bg-green-50 text-green-700 border-green-200'
+          "
+        >
+          <Wallet class="w-4 h-4 mr-2" />
+          <span v-if="myDebt > 0">{{ t('debt.prefix') }}: {{ formatCurrency(myDebt) }}</span>
+          <span v-else>{{ t('debt.clean') }}</span>
+        </div>
+
+        <!-- Mobile User Profile & Logout -->
+        <div class="pt-4 border-t border-gray-100">
+          <div class="px-3 py-2">
+            <p class="text-base font-medium text-gray-900">{{ displayName }}</p>
+            <p class="text-sm font-medium text-gray-500">{{ authStore.user?.email }}</p>
+          </div>
+          <div class="mt-3 space-y-1">
+            <router-link
+              v-if="authStore.profile?.id"
+              :to="'/member/' + authStore.profile.id"
+              @click="closeMobileMenu"
+              class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 transition"
+            >
+              {{ t('auth.profile') }}
+            </router-link>
+            <button
+              @click="handleLogout"
+              class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 transition flex items-center"
+            >
+              <LogOut class="w-5 h-5 mr-3" />
+              {{ t('auth.logout') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
