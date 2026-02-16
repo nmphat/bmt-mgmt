@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase'
 import type { MemberDebtSummary, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
+import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
+import MemberUnpaidSessionsModal from '@/components/MemberUnpaidSessionsModal.vue'
 import HomeDebtTable from '@/components/HomeDebtTable.vue'
 import { useToast } from 'vue-toastification'
 
@@ -14,7 +16,12 @@ const toast = useToast()
 const members = ref<MemberDebtSummary[]>([])
 const loading = ref(true)
 const showPaymentModal = ref(false)
+const showCashUnpaidModal = ref(false)
+const showManualModal = ref(false)
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
+const selectedMemberSnapshots = ref<any[]>([])
+const selectedMemberName = ref('')
+const selectedSnapshot = ref<any>(null)
 
 // Pagination
 const currentPage = ref(1)
@@ -69,6 +76,50 @@ async function handleSinglePay(memberId: string) {
 
 async function handleGroupPay(memberIds: string[]) {
   await createPaymentForMembers(memberIds)
+}
+
+async function handleCashPay(memberId: string, memberName: string) {
+  try {
+    loading.value = true
+    selectedMemberName.value = memberName
+
+    // Fetch all unpaid snapshots for this member
+    const { data, error } = await supabase
+      .from('session_costs_snapshot')
+      .select('*, sessions(title, start_time)')
+      .eq('member_id', memberId)
+      .neq('status', 'paid')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    if (!data || data.length === 0) {
+      toast.info(t.value('debt.noDebt'))
+      return
+    }
+
+    selectedMemberSnapshots.value = data
+
+    if (data.length === 1) {
+      // If only one unpaid session, open ManualPaymentModal directly
+      selectedSnapshot.value = data[0]
+      showManualModal.value = true
+    } else {
+      // If multiple, show the selection modal
+      showCashUnpaidModal.value = true
+    }
+  } catch (error: any) {
+    console.error('Error fetching member snapshots:', error)
+    toast.error(error.message || 'Failed to fetch unpaid sessions')
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleSelectSnapshot(snapshot: any) {
+  selectedSnapshot.value = snapshot
+  showCashUnpaidModal.value = false
+  showManualModal.value = true
 }
 
 async function createPaymentForMembers(memberIds: string[]) {
@@ -147,6 +198,7 @@ function handlePaymentComplete() {
   currentPage.value = 1
   fetchDebts()
   showPaymentModal.value = false
+  showManualModal.value = false
 }
 
 onMounted(fetchDebts)
@@ -164,6 +216,7 @@ onMounted(fetchDebts)
       :has-more="hasMore"
       @pay-single="handleSinglePay"
       @pay-group="handleGroupPay"
+      @pay-cash="handleCashPay"
       @load-more="loadMore"
     />
 
@@ -174,6 +227,22 @@ onMounted(fetchDebts)
       member-name=""
       @close="showPaymentModal = false"
       @payment-complete="handlePaymentComplete"
+    />
+
+    <MemberUnpaidSessionsModal
+      :show="showCashUnpaidModal"
+      :member-name="selectedMemberName"
+      :snapshots="selectedMemberSnapshots"
+      @close="showCashUnpaidModal = false"
+      @select-snapshot="handleSelectSnapshot"
+    />
+
+    <ManualPaymentModal
+      :show="showManualModal"
+      :snapshot="selectedSnapshot"
+      :member-name="selectedMemberName"
+      @close="showManualModal = false"
+      @success="handlePaymentComplete"
     />
   </div>
 </template>

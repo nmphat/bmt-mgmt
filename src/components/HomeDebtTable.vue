@@ -2,8 +2,9 @@
 import { ref, computed } from 'vue'
 import type { MemberDebtSummary } from '@/types'
 import { useLangStore } from '@/stores/lang'
-import { QrCode, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { QrCode, Banknote, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import { getShortName } from '@/utils/formatters'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps<{
   members: MemberDebtSummary[]
@@ -14,8 +15,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'pay-single', memberId: string): void
   (e: 'pay-group', memberIds: string[]): void
+  (e: 'pay-cash', memberId: string, memberName: string): void
   (e: 'load-more'): void
 }>()
+
+const authStore = useAuthStore()
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
@@ -119,6 +123,14 @@ const handlePayGroup = () => {
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
+            <button
+              v-if="authStore.isAdmin"
+              @click.stop="emit('pay-cash', member.member_id, member.display_name)"
+              class="flex items-center justify-center p-2 text-green-600 bg-green-50 rounded-md hover:bg-green-100 active:scale-95 transition"
+              :title="t('payment.cashPay')"
+            >
+              <Banknote class="w-5 h-5" />
+            </button>
             <button
               @click.stop="emit('pay-single', member.member_id)"
               class="flex items-center gap-1 px-2 py-1.5 text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 active:scale-95 transition text-sm font-medium whitespace-nowrap"
@@ -238,13 +250,23 @@ const handlePayGroup = () => {
               {{ formatCurrency(member.total_debt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-              <button
-                @click="emit('pay-single', member.member_id)"
-                class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition inline-flex items-center"
-              >
-                <QrCode class="w-4 h-4 mr-1" />
-                {{ t('payment.qrPay') }}
-              </button>
+              <div class="flex items-center justify-center gap-2">
+                <button
+                  v-if="authStore.isAdmin"
+                  @click="emit('pay-cash', member.member_id, member.display_name)"
+                  class="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-md hover:bg-green-100 transition inline-flex items-center"
+                >
+                  <Banknote class="w-4 h-4 mr-1" />
+                  {{ t('payment.cashPay') }}
+                </button>
+                <button
+                  @click="emit('pay-single', member.member_id)"
+                  class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition inline-flex items-center"
+                >
+                  <QrCode class="w-4 h-4 mr-1" />
+                  {{ t('payment.qrPay') }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
