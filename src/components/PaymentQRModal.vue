@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
-import { Check, Loader2, X, AlertTriangle, Clock, Copy } from 'lucide-vue-next'
+import { Check, Loader2, X, AlertTriangle, Clock, Copy, Share2 } from 'lucide-vue-next'
 import { getShortName, formatCurrency } from '@/utils/formatters'
 import { usePaymentPolling } from '@/composables/usePaymentPolling'
 import { useLangStore } from '@/stores/lang'
@@ -108,6 +108,47 @@ const copyCode = async () => {
   }
 }
 
+const isSharing = ref(false)
+const sharePayment = async () => {
+  if (isSharing.value) return
+  isSharing.value = true
+
+  const shareUrl = `${window.location.origin}/pay?code=${effectiveCode.value}&amount=${effectiveAmount.value}`
+  const shareTitle = t.value('payment.shareTitle', { code: effectiveCode.value })
+  const shareText = t.value('payment.shareText', {
+    amount: formatCurrency(effectiveAmount.value),
+    code: effectiveCode.value,
+  })
+
+  try {
+    const response = await fetch(qrUrl.value)
+    const blob = await response.blob()
+    const file = new File([blob], `badminton_qr_${effectiveCode.value}.png`, { type: 'image/png' })
+
+    if (navigator.share) {
+      const shareData: any = {
+        title: shareTitle,
+        text: shareText,
+        url: shareUrl,
+      }
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        shareData.files = [file]
+      }
+
+      await navigator.share(shareData)
+    } else {
+      // Fallback: Copy to clipboard
+      await navigator.clipboard.writeText(`${shareTitle}\n${shareText}\n${shareUrl}`)
+      alert(t.value('payment.copied'))
+    }
+  } catch (err) {
+    console.error('Error sharing:', err)
+  } finally {
+    isSharing.value = false
+  }
+}
+
 const close = () => {
   emit('close')
 }
@@ -160,19 +201,31 @@ const close = () => {
 
         <!-- Waiting / Partial State -->
         <div v-else class="w-full flex flex-col items-center gap-6">
-          <div class="flex flex-col items-center gap-3">
-            <img
-              :src="qrUrl"
-              alt="VietQR"
-              class="w-64 h-64 object-contain border rounded-xl shadow-sm transition-all duration-300"
-            />
-            <div
-              v-if="!isPartial"
-              class="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-xs font-medium text-blue-700"
-            >
-              <Loader2 class="w-3.5 h-3.5 animate-spin text-blue-600" />
-              {{ t('payment.waitingTransfer') }}
+          <div class="flex flex-col items-center gap-4 w-full">
+            <div class="relative group">
+              <img
+                :src="qrUrl"
+                alt="VietQR"
+                class="w-64 h-64 object-contain border rounded-xl shadow-sm transition-all duration-300 group-hover:shadow-md"
+              />
+              <div
+                v-if="!isPartial"
+                class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-[10px] font-bold text-blue-700 whitespace-nowrap shadow-sm"
+              >
+                <Loader2 class="w-3 h-3 animate-spin text-blue-600" />
+                {{ t('payment.waitingTransfer') }}
+              </div>
             </div>
+
+            <button
+              @click="sharePayment"
+              :disabled="isSharing"
+              class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl font-bold text-base transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none mt-2"
+            >
+              <Loader2 v-if="isSharing" class="w-5 h-5 animate-spin" />
+              <Share2 v-else class="w-5 h-5" />
+              {{ t('payment.share') }}
+            </button>
           </div>
 
           <div class="text-center">

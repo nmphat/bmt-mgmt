@@ -189,6 +189,9 @@ export const messages = {
       step1: 'Sử dụng <strong>App Ngân hàng</strong> để quét.',
       step2: 'Giữ nội dung: <strong class="text-gray-900 dark:text-white">{code}</strong>',
       step3: 'Chờ ~5s để hệ thống tự động xác nhận.',
+      share: 'Chia sẻ QR',
+      shareTitle: 'Thanh toán cầu lông - {code}',
+      shareText: 'Thanh toán cầu lông. Số tiền: {amount}. Nội dung chuyển khoản: {code}',
     },
     debt: {
       title: 'Công Nợ',
@@ -403,6 +406,9 @@ export const messages = {
       step1: 'Use <strong>Banking App</strong> to Scan QR.',
       step2: 'Keep content: <strong class="text-gray-900 dark:text-white">{code}</strong>',
       step3: 'Wait ~5s for auto-confirmation.',
+      share: 'Share QR',
+      shareTitle: 'Badminton Payment - {code}',
+      shareText: 'Badminton payment. Amount: {amount}. Transfer content: {code}',
     },
     debt: {
       title: 'Member Debts',
