@@ -108,44 +108,27 @@ const copyCode = async () => {
   }
 }
 
-const isSharing = ref(false)
 const sharePayment = async () => {
-  if (isSharing.value) return
-  isSharing.value = true
-
   const shareUrl = `${window.location.origin}/pay?code=${effectiveCode.value}&amount=${effectiveAmount.value}`
-  const shareTitle = t.value('payment.shareTitle', { code: effectiveCode.value })
-  const shareText = t.value('payment.shareText', {
-    amount: formatCurrency(effectiveAmount.value),
-    code: effectiveCode.value,
-  })
+  const shareData = {
+    title: t.value('payment.shareTitle', { code: effectiveCode.value }),
+    text: t.value('payment.shareText', {
+      amount: formatCurrency(effectiveAmount.value),
+      code: effectiveCode.value,
+    }),
+    url: shareUrl,
+  }
 
   try {
-    const response = await fetch(qrUrl.value)
-    const blob = await response.blob()
-    const file = new File([blob], `badminton_qr_${effectiveCode.value}.png`, { type: 'image/png' })
-
     if (navigator.share) {
-      const shareData: any = {
-        title: shareTitle,
-        text: shareText,
-        url: shareUrl,
-      }
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        shareData.files = [file]
-      }
-
       await navigator.share(shareData)
     } else {
       // Fallback: Copy to clipboard
-      await navigator.clipboard.writeText(`${shareTitle}\n${shareText}\n${shareUrl}`)
+      await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`)
       alert(t.value('payment.copied'))
     }
   } catch (err) {
     console.error('Error sharing:', err)
-  } finally {
-    isSharing.value = false
   }
 }
 
@@ -219,11 +202,9 @@ const close = () => {
 
             <button
               @click="sharePayment"
-              :disabled="isSharing"
-              class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl font-bold text-base transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none mt-2"
+              class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-base transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none mt-2"
             >
-              <Loader2 v-if="isSharing" class="w-5 h-5 animate-spin" />
-              <Share2 v-else class="w-5 h-5" />
+              <Share2 class="w-5 h-5" />
               {{ t('payment.share') }}
             </button>
           </div>
