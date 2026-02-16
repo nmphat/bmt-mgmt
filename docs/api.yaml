@@ -186,6 +186,543 @@
               'tags': ['session_intervals'],
             },
         },
+      '/view_member_debt_summary':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_member_debt_summary.member_id' },
+                  { '$ref': '#/parameters/rowFilter.view_member_debt_summary.display_name' },
+                  { '$ref': '#/parameters/rowFilter.view_member_debt_summary.auth_user_id' },
+                  {
+                    '$ref': '#/parameters/rowFilter.view_member_debt_summary.unpaid_session_count',
+                  },
+                  { '$ref': '#/parameters/rowFilter.view_member_debt_summary.total_debt' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/view_member_debt_summary' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['view_member_debt_summary'],
+            },
+        },
+      '/view_member_session_details':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.snapshot_id' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.member_id' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.session_id' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.session_title' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.start_time' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.final_amount' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.court_fee_amount' },
+                  {
+                    '$ref': '#/parameters/rowFilter.view_member_session_details.shuttle_fee_amount',
+                  },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.paid_amount' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.remaining_amount' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.status' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.payment_code' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/view_member_session_details' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['view_member_session_details'],
+            },
+        },
+      '/bank_config':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.bank_config.id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.bank_id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_number' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_name' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.template' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.is_active' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        { 'items': { '$ref': '#/definitions/bank_config' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['bank_config'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.bank_config' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['bank_config'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.bank_config.id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.bank_id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_number' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_name' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.template' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.is_active' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['bank_config'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.bank_config.id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.bank_id' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_number' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.account_name' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.template' },
+                  { '$ref': '#/parameters/rowFilter.bank_config.is_active' },
+                  { '$ref': '#/parameters/body.bank_config' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['bank_config'],
+            },
+        },
+      '/session_costs_snapshot':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.final_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.payment_code' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.paid_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.status' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/session_costs_snapshot' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_costs_snapshot'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_costs_snapshot' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_costs_snapshot'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.final_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.payment_code' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.paid_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.status' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_costs_snapshot'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.final_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.payment_code' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.paid_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.status' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/body.session_costs_snapshot' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_costs_snapshot'],
+            },
+        },
+      '/view_attendance_log':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.session_name' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.member_name' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.interval_index' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.interval_time' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.is_present' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.presence_id' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.member_id' },
+                  { '$ref': '#/parameters/rowFilter.view_attendance_log.interval_id' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/view_attendance_log' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['view_attendance_log'],
+            },
+        },
+      '/view_session_summary':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.id' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.title' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.start_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/view_session_summary' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['view_session_summary'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.view_session_summary' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['view_session_summary'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.id' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.title' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.start_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['view_session_summary'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.id' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.title' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.start_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
+                  { '$ref': '#/parameters/body.view_session_summary' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['view_session_summary'],
+            },
+        },
+      '/group_payment_requests':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.id' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.group_code' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.snapshot_ids' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.total_amount' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.created_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.expires_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.fingerprint' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/group_payment_requests' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['group_payment_requests'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.group_payment_requests' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['group_payment_requests'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.id' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.group_code' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.snapshot_ids' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.total_amount' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.created_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.expires_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.fingerprint' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['group_payment_requests'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.id' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.group_code' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.snapshot_ids' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.total_amount' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.created_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.expires_at' },
+                  { '$ref': '#/parameters/rowFilter.group_payment_requests.fingerprint' },
+                  { '$ref': '#/parameters/body.group_payment_requests' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['group_payment_requests'],
+            },
+        },
+      '/session_payments':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_payments.id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.snapshot_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.transaction_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        { 'items': { '$ref': '#/definitions/session_payments' }, 'type': 'array' },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_payments'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_payments' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_payments'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_payments.id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.snapshot_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.transaction_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_payments'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_payments.id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.snapshot_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.transaction_id' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/body.session_payments' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_payments'],
+            },
+        },
       '/sessions':
         {
           'get':
@@ -424,6 +961,81 @@
               'tags': ['interval_presence'],
             },
         },
+      '/rpc/create_group_payment':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_snapshot_ids':
+                              {
+                                'format': 'uuid[]',
+                                'items': { 'type': 'string' },
+                                'type': 'array',
+                              },
+                          },
+                        'required': ['p_snapshot_ids'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) create_group_payment'],
+            },
+        },
+      '/rpc/batch_add_members_to_session':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_member_ids':
+                              {
+                                'format': 'uuid[]',
+                                'items': { 'type': 'string' },
+                                'type': 'array',
+                              },
+                            'p_session_id': { 'format': 'uuid', 'type': 'string' },
+                          },
+                        'required': ['p_session_id', 'p_member_ids'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) batch_add_members_to_session'],
+            },
+        },
       '/rpc/create_session_with_intervals':
         {
           'post':
@@ -471,6 +1083,102 @@
               'tags': ['(rpc) create_session_with_intervals'],
             },
         },
+      '/rpc/add_manual_payment':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_amount': { 'format': 'numeric', 'type': 'number' },
+                            'p_note': { 'format': 'text', 'type': 'string' },
+                            'p_snapshot_id': { 'format': 'uuid', 'type': 'string' },
+                          },
+                        'required': ['p_snapshot_id', 'p_amount'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) add_manual_payment'],
+            },
+        },
+      '/rpc/check_qr_status':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_code': { 'format': 'text', 'type': 'string' } },
+                        'required': ['p_code'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) check_qr_status'],
+            },
+        },
+      '/rpc/add_member_to_session_full_presence':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_member_id': { 'format': 'uuid', 'type': 'string' },
+                            'p_session_id': { 'format': 'uuid', 'type': 'string' },
+                          },
+                        'required': ['p_session_id', 'p_member_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) add_member_to_session_full_presence'],
+            },
+        },
       '/rpc/calculate_session_costs':
         {
           'post':
@@ -500,6 +1208,35 @@
               'tags': ['(rpc) calculate_session_costs'],
             },
         },
+      '/rpc/finalize_session':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_session_id': { 'format': 'uuid', 'type': 'string' } },
+                        'required': ['p_session_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) finalize_session'],
+            },
+        },
     },
   'definitions':
     {
@@ -511,19 +1248,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -542,13 +1279,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -560,6 +1297,226 @@
             },
           'type': 'object',
         },
+      'view_member_debt_summary':
+        {
+          'properties':
+            {
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'display_name': { 'format': 'text', 'type': 'string' },
+              'auth_user_id': { 'format': 'uuid', 'type': 'string' },
+              'unpaid_session_count': { 'format': 'bigint', 'type': 'integer' },
+              'total_debt': { 'format': 'numeric', 'type': 'number' },
+            },
+          'type': 'object',
+        },
+      'view_member_session_details':
+        {
+          'properties':
+            {
+              'snapshot_id':
+                {
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_title': { 'format': 'text', 'type': 'string' },
+              'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'final_amount': { 'format': 'numeric', 'type': 'number' },
+              'court_fee_amount': { 'format': 'numeric', 'type': 'number' },
+              'shuttle_fee_amount': { 'format': 'numeric', 'type': 'number' },
+              'paid_amount': { 'format': 'numeric', 'type': 'number' },
+              'remaining_amount': { 'format': 'numeric', 'type': 'number' },
+              'status': { 'format': 'text', 'type': 'string' },
+              'payment_code': { 'format': 'text', 'type': 'string' },
+              'created_at': { 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'bank_config':
+        {
+          'required': ['id', 'bank_id', 'account_number', 'account_name'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'bank_id': { 'format': 'text', 'type': 'string' },
+              'account_number': { 'format': 'text', 'type': 'string' },
+              'account_name': { 'format': 'text', 'type': 'string' },
+              'template': { 'default': 'compact', 'format': 'text', 'type': 'string' },
+              'is_active': { 'default': true, 'format': 'boolean', 'type': 'boolean' },
+            },
+          'type': 'object',
+        },
+      'session_costs_snapshot':
+        {
+          'required': ['id', 'final_amount'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'final_amount': { 'format': 'numeric', 'type': 'number' },
+              'payment_code': { 'format': 'text', 'type': 'string' },
+              'paid_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'status': { 'default': 'pending', 'format': 'text', 'type': 'string' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'court_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'shuttle_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+            },
+          'type': 'object',
+        },
+      'view_attendance_log':
+        {
+          'properties':
+            {
+              'session_name': { 'format': 'text', 'type': 'string' },
+              'member_name': { 'format': 'text', 'type': 'string' },
+              'interval_index': { 'format': 'integer', 'type': 'integer' },
+              'interval_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'is_present': { 'format': 'boolean', 'type': 'boolean' },
+              'presence_id':
+                {
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'interval_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+            },
+          'type': 'object',
+        },
+      'view_session_summary':
+        {
+          'properties':
+            {
+              'id':
+                {
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'title': { 'format': 'text', 'type': 'string' },
+              'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'end_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'session_date': { 'format': 'date', 'type': 'string' },
+              'status':
+                {
+                  'enum': ['open', 'waiting_for_payment', 'done', 'cancelled'],
+                  'format': 'public.session_status',
+                  'type': 'string',
+                },
+              'court_fee_total': { 'format': 'numeric', 'type': 'number' },
+              'shuttle_fee_total': { 'format': 'numeric', 'type': 'number' },
+              'total_intervals': { 'format': 'bigint', 'type': 'integer' },
+              'total_registrations': { 'format': 'bigint', 'type': 'integer' },
+              'total_collected': { 'format': 'numeric', 'type': 'number' },
+            },
+          'type': 'object',
+        },
+      'group_payment_requests':
+        {
+          'required': ['id', 'group_code', 'snapshot_ids', 'total_amount'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'group_code': { 'format': 'text', 'type': 'string' },
+              'snapshot_ids':
+                { 'format': 'uuid[]', 'items': { 'type': 'string' }, 'type': 'array' },
+              'total_amount': { 'format': 'numeric', 'type': 'number' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'expires_at':
+                {
+                  'default': "(now() + '1 day'::interval)",
+                  'format': 'timestamp with time zone',
+                  'type': 'string',
+                },
+              'fingerprint': { 'format': 'text', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'session_payments':
+        {
+          'required': ['id', 'amount'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'snapshot_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `session_costs_snapshot.id`.<fk table='session_costs_snapshot' column='id'/>",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'amount': { 'format': 'numeric', 'type': 'number' },
+              'transaction_id': { 'format': 'text', 'type': 'string' },
+              'raw_content': { 'format': 'text', 'type': 'string' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'payment_method': { 'default': 'transfer', 'format': 'text', 'type': 'string' },
+            },
+          'type': 'object',
+        },
       'sessions':
         {
           'required': ['id', 'title', 'start_time', 'end_time'],
@@ -568,7 +1525,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -579,8 +1536,8 @@
               'shuttle_fee_total': { 'default': 0, 'format': 'numeric', 'type': 'number' },
               'status':
                 {
-                  'default': 'draft',
-                  'enum': ['draft', 'active', 'closed'],
+                  'default': 'open',
+                  'enum': ['open', 'waiting_for_payment', 'done', 'cancelled'],
                   'format': 'public.session_status',
                   'type': 'string',
                 },
@@ -600,7 +1557,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -630,19 +1587,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'interval_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -797,6 +1754,204 @@
         { 'name': 'idx', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.session_intervals.created_at':
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.view_member_debt_summary':
+        {
+          'name': 'view_member_debt_summary',
+          'description': 'view_member_debt_summary',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/view_member_debt_summary' },
+        },
+      'rowFilter.view_member_debt_summary.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_debt_summary.display_name':
+        { 'name': 'display_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_debt_summary.auth_user_id':
+        { 'name': 'auth_user_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_debt_summary.unpaid_session_count':
+        { 'name': 'unpaid_session_count', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_debt_summary.total_debt':
+        { 'name': 'total_debt', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.view_member_session_details':
+        {
+          'name': 'view_member_session_details',
+          'description': 'view_member_session_details',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/view_member_session_details' },
+        },
+      'rowFilter.view_member_session_details.snapshot_id':
+        { 'name': 'snapshot_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.session_title':
+        { 'name': 'session_title', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.start_time':
+        { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.final_amount':
+        { 'name': 'final_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.court_fee_amount':
+        { 'name': 'court_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.shuttle_fee_amount':
+        { 'name': 'shuttle_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.paid_amount':
+        { 'name': 'paid_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.remaining_amount':
+        { 'name': 'remaining_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.status':
+        { 'name': 'status', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.payment_code':
+        { 'name': 'payment_code', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.bank_config':
+        {
+          'name': 'bank_config',
+          'description': 'bank_config',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/bank_config' },
+        },
+      'rowFilter.bank_config.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.bank_config.bank_id':
+        { 'name': 'bank_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.bank_config.account_number':
+        { 'name': 'account_number', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.bank_config.account_name':
+        { 'name': 'account_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.bank_config.template':
+        { 'name': 'template', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.bank_config.is_active':
+        { 'name': 'is_active', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.session_costs_snapshot':
+        {
+          'name': 'session_costs_snapshot',
+          'description': 'session_costs_snapshot',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_costs_snapshot' },
+        },
+      'rowFilter.session_costs_snapshot.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.final_amount':
+        { 'name': 'final_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.payment_code':
+        { 'name': 'payment_code', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.paid_amount':
+        { 'name': 'paid_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.status':
+        { 'name': 'status', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.court_fee_amount':
+        { 'name': 'court_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.shuttle_fee_amount':
+        { 'name': 'shuttle_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.view_attendance_log':
+        {
+          'name': 'view_attendance_log',
+          'description': 'view_attendance_log',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/view_attendance_log' },
+        },
+      'rowFilter.view_attendance_log.session_name':
+        { 'name': 'session_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.member_name':
+        { 'name': 'member_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.interval_index':
+        { 'name': 'interval_index', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.interval_time':
+        { 'name': 'interval_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.is_present':
+        { 'name': 'is_present', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.presence_id':
+        { 'name': 'presence_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_attendance_log.interval_id':
+        { 'name': 'interval_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.view_session_summary':
+        {
+          'name': 'view_session_summary',
+          'description': 'view_session_summary',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/view_session_summary' },
+        },
+      'rowFilter.view_session_summary.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.title':
+        { 'name': 'title', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.start_time':
+        { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.end_time':
+        { 'name': 'end_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.session_date':
+        { 'name': 'session_date', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.status':
+        { 'name': 'status', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.court_fee_total':
+        { 'name': 'court_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.shuttle_fee_total':
+        { 'name': 'shuttle_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_intervals':
+        { 'name': 'total_intervals', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_registrations':
+        { 'name': 'total_registrations', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_collected':
+        { 'name': 'total_collected', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.group_payment_requests':
+        {
+          'name': 'group_payment_requests',
+          'description': 'group_payment_requests',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/group_payment_requests' },
+        },
+      'rowFilter.group_payment_requests.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.group_code':
+        { 'name': 'group_code', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.snapshot_ids':
+        { 'name': 'snapshot_ids', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.total_amount':
+        { 'name': 'total_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.expires_at':
+        { 'name': 'expires_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.group_payment_requests.fingerprint':
+        { 'name': 'fingerprint', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.session_payments':
+        {
+          'name': 'session_payments',
+          'description': 'session_payments',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_payments' },
+        },
+      'rowFilter.session_payments.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.snapshot_id':
+        { 'name': 'snapshot_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.amount':
+        { 'name': 'amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.transaction_id':
+        { 'name': 'transaction_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.raw_content':
+        { 'name': 'raw_content', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.payment_method':
+        { 'name': 'payment_method', 'required': false, 'in': 'query', 'type': 'string' },
       'body.sessions':
         {
           'name': 'sessions',
