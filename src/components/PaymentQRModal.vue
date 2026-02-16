@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
-import { Check, Loader2, X, AlertTriangle, Clock, Copy } from 'lucide-vue-next'
+import {
+  Check,
+  Loader2,
+  X,
+  AlertTriangle,
+  Clock,
+  Copy,
+  Share2,
+  ExternalLink,
+  Wallet,
+} from 'lucide-vue-next'
 import { getShortName, formatCurrency } from '@/utils/formatters'
 import { usePaymentPolling } from '@/composables/usePaymentPolling'
 import { useLangStore } from '@/stores/lang'
@@ -56,6 +66,15 @@ const qrUrl = computed(() => {
   return `https://img.vietqr.io/image/${ACTIVE_BANK.BANK_ID}-${ACTIVE_BANK.ACCOUNT_NO}-${ACTIVE_BANK.TEMPLATE}.png?amount=${effectiveAmount.value}&addInfo=${addInfo}`
 })
 
+// Deep Links
+const bankingAppUrl = computed(() => {
+  return `https://dl.vietqr.io/pay?app=${ACTIVE_BANK.BANK_ID.toLowerCase()}&ba=${ACTIVE_BANK.ACCOUNT_NO}@${ACTIVE_BANK.BANK_ID}&amount=${effectiveAmount.value}&addInfo=${encodeURIComponent(effectiveCode.value)}`
+})
+
+const momoUrl = computed(() => {
+  return `https://dl.vietqr.io/pay?app=momo&ba=${ACTIVE_BANK.ACCOUNT_NO}@${ACTIVE_BANK.BANK_ID}&amount=${effectiveAmount.value}&addInfo=${encodeURIComponent(effectiveCode.value)}`
+})
+
 // Polling
 const { data, startPolling, stopPolling } = usePaymentPolling(effectiveCode)
 
@@ -105,6 +124,29 @@ const copyCode = async () => {
     }, 2000)
   } catch (err) {
     console.error('Failed to copy:', err)
+  }
+}
+
+const sharePayment = async () => {
+  const shareData = {
+    title: t.value('payment.shareTitle', { code: effectiveCode.value }),
+    text: t.value('payment.shareText', {
+      amount: formatCurrency(effectiveAmount.value),
+      code: effectiveCode.value,
+    }),
+    url: window.location.href,
+  }
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData)
+    } else {
+      // Fallback: Copy to clipboard
+      await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}`)
+      alert(t.value('payment.copied'))
+    }
+  } catch (err) {
+    console.error('Error sharing:', err)
   }
 }
 
@@ -160,7 +202,7 @@ const close = () => {
 
         <!-- Waiting / Partial State -->
         <div v-else class="w-full flex flex-col items-center gap-6">
-          <div class="flex flex-col items-center gap-3">
+          <div class="flex flex-col items-center gap-3 w-full">
             <img
               :src="qrUrl"
               alt="VietQR"
@@ -173,6 +215,32 @@ const close = () => {
               <Loader2 class="w-3.5 h-3.5 animate-spin text-blue-600" />
               {{ t('payment.waitingTransfer') }}
             </div>
+
+            <!-- Deep Link Action Buttons -->
+            <div class="grid grid-cols-2 gap-2 w-full mt-2">
+              <a
+                :href="momoUrl"
+                class="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#A50064] hover:bg-[#8e0056] text-white rounded-xl font-semibold text-sm transition-all active:scale-95 shadow-sm"
+              >
+                <Wallet class="w-4 h-4" />
+                {{ t('payment.openInMomo') }}
+              </a>
+              <a
+                :href="bankingAppUrl"
+                class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm transition-all active:scale-95 shadow-sm"
+              >
+                <ExternalLink class="w-4 h-4" />
+                {{ t('payment.openInBank') }}
+              </a>
+            </div>
+
+            <button
+              @click="sharePayment"
+              class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-semibold text-sm transition-all active:scale-95 border border-gray-200 dark:border-gray-600 shadow-sm"
+            >
+              <Share2 class="w-4 h-4" />
+              {{ t('payment.share') }}
+            </button>
           </div>
 
           <div class="text-center">
