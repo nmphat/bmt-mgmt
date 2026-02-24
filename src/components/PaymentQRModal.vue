@@ -47,8 +47,7 @@ const effectiveIsOpen = computed(() => props.isOpen || props.show || false)
 
 // Bank Info
 const BANK_INFO_TP = { BANK_ID: 'TPB', ACCOUNT_NO: '10003392871', TEMPLATE: 'compact2' }
-const BANK_INFO_MB = { BANK_ID: 'MB', ACCOUNT_NO: '3030191957777', TEMPLATE: 'compact2' }
-const ACTIVE_BANK = BANK_INFO_MB
+const ACTIVE_BANK = BANK_INFO_TP
 
 // QR Generation
 const qrUrl = computed(() => {

@@ -14,8 +14,8 @@ const code = computed(() => (route.query.code as string) || '')
 const amount = computed(() => Number(route.query.amount) || 0)
 
 // Bank Info (Should ideally be shared/centralized)
-const BANK_INFO_MB = { BANK_ID: 'MB', ACCOUNT_NO: '3030191957777', TEMPLATE: 'compact2' }
-const ACTIVE_BANK = BANK_INFO_MB
+const BANK_INFO_TPB = { BANK_ID: 'TPB', ACCOUNT_NO: '10003392871', TEMPLATE: 'compact2' }
+const ACTIVE_BANK = BANK_INFO_TPB
 
 const qrUrl = computed(() => {
   const addInfo = encodeURIComponent(`${code.value}`)
