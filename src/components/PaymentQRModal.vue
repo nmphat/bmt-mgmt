@@ -143,7 +143,7 @@ const close = () => {
   >
     <!-- Card -->
     <div
-      class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[95vh] overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-200"
     >
       <!-- Header -->
       <div
@@ -167,7 +167,7 @@ const close = () => {
       </div>
 
       <!-- Body -->
-      <div class="p-6 flex flex-col items-center">
+      <div class="p-4 sm:p-6 flex-1 overflow-y-auto flex flex-col items-center">
         <!-- Success State -->
         <div v-if="data.success" class="flex flex-col items-center py-8">
           <div
@@ -182,13 +182,13 @@ const close = () => {
         </div>
 
         <!-- Waiting / Partial State -->
-        <div v-else class="w-full flex flex-col items-center gap-6">
+        <div v-else class="w-full flex flex-col items-center gap-4 sm:gap-6">
           <div class="flex flex-col items-center gap-4 w-full">
             <div class="relative group">
               <img
                 :src="qrUrl"
                 alt="VietQR"
-                class="w-64 h-64 object-contain border rounded-xl shadow-sm transition-all duration-300 group-hover:shadow-md"
+                class="w-56 h-56 sm:w-64 sm:h-64 object-contain border rounded-xl shadow-sm transition-all duration-300 group-hover:shadow-md"
               />
               <div
                 v-if="!isPartial"
@@ -245,7 +245,7 @@ const close = () => {
           <!-- Instructions -->
           <div
             v-if="!isPartial"
-            class="w-full bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-sm text-gray-600 dark:text-gray-300 space-y-2"
+            class="hidden [@media(min-height:720px)]:block w-full bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-sm text-gray-600 dark:text-gray-300 space-y-2"
           >
             <div class="flex items-center gap-2">
               <span
