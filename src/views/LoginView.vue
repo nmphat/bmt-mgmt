@@ -37,7 +37,8 @@ async function handleLogin() {
   <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <img src="/3pcl-logo.png" alt="3PCL Logo" class="mx-auto h-16 w-auto mb-4" />
+        <h2 class="mt-2 text-center text-3xl font-extrabold text-gray-900">
           {{ t('auth.signInTitle') }}
         </h2>
       </div>

@@ -99,25 +99,13 @@ onMounted(() => {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <!-- Logo / Title -->
       <router-link to="/" class="flex items-center gap-2 group">
-        <div class="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:bg-indigo-700 transition">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="lucide lucide-activity"
-          >
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-          </svg>
-        </div>
-        <span
-          class="hidden sm:block text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition"
-          >Badminton Mgmt</span
+        <img
+          src="/3pcl-logo.png"
+          alt="3PCL Logo"
+          class="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+        />
+        <span class="block text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition"
+          >3PCL</span
         >
       </router-link>
 

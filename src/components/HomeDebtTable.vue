@@ -111,7 +111,7 @@ const handlePayGroup = () => {
                 {{ getShortName(member.display_name) }}
               </span>
             </div>
-            <div class="mt-1 flex items-center gap-2">
+            <div class="mt-1 flex flex-col sm:block-row items-center gap-2">
               <span class="text-red-600 font-bold text-sm">
                 {{ formatCurrency(member.total_debt) }}
               </span>

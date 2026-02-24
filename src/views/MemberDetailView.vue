@@ -221,24 +221,24 @@ onMounted(fetchMemberDetails)
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <!-- Header -->
-    <div class="flex items-center mb-6">
+    <div class="flex items-center mb-4 sm:mb-6">
       <button
         @click="router.push('/')"
-        class="mr-4 p-2 rounded-full hover:bg-gray-100 transition text-gray-500"
+        class="mr-3 sm:mr-4 p-2 rounded-full hover:bg-gray-100 transition text-gray-500"
       >
-        <ArrowLeft class="w-6 h-6" />
+        <ArrowLeft class="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ memberName }}</h1>
-        <p class="text-sm text-gray-500">{{ t('debt.history') }}</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">{{ memberName }}</h1>
+        <p class="text-xs sm:text-sm text-gray-500">{{ t('debt.history') }}</p>
       </div>
     </div>
 
     <!-- Debt Summary Card -->
     <div
-      class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex justify-between items-center"
+      class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8 flex justify-between items-center"
     >
       <div>
         <span class="text-sm font-medium text-gray-500 uppercase tracking-wider">{{
@@ -246,7 +246,7 @@ onMounted(fetchMemberDetails)
         }}</span>
         <div class="mt-1 flex items-baseline">
           <span
-            class="text-3xl font-extrabold text-gray-900"
+            class="text-2xl sm:text-3xl font-extrabold text-gray-900"
             :class="{ 'text-red-600': totalDebt > 0 }"
           >
             {{ formatCurrency(totalDebt) }}
@@ -256,9 +256,9 @@ onMounted(fetchMemberDetails)
       <button
         v-if="totalDebt > 0"
         @click="handlePayAll"
-        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition flex items-center font-medium"
+        class="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition flex items-center font-medium text-sm sm:text-base"
       >
-        <CreditCard class="w-5 h-5 mr-2" />
+        <CreditCard class="w-4 h-4 sm:w-5 h-5 mr-1.5 sm:mr-2" />
         {{ t('debt.payAll') }}
       </button>
     </div>
@@ -274,49 +274,49 @@ onMounted(fetchMemberDetails)
             <tr>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.sessionName') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="hidden sm:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.cost') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('session.time') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('session.courtFee') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('session.shuttleFee') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.remaining') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="hidden sm:table-cell px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.status') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {{ t('debt.action') }}
               </th>
@@ -324,48 +324,61 @@ onMounted(fetchMemberDetails)
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="session in sessions" :key="session.snapshot_id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ session.session_title }}</div>
-                <div class="text-xs text-gray-500">
+              <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
+                  {{ session.session_title }}
+                </div>
+                <div class="text-[10px] sm:text-xs text-gray-500">
                   {{
                     format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', { locale: dateLocale })
                   }}
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+              <td
+                class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+              >
                 {{ formatCurrency(session.final_amount) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500">
+              <td
+                class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500"
+              >
                 {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+              <td
+                class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+              >
                 {{ formatCurrency(session.court_fee_amount) }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+              <td
+                class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+              >
                 {{ formatCurrency(session.shuttle_fee_amount) }}
               </td>
               <td
-                class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                class="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
                 :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
               >
-                {{ formatCurrency(session.remaining_amount) }}
+                <span class="sm:hidden">{{
+                  formatCurrency(session.remaining_amount).replace(' ₫', '')
+                }}</span>
+                <span class="hidden sm:inline">{{ formatCurrency(session.remaining_amount) }}</span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-center">
+              <td class="hidden sm:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-center">
                 <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                  class="px-1.5 sm:px-2 inline-flex text-[10px] sm:text-xs leading-5 font-semibold rounded-full"
                   :class="getStatusColor(session.status)"
                 >
                   {{ getStatusLabel(session.status) }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                 <button
                   v-if="session.status !== 'paid'"
                   @click="handleSinglePay(session)"
-                  class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-full hover:bg-indigo-100 transition"
+                  class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 sm:p-2 rounded-full hover:bg-indigo-100 transition"
                   :title="t('payment.scanQR')"
                 >
-                  <QrCode class="w-5 h-5" />
+                  <QrCode class="w-4 h-4 sm:w-5 h-5" />
                 </button>
               </td>
             </tr>
