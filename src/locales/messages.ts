@@ -55,6 +55,7 @@ export const messages = {
       noSessions: 'Không có buổi tập',
       viewDetails: 'Xem chi tiết',
       intervals: 'ca',
+      sessions: 'buổi',
       registrations: 'đăng ký',
     },
     session: {
@@ -271,6 +272,7 @@ export const messages = {
       noSessions: 'No sessions found.',
       viewDetails: 'View details',
       intervals: 'intervals',
+      sessions: 'sessions',
       registrations: 'registrations',
     },
     session: {

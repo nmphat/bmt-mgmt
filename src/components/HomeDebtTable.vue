@@ -116,7 +116,7 @@ const handlePayGroup = () => {
                 {{ formatCurrency(member.total_debt) }}
               </span>
               <span class="text-xs text-gray-500 bg-gray-100 px-1.5 rounded">
-                {{ member.unpaid_session_count }} {{ t('dashboard.intervals') }}
+                {{ member.unpaid_session_count }} {{ t('dashboard.sessions') }}
               </span>
             </div>
           </div>
