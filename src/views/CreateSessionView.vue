@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
-import { ChevronLeft } from 'lucide-vue-next'
+import { ChevronLeft, Trash2, Plus } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -18,9 +18,17 @@ const form = ref({
   date: new Date().toISOString().split('T')[0],
   startTime: '18:00',
   endTime: '20:00',
-  courtFee: 0,
+  pricePerHour: 0,
   shuttleFee: 0,
 })
+
+interface CourtSlot {
+  name: string
+  start: string
+  end: string
+}
+
+const courts = ref<CourtSlot[]>([{ name: 'Sân 1', start: '18:00', end: '20:00' }])
 
 const loading = ref(false)
 
@@ -32,7 +40,48 @@ const endDateTime = computed(() => {
   return `${form.value.date}T${form.value.endTime}:00`
 })
 
+// Sync first court slot times when session times change
+watch(
+  () => [form.value.startTime, form.value.endTime] as [string, string],
+  ([newStart, newEnd]) => {
+    if (courts.value.length === 1 && courts.value[0]) {
+      courts.value[0].start = newStart
+      courts.value[0].end = newEnd
+    }
+  },
+)
+
+function addCourt() {
+  courts.value.push({
+    name: `Sân ${courts.value.length + 1}`,
+    start: form.value.startTime,
+    end: form.value.endTime,
+  })
+}
+
+function removeCourt(index: number) {
+  if (courts.value.length <= 1) return
+  courts.value.splice(index, 1)
+}
+
+function validateCourts(): boolean {
+  for (const court of courts.value) {
+    if (court.start < form.value.startTime || court.end > form.value.endTime) {
+      toast.error(t.value('createSession.courtTimeError'))
+      return false
+    }
+    if (court.start >= court.end) {
+      toast.error(t.value('createSession.endTimeError'))
+      return false
+    }
+  }
+  return true
+}
+
 async function createSession() {
+  // logger for testing
+  console.log('createSession')
+
   if (!authStore.user) return
 
   // Basic validation
@@ -41,15 +90,25 @@ async function createSession() {
     return
   }
 
+  if (!validateCourts()) return
+
   try {
     loading.value = true
-    const { error } = await supabase.rpc('create_session_with_intervals', {
+
+    const bookings = courts.value.map((c) => ({
+      court_name: c.name,
+      start_time: new Date(`${form.value.date}T${c.start}:00`).toISOString(),
+      end_time: new Date(`${form.value.date}T${c.end}:00`).toISOString(),
+    }))
+
+    const { error } = await supabase.rpc('create_session_with_bookings', {
       p_title: form.value.title,
       p_start_time: new Date(startDateTime.value).toISOString(),
       p_end_time: new Date(endDateTime.value).toISOString(),
-      p_court_fee: form.value.courtFee,
+      p_price_per_hour: form.value.pricePerHour,
       p_shuttle_fee: form.value.shuttleFee,
       p_created_by: authStore.user.id,
+      p_bookings: bookings,
     })
 
     if (error) throw error
@@ -137,13 +196,13 @@ async function createSession() {
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="courtFee" class="block text-sm font-medium text-gray-700"
-              >{{ t('session.courtFee') }} (VND)</label
+            <label for="pricePerHour" class="block text-sm font-medium text-gray-700"
+              >{{ t('session.pricePerHour') }} (VND)</label
             >
             <input
-              v-model.number="form.courtFee"
+              v-model.number="form.pricePerHour"
               type="number"
-              id="courtFee"
+              id="pricePerHour"
               min="0"
               step="1000"
               required
@@ -163,6 +222,74 @@ async function createSession() {
               required
               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
             />
+          </div>
+        </div>
+
+        <!-- Court Bookings -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <label class="block text-sm font-medium text-gray-700">{{
+              t('session.courtBookings')
+            }}</label>
+            <button
+              type="button"
+              @click="addCourt"
+              class="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium transition"
+            >
+              <Plus class="w-4 h-4 mr-1" />
+              {{ t('createSession.addCourt') }}
+            </button>
+          </div>
+          <div class="space-y-3">
+            <div
+              v-for="(court, index) in courts"
+              :key="index"
+              class="flex items-end gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+            >
+              <div class="flex-1 min-w-0">
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                  t('createSession.courtName')
+                }}</label>
+                <input
+                  v-model="court.name"
+                  type="text"
+                  required
+                  :placeholder="t('createSession.courtNamePlaceholder')"
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                />
+              </div>
+              <div class="w-28">
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                  t('createSession.startTime')
+                }}</label>
+                <input
+                  v-model="court.start"
+                  type="time"
+                  required
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                />
+              </div>
+              <div class="w-28">
+                <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                  t('createSession.endTime')
+                }}</label>
+                <input
+                  v-model="court.end"
+                  type="time"
+                  required
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                />
+              </div>
+              <button
+                type="button"
+                @click="removeCourt(index)"
+                :disabled="courts.length <= 1"
+                class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                :title="t('createSession.removeCourt')"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

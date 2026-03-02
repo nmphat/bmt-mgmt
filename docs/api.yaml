@@ -123,6 +123,7 @@
                   { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.active_court_count' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
                   { '$ref': '#/parameters/range' },
@@ -164,6 +165,7 @@
                   { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.active_court_count' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
               'responses': { '204': { 'description': 'No Content' } },
@@ -179,6 +181,7 @@
                   { '$ref': '#/parameters/rowFilter.session_intervals.end_time' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.idx' },
                   { '$ref': '#/parameters/rowFilter.session_intervals.created_at' },
+                  { '$ref': '#/parameters/rowFilter.session_intervals.active_court_count' },
                   { '$ref': '#/parameters/body.session_intervals' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -359,6 +362,7 @@
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.extra_fee_amount' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
                   { '$ref': '#/parameters/range' },
@@ -407,6 +411,7 @@
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.extra_fee_amount' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
               'responses': { '204': { 'description': 'No Content' } },
@@ -426,6 +431,7 @@
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.court_fee_amount' },
                   { '$ref': '#/parameters/rowFilter.session_costs_snapshot.shuttle_fee_amount' },
+                  { '$ref': '#/parameters/rowFilter.session_costs_snapshot.extra_fee_amount' },
                   { '$ref': '#/parameters/body.session_costs_snapshot' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -739,6 +745,8 @@
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
                   { '$ref': '#/parameters/range' },
@@ -783,6 +791,8 @@
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
               'responses': { '204': { 'description': 'No Content' } },
@@ -802,6 +812,8 @@
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
+                  { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
                   { '$ref': '#/parameters/body.sessions' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -887,6 +899,162 @@
                 ],
               'responses': { '204': { 'description': 'No Content' } },
               'tags': ['members'],
+            },
+        },
+      '/session_court_bookings':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.court_name' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/session_court_bookings' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_court_bookings'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_court_bookings' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_court_bookings'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.court_name' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.created_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_court_bookings'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.court_name' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.start_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.end_time' },
+                  { '$ref': '#/parameters/rowFilter.session_court_bookings.created_at' },
+                  { '$ref': '#/parameters/body.session_court_bookings' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_court_bookings'],
+            },
+        },
+      '/session_extra_charges':
+        {
+          'get':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.note' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.created_at' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/order' },
+                  { '$ref': '#/parameters/range' },
+                  { '$ref': '#/parameters/rangeUnit' },
+                  { '$ref': '#/parameters/offset' },
+                  { '$ref': '#/parameters/limit' },
+                  { '$ref': '#/parameters/preferCount' },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'OK',
+                      'schema':
+                        {
+                          'items': { '$ref': '#/definitions/session_extra_charges' },
+                          'type': 'array',
+                        },
+                    },
+                  '206': { 'description': 'Partial Content' },
+                },
+              'tags': ['session_extra_charges'],
+            },
+          'post':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/body.session_extra_charges' },
+                  { '$ref': '#/parameters/select' },
+                  { '$ref': '#/parameters/preferPost' },
+                ],
+              'responses': { '201': { 'description': 'Created' } },
+              'tags': ['session_extra_charges'],
+            },
+          'delete':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.note' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.created_at' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_extra_charges'],
+            },
+          'patch':
+            {
+              'parameters':
+                [
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.session_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.member_id' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.amount' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.note' },
+                  { '$ref': '#/parameters/rowFilter.session_extra_charges.created_at' },
+                  { '$ref': '#/parameters/body.session_extra_charges' },
+                  { '$ref': '#/parameters/preferReturn' },
+                ],
+              'responses': { '204': { 'description': 'No Content' } },
+              'tags': ['session_extra_charges'],
             },
         },
       '/interval_presence':
@@ -998,6 +1166,35 @@
               'tags': ['(rpc) create_group_payment'],
             },
         },
+      '/rpc/refresh_interval_courts':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_session_id': { 'format': 'uuid', 'type': 'string' } },
+                        'required': ['p_session_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) refresh_interval_courts'],
+            },
+        },
       '/rpc/batch_add_members_to_session':
         {
           'post':
@@ -1036,53 +1233,6 @@
               'tags': ['(rpc) batch_add_members_to_session'],
             },
         },
-      '/rpc/create_session_with_intervals':
-        {
-          'post':
-            {
-              'parameters':
-                [
-                  {
-                    'in': 'body',
-                    'name': 'args',
-                    'required': true,
-                    'schema':
-                      {
-                        'properties':
-                          {
-                            'p_court_fee': { 'format': 'numeric', 'type': 'number' },
-                            'p_created_by': { 'format': 'uuid', 'type': 'string' },
-                            'p_end_time':
-                              { 'format': 'timestamp with time zone', 'type': 'string' },
-                            'p_shuttle_fee': { 'format': 'numeric', 'type': 'number' },
-                            'p_start_time':
-                              { 'format': 'timestamp with time zone', 'type': 'string' },
-                            'p_title': { 'format': 'text', 'type': 'string' },
-                          },
-                        'required':
-                          [
-                            'p_title',
-                            'p_start_time',
-                            'p_end_time',
-                            'p_court_fee',
-                            'p_shuttle_fee',
-                            'p_created_by',
-                          ],
-                        'type': 'object',
-                      },
-                  },
-                  { '$ref': '#/parameters/preferParams' },
-                ],
-              'produces':
-                [
-                  'application/json',
-                  'application/vnd.pgrst.object+json;nulls=stripped',
-                  'application/vnd.pgrst.object+json',
-                ],
-              'responses': { '200': { 'description': 'OK' } },
-              'tags': ['(rpc) create_session_with_intervals'],
-            },
-        },
       '/rpc/add_manual_payment':
         {
           'post':
@@ -1115,6 +1265,55 @@
                 ],
               'responses': { '200': { 'description': 'OK' } },
               'tags': ['(rpc) add_manual_payment'],
+            },
+        },
+      '/rpc/create_session_with_bookings':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_bookings': { 'format': 'jsonb' },
+                            'p_created_by': { 'format': 'uuid', 'type': 'string' },
+                            'p_end_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                            'p_price_per_hour': { 'format': 'numeric', 'type': 'number' },
+                            'p_shuttle_fee': { 'format': 'numeric', 'type': 'number' },
+                            'p_start_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                            'p_title': { 'format': 'text', 'type': 'string' },
+                          },
+                        'required':
+                          [
+                            'p_title',
+                            'p_start_time',
+                            'p_end_time',
+                            'p_price_per_hour',
+                            'p_shuttle_fee',
+                            'p_created_by',
+                            'p_bookings',
+                          ],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) create_session_with_bookings'],
             },
         },
       '/rpc/check_qr_status':
@@ -1248,19 +1447,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1279,13 +1478,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1294,6 +1493,7 @@
               'idx': { 'format': 'integer', 'type': 'integer' },
               'created_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'active_court_count': { 'default': 1, 'format': 'integer', 'type': 'integer' },
             },
           'type': 'object',
         },
@@ -1303,7 +1503,7 @@
             {
               'member_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1320,19 +1520,19 @@
             {
               'snapshot_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1357,7 +1557,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1377,19 +1577,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1401,6 +1601,7 @@
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'court_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
               'shuttle_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'extra_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
             },
           'type': 'object',
         },
@@ -1415,19 +1616,19 @@
               'is_present': { 'format': 'boolean', 'type': 'boolean' },
               'presence_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'interval_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1440,7 +1641,7 @@
             {
               'id':
                 {
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1470,7 +1671,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1498,13 +1699,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'snapshot_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_costs_snapshot.id`.<fk table='session_costs_snapshot' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `session_costs_snapshot.id`.\u003Cfk table='session_costs_snapshot' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1525,7 +1726,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1546,6 +1747,8 @@
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'updated_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+              'price_per_hour': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'default_court_count': { 'default': 1, 'format': 'integer', 'type': 'integer' },
             },
           'type': 'object',
         },
@@ -1557,7 +1760,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1579,6 +1782,63 @@
             },
           'type': 'object',
         },
+      'session_court_bookings':
+        {
+          'required': ['id', 'start_time', 'end_time'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'court_name': { 'format': 'text', 'type': 'string' },
+              'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'end_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
+      'session_extra_charges':
+        {
+          'required': ['id', 'amount'],
+          'properties':
+            {
+              'id':
+                {
+                  'default': 'extensions.uuid_generate_v4()',
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'session_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'member_id':
+                {
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'format': 'uuid',
+                  'type': 'string',
+                },
+              'amount': { 'format': 'numeric', 'type': 'number' },
+              'note': { 'format': 'text', 'type': 'string' },
+              'created_at':
+                { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
+            },
+          'type': 'object',
+        },
       'interval_presence':
         {
           'required': ['id'],
@@ -1587,19 +1847,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.<pk/>",
+                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'interval_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1754,6 +2014,8 @@
         { 'name': 'idx', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.session_intervals.created_at':
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_intervals.active_court_count':
+        { 'name': 'active_court_count', 'required': false, 'in': 'query', 'type': 'string' },
       'body.view_member_debt_summary':
         {
           'name': 'view_member_debt_summary',
@@ -1854,6 +2116,8 @@
         { 'name': 'court_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.session_costs_snapshot.shuttle_fee_amount':
         { 'name': 'shuttle_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_costs_snapshot.extra_fee_amount':
+        { 'name': 'extra_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'body.view_attendance_log':
         {
           'name': 'view_attendance_log',
@@ -1979,6 +2243,10 @@
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.sessions.updated_at':
         { 'name': 'updated_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.price_per_hour':
+        { 'name': 'price_per_hour', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.default_court_count':
+        { 'name': 'default_court_count', 'required': false, 'in': 'query', 'type': 'string' },
       'body.members':
         {
           'name': 'members',
@@ -2002,6 +2270,46 @@
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.members.updated_at':
         { 'name': 'updated_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.session_court_bookings':
+        {
+          'name': 'session_court_bookings',
+          'description': 'session_court_bookings',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_court_bookings' },
+        },
+      'rowFilter.session_court_bookings.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_court_bookings.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_court_bookings.court_name':
+        { 'name': 'court_name', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_court_bookings.start_time':
+        { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_court_bookings.end_time':
+        { 'name': 'end_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_court_bookings.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
+      'body.session_extra_charges':
+        {
+          'name': 'session_extra_charges',
+          'description': 'session_extra_charges',
+          'required': false,
+          'in': 'body',
+          'schema': { '$ref': '#/definitions/session_extra_charges' },
+        },
+      'rowFilter.session_extra_charges.id':
+        { 'name': 'id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_extra_charges.session_id':
+        { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_extra_charges.member_id':
+        { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_extra_charges.amount':
+        { 'name': 'amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_extra_charges.note':
+        { 'name': 'note', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_extra_charges.created_at':
+        { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'body.interval_presence':
         {
           'name': 'interval_presence',

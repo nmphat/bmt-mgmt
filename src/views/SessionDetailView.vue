@@ -9,6 +9,7 @@ import type {
   MemberCost,
   Member,
   GroupPaymentData,
+  CourtBooking,
 } from '@/types'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
@@ -27,9 +28,11 @@ import {
   CreditCard,
   QrCode,
   Check,
+  Plus,
 } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
+import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -54,6 +57,16 @@ const showMemberDropdown = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const presence = ref<Record<string, Record<string, boolean>>>({}) // memberId -> intervalId -> isPresent
 const costs = ref<MemberCost[]>([])
+const courtBookings = ref<CourtBooking[]>([])
+const extraChargesRef = ref<InstanceType<typeof SessionExtraCharges> | null>(null)
+
+interface EditBookingSlot {
+  id?: string
+  court_name: string
+  start_time: string // HH:mm format for editing
+  end_time: string // HH:mm format for editing
+}
+const editBookings = ref<EditBookingSlot[]>([])
 const getBreakdown = (memberId: string) => {
   return costs.value.find((c) => c.member_id === memberId)
 }
@@ -102,7 +115,7 @@ const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
 const sessionForm = ref({
   title: '',
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
-  court_fee_total: 0,
+  price_per_hour: 0,
   shuttle_fee_total: 0,
 })
 let realtimeChannel: RealtimeChannel | null = null
@@ -137,11 +150,11 @@ async function fetchData(refreshCostsOnly = false) {
     if (sessionError) throw sessionError
     session.value = sessionData
 
-    if (sessionData) {
+    if (sessionData && !isEditingSession.value) {
       sessionForm.value = {
         title: sessionData.title,
         status: sessionData.status,
-        court_fee_total: sessionData.court_fee_total,
+        price_per_hour: sessionData.price_per_hour,
         shuttle_fee_total: sessionData.shuttle_fee_total,
       }
     }
@@ -154,6 +167,14 @@ async function fetchData(refreshCostsOnly = false) {
         .eq('session_id', sessionId)
         .order('idx', { ascending: true })
       intervals.value = intervalsData || []
+
+      // Fetch court bookings
+      const { data: bookingsData } = await supabase
+        .from('session_court_bookings')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('start_time', { ascending: true })
+      courtBookings.value = bookingsData || []
 
       // Fetch all members for registration dropdown
       const { data: membersData } = await supabase
@@ -288,17 +309,69 @@ function openCashPayment(snapshot: CostSnapshot, name: string) {
   showCashModal.value = true
 }
 
+function stopRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel)
+    realtimeChannel = null
+  }
+}
+
+function startEditing() {
+  if (!session.value) return
+  isEditingSession.value = true
+  stopRealtime()
+  // Populate editBookings from current court bookings
+  editBookings.value = courtBookings.value.map((b) => ({
+    id: b.id,
+    court_name: b.court_name,
+    start_time: format(new Date(b.start_time), 'HH:mm'),
+    end_time: format(new Date(b.end_time), 'HH:mm'),
+  }))
+  if (editBookings.value.length === 0) {
+    editBookings.value.push({ court_name: 'Sân 1', start_time: '18:00', end_time: '20:00' })
+  }
+}
+
+function cancelEditing() {
+  isEditingSession.value = false
+  // Restore form from current session data
+  if (session.value) {
+    sessionForm.value = {
+      title: session.value.title,
+      status: session.value.status,
+      price_per_hour: session.value.price_per_hour,
+      shuttle_fee_total: session.value.shuttle_fee_total,
+    }
+  }
+  initRealtime()
+}
+
+function addEditBooking() {
+  editBookings.value.push({
+    court_name: `Sân ${editBookings.value.length + 1}`,
+    start_time: '18:00',
+    end_time: '20:00',
+  })
+}
+
+function removeEditBooking(index: number) {
+  if (editBookings.value.length <= 1) return
+  editBookings.value.splice(index, 1)
+}
+
 async function saveSession() {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAuthenticated || !session.value) return
 
   try {
     isSavingSession.value = true
+
+    // 1. Update session fields
     const { error } = await supabase
       .from('sessions')
       .update({
         title: sessionForm.value.title,
         status: sessionForm.value.status,
-        court_fee_total: sessionForm.value.court_fee_total,
+        price_per_hour: sessionForm.value.price_per_hour,
         shuttle_fee_total: sessionForm.value.shuttle_fee_total,
         updated_at: new Date().toISOString(),
       })
@@ -306,9 +379,35 @@ async function saveSession() {
 
     if (error) throw error
 
+    // 2. Delete existing bookings & re-insert
+    const { error: delErr } = await supabase
+      .from('session_court_bookings')
+      .delete()
+      .eq('session_id', sessionId)
+    if (delErr) throw delErr
+
+    // Get session date for building full timestamps
+    const sessionDate =
+      session.value.session_date.split('T')[0] ||
+      format(new Date(session.value.session_date), 'yyyy-MM-dd')
+
+    const newBookings = editBookings.value.map((b) => ({
+      session_id: sessionId,
+      court_name: b.court_name,
+      start_time: new Date(`${sessionDate}T${b.start_time}:00`).toISOString(),
+      end_time: new Date(`${sessionDate}T${b.end_time}:00`).toISOString(),
+    }))
+
+    const { error: insErr } = await supabase.from('session_court_bookings').insert(newBookings)
+    if (insErr) throw insErr
+
+    // 3. Refresh interval court counts
+    await supabase.rpc('refresh_interval_courts', { p_session_id: sessionId })
+
     toast.success(t.value('toast.sessionUpdated'))
     isEditingSession.value = false
     await fetchData()
+    initRealtime()
   } catch (error: any) {
     console.error('Error updating session:', error)
     toast.error(error.message || t.value('session.updateError'))
@@ -353,11 +452,14 @@ async function registerMembers() {
   }
 }
 
-async function removeRegistration(regId: string, name: string) {
+async function removeRegistration(memberId: string, name: string) {
   if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
-    const { error } = await supabase.from('session_registrations').delete().eq('id', regId)
+    const { error } = await supabase.rpc('remove_member_from_session', {
+      p_session_id: sessionId,
+      p_member_id: memberId,
+    })
 
     if (error) throw error
 
@@ -508,10 +610,10 @@ function handleCloseQR() {
 }
 
 function startPolling() {
-  if (pollTimer) return
-  pollTimer = setInterval(() => {
-    fetchData(true)
-  }, 10_000) // Poll every 10 seconds
+  // if (pollTimer) return
+  // pollTimer = setInterval(() => {
+  //   fetchData(true)
+  // }, 10_000) // Poll every 10 seconds
 }
 
 function stopPolling() {
@@ -572,7 +674,24 @@ function initRealtime() {
         }
       },
     )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'session_extra_charges',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      () => {
+        extraChargesRef.value?.fetchCharges()
+        fetchCosts()
+      },
+    )
     .subscribe()
+}
+
+async function handleExtraChargesChanged() {
+  await fetchCosts()
 }
 
 onMounted(async () => {
@@ -616,7 +735,7 @@ onUnmounted(() => {
         <div v-if="isEditingSession && authStore.isAuthenticated" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
-            <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="cancelEditing" class="text-gray-400 hover:text-gray-600">
               <X class="w-5 h-5" />
             </button>
           </div>
@@ -647,10 +766,10 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700">{{
-                t('session.courtFee')
+                t('session.pricePerHour')
               }}</label>
               <input
-                v-model.number="sessionForm.court_fee_total"
+                v-model.number="sessionForm.price_per_hour"
                 type="number"
                 step="1000"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
@@ -668,9 +787,78 @@ onUnmounted(() => {
               />
             </div>
           </div>
+
+          <!-- Court Bookings Edit -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium text-gray-700">{{
+                t('session.courtBookings')
+              }}</label>
+              <button
+                type="button"
+                @click="addEditBooking"
+                class="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium transition"
+              >
+                <Plus class="w-4 h-4 mr-1" />
+                {{ t('createSession.addCourt') }}
+              </button>
+            </div>
+            <div class="space-y-3">
+              <div
+                v-for="(booking, index) in editBookings"
+                :key="index"
+                class="flex items-end gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                    t('createSession.courtName')
+                  }}</label>
+                  <input
+                    v-model="booking.court_name"
+                    type="text"
+                    required
+                    :placeholder="t('createSession.courtNamePlaceholder')"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                  />
+                </div>
+                <div class="w-28">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                    t('createSession.startTime')
+                  }}</label>
+                  <input
+                    v-model="booking.start_time"
+                    type="time"
+                    required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                  />
+                </div>
+                <div class="w-28">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
+                    t('createSession.endTime')
+                  }}</label>
+                  <input
+                    v-model="booking.end_time"
+                    type="time"
+                    required
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+                  />
+                </div>
+                <button
+                  type="button"
+                  @click="removeEditBooking(index)"
+                  :disabled="editBookings.length <= 1"
+                  class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  :title="t('createSession.removeCourt')"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
             <button
-              @click="isEditingSession = false"
+              @click="cancelEditing"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
             >
               {{ t('common.cancel') }}
@@ -699,7 +887,7 @@ onUnmounted(() => {
                   session.status !== 'cancelled' &&
                   session.status !== 'waiting_for_payment'
                 "
-                @click="isEditingSession = true"
+                @click="startEditing"
                 class="p-1 text-gray-400 hover:text-indigo-600 transition"
                 :title="t('session.editSession')"
               >
@@ -711,10 +899,16 @@ onUnmounted(() => {
             </p>
             <div class="flex flex-wrap gap-6 text-base">
               <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.courtFee') }}</span>
+                <span class="text-gray-500 block mb-1">{{ t('session.pricePerHour') }}</span>
                 <span class="font-semibold text-gray-900">{{
-                  formatCurrency(session.court_fee_total)
+                  formatCurrency(session.price_per_hour)
                 }}</span>
+              </div>
+              <div>
+                <span class="text-gray-500 block mb-1">{{ t('session.courtBookings') }}</span>
+                <span class="font-semibold text-gray-900"
+                  >{{ courtBookings.length }} {{ t('session.courts') }}</span
+                >
               </div>
               <div>
                 <span class="text-gray-500 block mb-1">{{ t('session.shuttleFee') }}</span>
@@ -840,6 +1034,12 @@ onUnmounted(() => {
                 </th>
                 <th
                   scope="col"
+                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.extraFee') }}
+                </th>
+                <th
+                  scope="col"
                   class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('payment.paid') }}
@@ -888,6 +1088,9 @@ onUnmounted(() => {
                 </td>
                 <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
                   {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_extra_fee || 0) }}
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
@@ -1100,7 +1303,7 @@ onUnmounted(() => {
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
-                    @click="removeRegistration(reg.id, reg.member?.display_name || '')"
+                    @click="removeRegistration(reg.member_id, reg.member?.display_name || '')"
                     class="text-gray-300 hover:text-red-500 transition focus:outline-none"
                     :title="t('session.removeRegistrationTooltip')"
                   >
@@ -1195,6 +1398,12 @@ onUnmounted(() => {
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.extraFee') }}
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -1216,10 +1425,13 @@ onUnmounted(() => {
                 <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
                   {{ formatCurrency(cost.total_shuttle_fee) }}
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
+                  {{ formatCurrency(cost.total_extra_fee) }}
+                </td>
               </tr>
               <!-- Surplus Row -->
               <tr class="bg-gray-50">
-                <td colspan="4" class="px-6 py-4 text-right text-base font-bold text-gray-700">
+                <td colspan="5" class="px-6 py-4 text-right text-base font-bold text-gray-700">
                   {{ t('session.surplusFund') }}
                 </td>
                 <td class="px-6 py-4 text-right text-base font-bold text-green-600">
@@ -1230,6 +1442,18 @@ onUnmounted(() => {
           </table>
         </div>
       </div>
+
+      <!-- Extra Charges Section -->
+      <SessionExtraCharges
+        v-if="session.status !== 'cancelled'"
+        ref="extraChargesRef"
+        :sessionId="sessionId"
+        :members="allMembers"
+        :isAdmin="authStore.isAuthenticated"
+        :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
+        @changed="handleExtraChargesChanged"
+        class="mb-8"
+      />
     </div>
 
     <!-- Floating Action Bar for Group Payment -->
