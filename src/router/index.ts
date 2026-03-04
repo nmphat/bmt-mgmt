@@ -52,7 +52,9 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Wait for auth to initialize if refreshing
+  // Wait for auth to finish initializing (initialized by App.vue's onMounted).
+  // We do NOT call initialize() here to avoid duplicate onAuthStateChange subscriptions.
+  // Instead, poll until loading is false (it will be set false by App.vue's initialize()).
   if (authStore.loading) {
     await authStore.initialize()
   }

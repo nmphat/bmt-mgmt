@@ -557,11 +557,16 @@ const getStatusLabel = (status: string) => {
 const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
 
+  // Surplus = sum of rounding adjustments (CEIL to 1000đ per member)
+  // = totalCollected - totalActualCosts (before rounding)
+  // Using costs array covers all cost types (court + shuttle + extra) in both
+  // price_per_hour mode and court_fee_total mode, without depending on session-level fields.
   const totalCollected = costs.value.reduce((sum, c) => sum + c.final_total, 0)
-  // Note: session.court_fee_total and shuttle_fee_total might be string or number depending on DB driver, usually number in JS client
-  const totalCost = (session.value.court_fee_total || 0) + (session.value.shuttle_fee_total || 0)
-
-  return totalCollected - totalCost
+  const totalActual = costs.value.reduce(
+    (sum, c) => sum + c.total_court_fee + c.total_shuttle_fee + c.total_extra_fee,
+    0,
+  )
+  return totalCollected - totalActual
 })
 
 const totalSelectedAmount = computed(() => {
