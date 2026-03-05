@@ -177,34 +177,21 @@ onMounted(() => {
 
             <!-- Dropdown Menu -->
             <div
-              class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]"
+              class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]"
             >
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ displayName }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ authStore.user?.email }}</p>
-              </div>
-
               <router-link
-                v-if="authStore.profile?.id"
-                :to="'/member/' + authStore.profile.id"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                to="/profile"
+                class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
+                <User class="w-4 h-4" />
                 {{ t('auth.profile') }}
-              </router-link>
-
-              <router-link
-                v-if="authStore.isAdmin"
-                to="/sessions"
-                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                {{ t('auth.admin_settings') }}
               </router-link>
 
               <button
                 @click="handleLogout"
-                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               >
-                <LogOut class="w-4 h-4 mr-2" />
+                <LogOut class="w-4 h-4" />
                 {{ t('auth.logout') }}
               </button>
             </div>
@@ -221,10 +208,10 @@ onMounted(() => {
           </button>
         </template>
 
-        <!-- Hamburger Button (Mobile Only) -->
+        <!-- Hamburger Button (tablet/desktop fallback — BottomNav handles mobile) -->
         <button
           @click="toggleMobileMenu"
-          class="inline-flex md:hidden items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 transition focus:outline-none"
+          class="hidden"
         >
           <Menu v-if="!isMobileMenuOpen" class="w-6 h-6" />
           <X v-else class="w-6 h-6" />

@@ -3,6 +3,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import AppHeader from '@/components/AppHeader.vue'
+import BottomNav from '@/components/BottomNav.vue'
 
 const authStore = useAuthStore()
 
@@ -49,9 +50,12 @@ onUnmounted(() => {
   <div class="min-h-screen bg-gray-50">
     <AppHeader />
 
-    <main>
+    <!-- pb-16 on mobile to clear the fixed BottomNav; none on md+ -->
+    <main class="pb-16 md:pb-0">
       <router-view />
     </main>
+
+    <BottomNav />
   </div>
 </template>
 
