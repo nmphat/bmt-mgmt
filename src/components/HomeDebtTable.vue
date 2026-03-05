@@ -287,7 +287,7 @@ const handlePayGroup = () => {
     <!-- Floating Action Bar -->
     <div
       v-if="selectedMemberIds.length > 0"
-      class="fixed bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-indigo-100 text-indigo-600 px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-50 animate-fade-in-up safe-area-pb"
+      class="fixed bottom-16 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-indigo-100 text-indigo-600 px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-40 animate-fade-in-up safe-area-pb"
     >
       <div class="flex flex-col">
         <span class="text-xs text-indigo-400 uppercase tracking-wider font-semibold">

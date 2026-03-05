@@ -254,9 +254,84 @@ onMounted(fetchMembers)
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
     </div>
 
-    <div v-else class="bg-white shadow-sm rounded-lg border border-gray-100 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+    <template v-else>
+      <!-- Mobile card list -->
+      <div class="md:hidden space-y-2">
+        <div
+          v-for="member in members"
+          :key="member.id"
+          class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
+          :class="{ 'ring-2 ring-indigo-200': editingMemberId === member.id }"
+        >
+          <!-- Inline edit form -->
+          <div v-if="editingMemberId === member.id" class="p-4 space-y-3">
+            <input
+              v-model="editForm.display_name"
+              type="text"
+              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm border px-3 py-2"
+            />
+            <div class="flex gap-2">
+              <select
+                v-model="editForm.role"
+                class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm border px-3 py-2"
+              >
+                <option value="member">{{ t('member.memberRole') }}</option>
+                <option value="admin">{{ t('member.adminRole') }}</option>
+              </select>
+              <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                <input v-model="editForm.is_active" type="checkbox" class="rounded border-gray-300 text-indigo-600 h-4 w-4" />
+                {{ t('member.active') }}
+              </label>
+              <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                <input v-model="editForm.is_permanent" type="checkbox" class="rounded border-gray-300 text-indigo-600 h-4 w-4" />
+                {{ t('member.permanent') }}
+              </label>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button @click="saveEdit(member.id)" class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                <Save class="w-3.5 h-3.5" />{{ t('common.save') }}
+              </button>
+              <button @click="cancelEdit" class="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+                <X class="w-3.5 h-3.5" />{{ t('common.cancel') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- View mode -->
+          <div v-else class="flex items-center p-3 gap-3">
+            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-base flex-shrink-0">
+              {{ member.display_name.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-gray-900 text-sm truncate">{{ member.display_name }}</span>
+                <span
+                  class="px-1.5 py-0.5 text-[10px] font-bold rounded-full"
+                  :class="member.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
+                >{{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}</span>
+              </div>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span v-if="member.is_active" class="text-[10px] text-green-600 font-medium">● {{ t('member.active') }}</span>
+                <span v-else class="text-[10px] text-gray-400 font-medium">○ {{ t('member.active') }}</span>
+                <span v-if="member.is_permanent" class="text-[10px] text-indigo-600 font-medium">★ {{ t('member.permanent') }}</span>
+              </div>
+            </div>
+            <div v-if="authStore.isAuthenticated" class="flex items-center gap-1 flex-shrink-0">
+              <button @click="startEdit(member)" class="p-2 text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition">
+                <Edit class="w-4 h-4" />
+              </button>
+              <button @click="deleteMember(member.id, member.display_name)" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop table -->
+      <div class="hidden md:block bg-white shadow-sm rounded-lg border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
               <th
@@ -405,5 +480,6 @@ onMounted(fetchMembers)
         </table>
       </div>
     </div>
+    </template>
   </div>
 </template>

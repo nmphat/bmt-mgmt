@@ -84,29 +84,28 @@ async function handleConfirm() {
 <template>
   <div
     v-if="show"
-    class="fixed inset-0 z-50 overflow-y-auto"
+    class="fixed inset-0 z-50"
     aria-labelledby="modal-title"
     role="dialog"
     aria-modal="true"
   >
-    <div
-      class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
-    >
-      <!-- Background overlay -->
+    <div class="flex min-h-screen items-end sm:items-center justify-center sm:p-4">
+      <!-- Backdrop -->
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
         aria-hidden="true"
         @click="emit('close')"
       ></div>
 
-      <!-- Modal panel -->
-      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"
-        >&#8203;</span
-      >
+      <!-- Panel -->
       <div
-        class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full"
+        class="relative z-10 w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl text-left shadow-xl transform transition-all"
       >
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="px-5 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <!-- Handle bar (mobile) -->
+          <div class="flex justify-center mb-3 sm:hidden">
+            <div class="w-10 h-1 rounded-full bg-gray-300" />
+          </div>
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2" id="modal-title">
               <DollarSign class="w-6 h-6 text-green-600" />
@@ -186,24 +185,24 @@ async function handleConfirm() {
           </div>
         </div>
 
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button
-            @click="handleConfirm"
-            :disabled="isSubmitting"
-            type="button"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-bold text-white hover:bg-green-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm items-center disabled:opacity-50"
-          >
-            <Loader2 v-if="isSubmitting" class="w-4 h-4 mr-2 animate-spin" />
-            <CheckCircle v-else class="w-4 h-4 mr-2" />
-            {{ t('payment.confirmPayment') }}
-          </button>
+        <div class="bg-gray-50 px-5 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2" style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)">
           <button
             @click="emit('close')"
             :disabled="isSubmitting"
             type="button"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            class="w-full sm:w-auto inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {{ t('common.cancel') }}
+          </button>
+          <button
+            @click="handleConfirm"
+            :disabled="isSubmitting"
+            type="button"
+            class="w-full sm:w-auto inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <Loader2 v-if="isSubmitting" class="w-4 h-4 mr-2 animate-spin" />
+            <CheckCircle v-else class="w-4 h-4 mr-2" />
+            {{ t('payment.confirmPayment') }}
           </button>
         </div>
       </div>

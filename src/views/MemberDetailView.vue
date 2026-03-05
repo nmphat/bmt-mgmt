@@ -263,13 +263,68 @@ onMounted(fetchMemberDetails)
       </button>
     </div>
 
-    <!-- Session History Table -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+    <!-- Session History -->
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
       <div v-if="loading" class="p-8 flex justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+
+      <template v-else>
+        <!-- Mobile card list -->
+        <div class="md:hidden divide-y divide-gray-100">
+          <div v-if="sessions.length === 0" class="p-8 text-center text-gray-400 text-sm">
+            {{ t('debt.noDebt') }}
+          </div>
+          <div
+            v-for="session in sessions"
+            :key="session.snapshot_id"
+            class="p-4 flex gap-3 items-start"
+          >
+            <!-- Status dot -->
+            <div
+              class="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
+              :class="{
+                'bg-green-500': session.status === 'paid',
+                'bg-yellow-400': session.status === 'partial',
+                'bg-red-400': session.status === 'pending',
+              }"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-900 truncate">{{ session.session_title }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    {{ format(new Date(session.start_time), 'dd/MM/yyyy', { locale: dateLocale }) }}
+                    <span v-if="sessionIntervalsMap[session.snapshot_id] && sessionIntervalsMap[session.snapshot_id] !== '-'"
+                      class="ml-1 text-gray-400">· {{ sessionIntervalsMap[session.snapshot_id] }}</span>
+                  </p>
+                </div>
+                <button
+                  v-if="session.status !== 'paid'"
+                  @click="handleSinglePay(session)"
+                  class="flex-shrink-0 p-2 text-indigo-500 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition"
+                >
+                  <QrCode class="w-4 h-4" />
+                </button>
+              </div>
+              <div class="mt-2 flex items-center gap-3 flex-wrap">
+                <span
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-full"
+                  :class="getStatusColor(session.status)"
+                >{{ getStatusLabel(session.status) }}</span>
+                <span class="text-xs text-gray-500">{{ formatCurrency(session.final_amount) }}</span>
+                <span
+                  v-if="session.remaining_amount > 0"
+                  class="text-xs font-bold text-red-600 ml-auto"
+                >-{{ formatCurrency(session.remaining_amount) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop table -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
               <th
@@ -384,7 +439,8 @@ onMounted(fetchMemberDetails)
             </tr>
           </tbody>
         </table>
-      </div>
+        </div><!-- /desktop table -->
+      </template><!-- /v-else -->
     </div>
 
     <PaymentQRModal

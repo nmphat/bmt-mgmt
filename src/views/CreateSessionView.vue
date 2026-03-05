@@ -244,9 +244,9 @@ async function createSession() {
             <div
               v-for="(court, index) in courts"
               :key="index"
-              class="flex items-end gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+              class="grid grid-cols-2 gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200 sm:flex sm:items-end sm:gap-3"
             >
-              <div class="flex-1 min-w-0">
+              <div class="col-span-2 sm:flex-1 sm:min-w-0">
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{
                   t('createSession.courtName')
                 }}</label>
@@ -258,7 +258,7 @@ async function createSession() {
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
                 />
               </div>
-              <div class="w-28">
+              <div class="sm:w-28">
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{
                   t('createSession.startTime')
                 }}</label>
@@ -269,7 +269,7 @@ async function createSession() {
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
                 />
               </div>
-              <div class="w-28">
+              <div class="sm:w-28">
                 <label class="block text-xs font-medium text-gray-500 mb-1">{{
                   t('createSession.endTime')
                 }}</label>
@@ -280,24 +280,26 @@ async function createSession() {
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
                 />
               </div>
-              <button
-                type="button"
-                @click="removeCourt(index)"
-                :disabled="courts.length <= 1"
-                class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                :title="t('createSession.removeCourt')"
-              >
-                <Trash2 class="w-4 h-4" />
-              </button>
+              <div class="flex items-end justify-end col-span-2 sm:col-span-1">
+                <button
+                  type="button"
+                  @click="removeCourt(index)"
+                  :disabled="courts.length <= 1"
+                  class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                  :title="t('createSession.removeCourt')"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="pt-4">
+        <div class="pt-4 sticky bottom-0 bg-white pb-safe">
           <button
             type="submit"
             :disabled="loading"
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading ? t('createSession.creating') : t('createSession.createButton') }}
           </button>

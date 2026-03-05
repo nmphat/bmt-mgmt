@@ -32,28 +32,26 @@ function handleSelect(snapshot: any) {
 <template>
   <div
     v-if="show"
-    class="fixed inset-0 z-[60] overflow-y-auto"
+    class="fixed inset-0 z-[60]"
     aria-labelledby="modal-title"
     role="dialog"
     aria-modal="true"
   >
-    <div
-      class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
-    >
+    <div class="flex min-h-screen items-end sm:items-center justify-center sm:p-4">
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
         aria-hidden="true"
         @click="emit('close')"
       ></div>
 
-      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"
-        >&#8203;</span
-      >
-
       <div
-        class="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+        class="relative z-10 w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl text-left shadow-xl transform transition-all max-h-[85vh] flex flex-col"
       >
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="px-5 pt-5 pb-4 sm:p-6 sm:pb-4 flex-1 overflow-y-auto">
+          <!-- Handle bar -->
+          <div class="flex justify-center mb-3 sm:hidden">
+            <div class="w-10 h-1 rounded-full bg-gray-300" />
+          </div>
           <div class="flex justify-between items-start mb-4">
             <div>
               <h3 class="text-xl font-bold text-gray-900" id="modal-title">
@@ -120,11 +118,11 @@ function handleSelect(snapshot: any) {
           </div>
         </div>
 
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end">
+        <div class="bg-gray-50 px-5 py-4 sm:px-6 flex justify-end" style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)">
           <button
             @click="emit('close')"
             type="button"
-            class="w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm"
+            class="w-full sm:w-auto inline-flex justify-center rounded-xl border border-gray-300 shadow-sm px-4 py-2.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
           >
             {{ t('common.cancel') }}
           </button>
