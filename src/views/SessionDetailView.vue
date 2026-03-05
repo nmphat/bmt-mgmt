@@ -11,68 +11,39 @@ import type {
   GroupPaymentData,
   CourtBooking,
 } from '@/types'
-import { format } from 'date-fns'
-import { vi, enUS } from 'date-fns/locale'
 import { useLangStore } from '@/stores/lang'
-import {
-  ChevronLeft,
-  RefreshCcw,
-  UserX,
-  UserPlus,
-  Trash2,
-  Loader2,
-  X,
-  Edit,
-  Save,
-  Lock,
-  CreditCard,
-  QrCode,
-  Check,
-  Plus,
-} from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
+import SessionHeader from '@/components/session/SessionHeader.vue'
+import SessionPaymentTable from '@/components/session/SessionPaymentTable.vue'
+import SessionAttendanceGrid from '@/components/session/SessionAttendanceGrid.vue'
+import SessionCostSummary from '@/components/session/SessionCostSummary.vue'
+import SessionGroupPaymentBar from '@/components/session/SessionGroupPaymentBar.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
 import type { CostSnapshot } from '@/types'
-import { BANK_INFO } from '@/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const langStore = useLangStore()
 const toast = useToast()
 const t = computed(() => langStore.t)
-const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 const sessionId = route.params.id as string
 
 const session = ref<SessionSummary | null>(null)
 const intervals = ref<Interval[]>([])
 const registrations = ref<SessionRegistration[]>([])
 const allMembers = ref<Member[]>([])
-const selectedMemberIds = ref<string[]>([])
 const isRegistering = ref(false)
-const showMemberDropdown = ref(false)
-const dropdownRef = ref<HTMLElement | null>(null)
 const presence = ref<Record<string, Record<string, boolean>>>({}) // memberId -> intervalId -> isPresent
 const costs = ref<MemberCost[]>([])
 const courtBookings = ref<CourtBooking[]>([])
 const extraChargesRef = ref<InstanceType<typeof SessionExtraCharges> | null>(null)
 
-interface EditBookingSlot {
-  id?: string
-  court_name: string
-  start_time: string // HH:mm format for editing
-  end_time: string // HH:mm format for editing
-}
-const editBookings = ref<EditBookingSlot[]>([])
-const getBreakdown = (memberId: string) => {
-  return costs.value.find((c) => c.member_id === memberId)
-}
 const snapshots = ref<(CostSnapshot & { display_name: string })[]>([])
 const loading = ref(true)
-const finalizeLoading = ref(false)
 const showQRModal = ref(false)
 const showCashModal = ref(false)
 const selectedMemberId = ref<string | null>(null)
@@ -91,35 +62,13 @@ const isPaymentSuccess = computed(() => {
   return selectedSnapshot.value?.status === 'paid'
 })
 const selectedSnapshotMemberName = ref('')
-const isEditingSession = ref(false)
-const isSavingSession = ref(false)
 const selectedSnapshotIds = ref<string[]>([])
 const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
 const isFetching = ref(false)
 
-// Cache formatters for performance
-const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
-  vi: new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }),
-  en: new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }),
-}
 
-const sessionForm = ref({
-  title: '',
-  status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
-  price_per_hour: 0,
-  shuttle_fee_total: 0,
-})
 let realtimeChannel: RealtimeChannel | null = null
-let pollTimer: any = null
 
 const availableMembers = computed(() => {
   const registeredIds = new Set(registrations.value.map((r) => r.member_id))
@@ -127,12 +76,6 @@ const availableMembers = computed(() => {
     .filter((m) => !registeredIds.has(m.id) && m.is_active)
     .sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
 })
-
-const handleClickOutside = (event: MouseEvent) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    showMemberDropdown.value = false
-  }
-}
 
 async function fetchData(refreshCostsOnly = false) {
   if (isFetching.value) return
@@ -149,15 +92,6 @@ async function fetchData(refreshCostsOnly = false) {
 
     if (sessionError) throw sessionError
     session.value = sessionData
-
-    if (sessionData && !isEditingSession.value) {
-      sessionForm.value = {
-        title: sessionData.title,
-        status: sessionData.status,
-        price_per_hour: sessionData.price_per_hour,
-        shuttle_fee_total: sessionData.shuttle_fee_total,
-      }
-    }
 
     if (!refreshCostsOnly) {
       // Fetch intervals
@@ -258,45 +192,6 @@ async function fetchSnapshotData() {
   snapshots.value = sortedSnapshots
 }
 
-async function finalizeSession() {
-  if (!authStore.isAuthenticated || !session.value) return
-  if (!confirm(t.value('session.finalizeConfirm'))) return
-
-  try {
-    finalizeLoading.value = true
-    const { error } = await supabase.rpc('finalize_session', { p_session_id: sessionId })
-
-    if (error) throw error
-
-    toast.success(t.value('toast.sessionFinalized'))
-    await fetchData()
-  } catch (error: any) {
-    console.error('Error finalizing session:', error)
-    toast.error(error.message || t.value('session.finalizeError'))
-  } finally {
-    finalizeLoading.value = false
-  }
-}
-
-async function cancelSession() {
-  if (!authStore.isAuthenticated || !session.value) return
-  if (!confirm(t.value('session.cancelConfirm'))) return
-
-  try {
-    const { error } = await supabase
-      .from('sessions')
-      .update({ status: 'cancelled' })
-      .eq('id', sessionId)
-
-    if (error) throw error
-    toast.success(t.value('toast.sessionCancelled'))
-    await fetchData()
-  } catch (error: any) {
-    console.error('Error cancelling session:', error)
-    toast.error(error.message || t.value('session.cancelError'))
-  }
-}
-
 function openPaymentQR(snapshot: CostSnapshot, name: string) {
   selectedMemberId.value = snapshot.member_id
   selectedSnapshotMemberName.value = name
@@ -316,114 +211,14 @@ function stopRealtime() {
   }
 }
 
-function startEditing() {
-  if (!session.value) return
-  isEditingSession.value = true
-  stopRealtime()
-  // Populate editBookings from current court bookings
-  editBookings.value = courtBookings.value.map((b) => ({
-    id: b.id,
-    court_name: b.court_name,
-    start_time: format(new Date(b.start_time), 'HH:mm'),
-    end_time: format(new Date(b.end_time), 'HH:mm'),
-  }))
-  if (editBookings.value.length === 0) {
-    editBookings.value.push({ court_name: 'Sân 1', start_time: '18:00', end_time: '20:00' })
-  }
-}
-
-function cancelEditing() {
-  isEditingSession.value = false
-  // Restore form from current session data
-  if (session.value) {
-    sessionForm.value = {
-      title: session.value.title,
-      status: session.value.status,
-      price_per_hour: session.value.price_per_hour,
-      shuttle_fee_total: session.value.shuttle_fee_total,
-    }
-  }
-  initRealtime()
-}
-
-function addEditBooking() {
-  editBookings.value.push({
-    court_name: `Sân ${editBookings.value.length + 1}`,
-    start_time: '18:00',
-    end_time: '20:00',
-  })
-}
-
-function removeEditBooking(index: number) {
-  if (editBookings.value.length <= 1) return
-  editBookings.value.splice(index, 1)
-}
-
-async function saveSession() {
-  if (!authStore.isAuthenticated || !session.value) return
-
-  try {
-    isSavingSession.value = true
-
-    // 1. Update session fields
-    const { error } = await supabase
-      .from('sessions')
-      .update({
-        title: sessionForm.value.title,
-        status: sessionForm.value.status,
-        price_per_hour: sessionForm.value.price_per_hour,
-        shuttle_fee_total: sessionForm.value.shuttle_fee_total,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId)
-
-    if (error) throw error
-
-    // 2. Delete existing bookings & re-insert
-    const { error: delErr } = await supabase
-      .from('session_court_bookings')
-      .delete()
-      .eq('session_id', sessionId)
-    if (delErr) throw delErr
-
-    // Get session date for building full timestamps
-    const sessionDate =
-      session.value.session_date.split('T')[0] ||
-      format(new Date(session.value.session_date), 'yyyy-MM-dd')
-
-    const newBookings = editBookings.value.map((b) => ({
-      session_id: sessionId,
-      court_name: b.court_name,
-      start_time: new Date(`${sessionDate}T${b.start_time}:00`).toISOString(),
-      end_time: new Date(`${sessionDate}T${b.end_time}:00`).toISOString(),
-    }))
-
-    const { error: insErr } = await supabase.from('session_court_bookings').insert(newBookings)
-    if (insErr) throw insErr
-
-    // 3. Refresh interval court counts
-    await supabase.rpc('refresh_interval_courts', { p_session_id: sessionId })
-
-    toast.success(t.value('toast.sessionUpdated'))
-    isEditingSession.value = false
-    await fetchData()
-    initRealtime()
-  } catch (error: any) {
-    console.error('Error updating session:', error)
-    toast.error(error.message || t.value('session.updateError'))
-  } finally {
-    isSavingSession.value = false
-  }
-}
-
-async function registerMembers() {
-  if (selectedMemberIds.value.length === 0) return
+async function registerMembers(memberIds: string[]) {
+  if (memberIds.length === 0) return
 
   try {
     isRegistering.value = true
 
     // Call RPC for each selected member
-    const promises = selectedMemberIds.value.map((memberId) =>
+    const promises = memberIds.map((memberId) =>
       supabase.rpc('add_member_to_session_full_presence', {
         p_session_id: sessionId,
         p_member_id: memberId,
@@ -437,11 +232,9 @@ async function registerMembers() {
       console.error('Some registrations failed:', errors)
       toast.error(t.value('toast.registrationPartialFailure'))
     } else {
-      toast.success(t.value('toast.memberRegistered', { count: selectedMemberIds.value.length }))
+      toast.success(t.value('toast.memberRegistered', { count: memberIds.length }))
     }
 
-    selectedMemberIds.value = []
-    showMemberDropdown.value = false
     await fetchData(true)
   } catch (error: any) {
     toast.error(
@@ -537,23 +330,6 @@ async function toggleAbsent(reg: SessionRegistration) {
   }
 }
 
-const formatCurrency = (value: number) => {
-  const formatter = currencyFormatters[langStore.currentLang] || currencyFormatters.vi
-  return formatter!.format(value)
-}
-
-const formatTime = (isoString: string) => {
-  return format(new Date(isoString), 'HH:mm')
-}
-
-const formatSessionDate = (isoString: string) => {
-  return format(new Date(isoString), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
-}
-
-const getStatusLabel = (status: string) => {
-  return t.value(`common.${status}`)
-}
-
 const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
 
@@ -612,20 +388,6 @@ function handleCloseQR() {
   showQRModal.value = false
   groupPaymentData.value = null
   selectedSnapshotIds.value = []
-}
-
-function startPolling() {
-  // if (pollTimer) return
-  // pollTimer = setInterval(() => {
-  //   fetchData(true)
-  // }, 10_000) // Poll every 10 seconds
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
 }
 
 function initRealtime() {
@@ -702,13 +464,9 @@ async function handleExtraChargesChanged() {
 onMounted(async () => {
   await fetchData()
   initRealtime()
-  document.addEventListener('click', handleClickOutside)
-  startPolling()
 })
 
 onUnmounted(() => {
-  stopPolling()
-  document.removeEventListener('click', handleClickOutside)
   if (realtimeChannel) {
     supabase.removeChannel(realtimeChannel)
   }
@@ -716,739 +474,61 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="mb-6 flex items-center justify-between">
-      <router-link
-        to="/"
-        class="flex items-center text-indigo-600 hover:text-indigo-800 transition"
-      >
-        <ChevronLeft class="w-5 h-5 mr-1" />
-        {{ t('common.backToHome') }}
-      </router-link>
-      <button @click="() => fetchData()" class="p-2 text-gray-500 hover:text-indigo-600 transition">
-        <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': loading }" />
-      </button>
-    </div>
-
+  <div class="max-w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6">
     <div v-if="loading && !session" class="flex justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
     </div>
 
-    <div v-else-if="session">
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-        <!-- Edit Mode -->
-        <div v-if="isEditingSession && authStore.isAuthenticated" class="space-y-4">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
-            <button @click="cancelEditing" class="text-gray-400 hover:text-gray-600">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{
-                t('session.title')
-              }}</label>
-              <input
-                v-model="sessionForm.title"
-                type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{
-                t('common.status')
-              }}</label>
-              <select
-                v-model="sessionForm.status"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-              >
-                <option value="open">{{ t('common.open') }}</option>
-                <option value="waiting_for_payment">{{ t('common.waiting_for_payment') }}</option>
-                <option value="done">{{ t('common.done') }}</option>
-                <option value="cancelled">{{ t('common.cancelled') }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{
-                t('session.pricePerHour')
-              }}</label>
-              <input
-                v-model.number="sessionForm.price_per_hour"
-                type="number"
-                step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700">{{
-                t('session.shuttleFee')
-              }}</label>
-              <input
-                v-model.number="sessionForm.shuttle_fee_total"
-                type="number"
-                step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-              />
-            </div>
-          </div>
-
-          <!-- Court Bookings Edit -->
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <label class="block text-sm font-medium text-gray-700">{{
-                t('session.courtBookings')
-              }}</label>
-              <button
-                type="button"
-                @click="addEditBooking"
-                class="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium transition"
-              >
-                <Plus class="w-4 h-4 mr-1" />
-                {{ t('createSession.addCourt') }}
-              </button>
-            </div>
-            <div class="space-y-3">
-              <div
-                v-for="(booking, index) in editBookings"
-                :key="index"
-                class="flex items-end gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-              >
-                <div class="flex-1 min-w-0">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
-                    t('createSession.courtName')
-                  }}</label>
-                  <input
-                    v-model="booking.court_name"
-                    type="text"
-                    required
-                    :placeholder="t('createSession.courtNamePlaceholder')"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
-                  />
-                </div>
-                <div class="w-28">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
-                    t('createSession.startTime')
-                  }}</label>
-                  <input
-                    v-model="booking.start_time"
-                    type="time"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
-                  />
-                </div>
-                <div class="w-28">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">{{
-                    t('createSession.endTime')
-                  }}</label>
-                  <input
-                    v-model="booking.end_time"
-                    type="time"
-                    required
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
-                  />
-                </div>
-                <button
-                  type="button"
-                  @click="removeEditBooking(index)"
-                  :disabled="editBookings.length <= 1"
-                  class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 disabled:cursor-not-allowed"
-                  :title="t('createSession.removeCourt')"
-                >
-                  <Trash2 class="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
-            <button
-              @click="cancelEditing"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
-            >
-              {{ t('common.cancel') }}
-            </button>
-            <button
-              @click="saveSession"
-              :disabled="isSavingSession"
-              class="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
-            >
-              <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
-              <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
-              {{ t('common.save') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- View Mode -->
-        <div v-else class="flex justify-between items-start">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
-              <button
-                v-if="
-                  authStore.isAuthenticated &&
-                  session.status !== 'done' &&
-                  session.status !== 'cancelled' &&
-                  session.status !== 'waiting_for_payment'
-                "
-                @click="startEditing"
-                class="p-1 text-gray-400 hover:text-indigo-600 transition"
-                :title="t('session.editSession')"
-              >
-                <Edit class="w-5 h-5" />
-              </button>
-            </div>
-            <p class="text-gray-600 mb-4 capitalize">
-              {{ formatSessionDate(session.session_date) }}
-            </p>
-            <div class="flex flex-wrap gap-6 text-base">
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.pricePerHour') }}</span>
-                <span class="font-semibold text-gray-900">{{
-                  formatCurrency(session.price_per_hour)
-                }}</span>
-              </div>
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.courtBookings') }}</span>
-                <span class="font-semibold text-gray-900"
-                  >{{ courtBookings.length }} {{ t('session.courts') }}</span
-                >
-              </div>
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.shuttleFee') }}</span>
-                <span class="font-semibold text-gray-900">{{
-                  formatCurrency(session.shuttle_fee_total)
-                }}</span>
-              </div>
-              <div v-if="session.status === 'waiting_for_payment' || session.status === 'done'">
-                <span class="text-gray-500 block mb-1 font-bold text-indigo-600">{{
-                  t('session.totalCollected')
-                }}</span>
-                <span class="font-bold text-indigo-700">{{
-                  formatCurrency(
-                    costs.length > 0
-                      ? costs.reduce((sum, c) => sum + c.final_total, 0)
-                      : snapshots.reduce((sum, s) => sum + s.final_amount, 0),
-                  )
-                }}</span>
-              </div>
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('common.status') }}</span>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                  :class="
-                    session.status === 'done'
-                      ? 'bg-green-100 text-green-800'
-                      : session.status === 'waiting_for_payment'
-                        ? 'bg-orange-100 text-orange-800'
-                        : session.status === 'cancelled'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-blue-100 text-blue-800'
-                  "
-                >
-                  {{ getStatusLabel(session.status) }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="authStore.isAuthenticated && session.status === 'open'"
-            class="flex items-center gap-2"
-          >
-            <button
-              @click="cancelSession"
-              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition shadow-sm font-medium"
-            >
-              🚫 {{ t('session.cancelSession') }}
-            </button>
-            <button
-              @click="finalizeSession"
-              :disabled="finalizeLoading"
-              class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm font-medium"
-            >
-              <Lock v-if="!finalizeLoading" class="w-4 h-4 mr-2" />
-              <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
-              {{ t('session.finalize') }}
-            </button>
-          </div>
-        </div>
-      </div>
+    <template v-else-if="session">
+      <SessionHeader
+        :session="session"
+        :courtBookings="courtBookings"
+        :costs="costs"
+        :snapshots="snapshots"
+        :sessionId="sessionId"
+        :loading="loading"
+        @dataChanged="fetchData()"
+        @refresh="fetchData()"
+      />
       <!-- Cancelled Banner -->
-      <div
-        v-if="session.status === 'cancelled'"
-        class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-8"
-      >
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <X class="h-5 w-5 text-gray-400" aria-hidden="true" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-gray-700">
-              {{ t('session.cancelledMessage') }}
-            </p>
-          </div>
-        </div>
+      <div v-if="session.status === 'cancelled'" class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded-r-md">
+        <p class="text-sm text-gray-700">{{ t('session.cancelledMessage') }}</p>
       </div>
 
-      <!-- Snapshot View (Waiting/Done mode) -->
-      <div
+      <!-- Payment table (waiting_for_payment / done) -->
+      <SessionPaymentTable
         v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
-        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 mb-8"
-      >
-        <div
-          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
-        >
-          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('common.member') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
-                >
-                  {{ t('session.mustPay') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.intervalsAbbr') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.courtFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.shuttleFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.extraFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('payment.paid') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('common.status') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.pay') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="snapshot in snapshots" :key="snapshot.id">
-                <td v-if="authStore.isAuthenticated" class="px-3 py-4 text-center">
-                  <input
-                    v-if="snapshot.status !== 'paid'"
-                    type="checkbox"
-                    :value="snapshot.id"
-                    v-model="selectedSnapshotIds"
-                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                  />
-                  <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
-                >
-                  {{ snapshot.display_name }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-indigo-700"
-                >
-                  {{ formatCurrency(snapshot.final_amount) }}
-                </td>
-                <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-500">
-                  {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
-                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
-                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
-                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_extra_fee || 0) }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
-                >
-                  {{ formatCurrency(snapshot.paid_amount) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-green-100 text-green-800': snapshot.status === 'paid',
-                      'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
-                      'bg-gray-100 text-gray-800': snapshot.status === 'pending',
-                    }"
-                  >
-                    {{
-                      snapshot.status === 'paid'
-                        ? t('payment.paid')
-                        : snapshot.status === 'partial'
-                          ? t('payment.partial')
-                          : t('payment.pending')
-                    }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <div class="flex flex-col gap-1.5 items-center">
-                    <button
-                      v-if="snapshot.status !== 'paid'"
-                      @click="openPaymentQR(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
-                    >
-                      <QrCode class="w-4 h-4 mr-1.5" />
-                      {{ t('payment.qrPay') }}
-                    </button>
-                    <button
-                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
-                      @click="openCashPayment(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
-                    >
-                      {{ t('payment.cashPay') }}
-                    </button>
-                    <span
-                      v-else-if="snapshot.status === 'paid'"
-                      class="text-green-500 flex items-center justify-center"
-                    >
-                      <Check class="w-5 h-5 mr-1" />
-                      <span class="text-sm font-medium">{{ t('payment.done') }}</span>
-                    </span>
-                  </div>
-                </td>
-              </tr>
-              <!-- Surplus Row -->
-              <tr class="bg-gray-50 border-t-2 border-gray-100">
-                <td
-                  :colspan="authStore.isAuthenticated ? 6 : 5"
-                  class="px-6 py-4 text-right text-sm font-bold text-gray-700"
-                >
-                  {{ t('session.surplusFund') }}
-                </td>
-                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
-                  {{ formatCurrency(surplus) }}
-                </td>
-                <td colspan="2"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        :snapshots="snapshots"
+        :costs="costs"
+        :surplus="surplus"
+        :selectedSnapshotIds="selectedSnapshotIds"
+        @update:selectedSnapshotIds="selectedSnapshotIds = $event"
+        @openQR="openPaymentQR"
+        @openCash="openCashPayment"
+      />
 
-      <!-- Attendance Matrix -->
-      <div class="bg-white rounded-lg shadow-sm mb-8 border border-gray-100">
-        <div
-          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-        >
-          <div class="flex items-center gap-2">
-            <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendanceMatrix') }}</h2>
-            <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-500 italic">{{
-              t('session.readOnly')
-            }}</span>
-          </div>
-          <!-- Add Members to Session -->
-          <div
-            v-if="
-              authStore.isAuthenticated &&
-              session.status !== 'waiting_for_payment' &&
-              session.status !== 'done'
-            "
-            class="flex items-center gap-2 w-full sm:w-auto relative"
-            ref="dropdownRef"
-          >
-            <div class="relative w-full sm:w-64">
-              <button
-                @click="showMemberDropdown = !showMemberDropdown"
-                class="flex items-center justify-between w-full rounded-md border-gray-300 shadow-sm bg-white border px-3 py-1.5 text-sm cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              >
-                <span v-if="selectedMemberIds.length === 0" class="text-gray-500">{{
-                  t('session.selectMembers')
-                }}</span>
-                <span v-else class="text-gray-900 font-medium">{{
-                  t('session.selectedCount', { count: selectedMemberIds.length })
-                }}</span>
-                <ChevronLeft
-                  class="w-4 h-4 text-gray-400 transition-transform duration-200"
-                  :class="showMemberDropdown ? 'rotate-90' : '-rotate-90'"
-                />
-              </button>
-              <!-- Custom Checkbox Dropdown -->
-              <div
-                v-if="showMemberDropdown"
-                class="absolute z-[60] left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
-              >
-                <div
-                  v-if="availableMembers.length === 0"
-                  class="p-3 text-base text-gray-500 italic text-center"
-                >
-                  {{ t('session.noMoreMembers') }}
-                </div>
-                <label
-                  v-for="m in availableMembers"
-                  :key="m.id"
-                  class="flex items-center px-3 py-2 hover:bg-indigo-50 cursor-pointer transition select-none"
-                >
-                  <input
-                    type="checkbox"
-                    :value="m.id"
-                    v-model="selectedMemberIds"
-                    class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-3"
-                  />
-                  <span class="text-base text-gray-700">{{ m.display_name }}</span>
-                </label>
-              </div>
-            </div>
-            <button
-              @click="registerMembers"
-              :disabled="selectedMemberIds.length === 0 || isRegistering"
-              class="flex items-center px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50 whitespace-nowrap text-base font-medium shadow-sm"
-            >
-              <UserPlus v-if="!isRegistering" class="w-4 h-4 mr-1.5" />
-              <Loader2 v-else class="w-4 h-4 mr-1.5 animate-spin" />
-              {{ isRegistering ? t('common.loading') : t('session.register') }}
-            </button>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
-                >
-                  {{ t('common.member') }}
-                </th>
-                <th
-                  v-if="
-                    authStore.isAuthenticated &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
-                  scope="col"
-                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
-                >
-                  <span class="sr-only">{{ t('common.actions') }}</span>
-                </th>
-                <th
-                  v-if="
-                    authStore.isAuthenticated &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
-                  scope="col"
-                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
-                >
-                  {{ t('session.absent') }}
-                </th>
-                <th
-                  v-for="interval in intervals"
-                  :key="interval.id"
-                  scope="col"
-                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider min-w-[100px]"
-                >
-                  {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr
-                v-for="reg in registrations"
-                :key="reg.id"
-                :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
-              >
-                <td
-                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
-                >
-                  <div class="flex items-center">
-                    {{ reg.member?.display_name }}
-                    <span
-                      v-if="reg.is_registered_not_attended"
-                      class="ml-2 text-sm text-red-500 font-normal italic"
-                      >({{ t('session.absent') }})</span
-                    >
-                  </div>
-                </td>
-                <td
-                  v-if="
-                    authStore.isAuthenticated &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
-                  class="px-2 py-4 whitespace-nowrap text-center"
-                >
-                  <button
-                    @click="removeRegistration(reg.member_id, reg.member?.display_name || '')"
-                    class="text-gray-300 hover:text-red-500 transition focus:outline-none"
-                    :title="t('session.removeRegistrationTooltip')"
-                  >
-                    <Trash2 class="w-4 h-4 mx-auto" />
-                  </button>
-                </td>
-                <td
-                  v-if="
-                    authStore.isAuthenticated &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
-                  class="px-2 py-4 whitespace-nowrap text-center"
-                >
-                  <button
-                    @click="toggleAbsent(reg)"
-                    class="text-gray-400 hover:text-red-600 transition focus:outline-none"
-                    :class="{ 'text-red-600': reg.is_registered_not_attended }"
-                    :title="t('session.markAbsentTooltip')"
-                  >
-                    <UserX class="w-5 h-5 mx-auto" />
-                  </button>
-                </td>
-                <td
-                  v-for="interval in intervals"
-                  :key="interval.id"
-                  class="px-3 py-4 whitespace-nowrap text-center"
-                >
-                  <div class="flex justify-center items-center h-full">
-                    <input
-                      type="checkbox"
-                      :checked="presence[reg.member_id]?.[interval.id] || false"
-                      @change="togglePresence(reg.member_id, interval.id)"
-                      :disabled="
-                        !authStore.isAuthenticated ||
-                        reg.is_registered_not_attended ||
-                        session.status === 'waiting_for_payment' ||
-                        session.status === 'done'
-                      "
-                      class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Attendance grid + member management -->
+      <SessionAttendanceGrid
+        :session="session"
+        :registrations="registrations"
+        :intervals="intervals"
+        :presence="presence"
+        :availableMembers="availableMembers"
+        :isRegistering="isRegistering"
+        @togglePresence="togglePresence"
+        @toggleAbsent="toggleAbsent"
+        @registerMembers="registerMembers"
+        @removeRegistration="removeRegistration"
+      />
 
-      <!-- Cost Summary (Live mode) -->
-      <div
+      <!-- Live cost summary (open status only) -->
+      <SessionCostSummary
         v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'"
-        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
-      >
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-900">
-            {{ t('session.costSummary') }}
-            <span class="text-xs font-normal text-gray-500">({{ t('session.live') }})</span>
-          </h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('common.member') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
-                >
-                  {{ t('session.total') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.numIntervals') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.courtFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.shuttleFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.extraFee') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="cost in costs" :key="cost.member_id">
-                <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
-                  {{ cost.display_name }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-gray-900"
-                >
-                  {{ formatCurrency(cost.final_total) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-base text-center text-gray-500">
-                  {{ cost.intervals_count }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
-                  {{ formatCurrency(cost.total_court_fee) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
-                  {{ formatCurrency(cost.total_shuttle_fee) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
-                  {{ formatCurrency(cost.total_extra_fee) }}
-                </td>
-              </tr>
-              <!-- Surplus Row -->
-              <tr class="bg-gray-50">
-                <td colspan="5" class="px-6 py-4 text-right text-base font-bold text-gray-700">
-                  {{ t('session.surplusFund') }}
-                </td>
-                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
-                  {{ formatCurrency(surplus) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        :costs="costs"
+        :surplus="surplus"
+      />
 
-      <!-- Extra Charges Section -->
+      <!-- Extra Charges -->
       <SessionExtraCharges
         v-if="session.status !== 'cancelled'"
         ref="extraChargesRef"
@@ -1457,46 +537,17 @@ onUnmounted(() => {
         :isAdmin="authStore.isAuthenticated"
         :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
         @changed="handleExtraChargesChanged"
-        class="mb-8"
+        class="mb-6"
       />
-    </div>
+    </template>
 
-    <!-- Floating Action Bar for Group Payment -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="transform translate-y-full opacity-0"
-      enter-to-class="transform translate-y-0 opacity-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="transform translate-y-0 opacity-100"
-      leave-to-class="transform translate-y-full opacity-0"
-    >
-      <div
-        v-if="selectedSnapshotIds.length > 0"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl"
-      >
-        <div
-          class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between border border-indigo-500/50 backdrop-blur-md"
-        >
-          <div class="flex flex-col">
-            <span class="text-sm font-medium opacity-90">{{
-              t('session.payGroup', { count: selectedSnapshotIds.length })
-            }}</span>
-            <span class="text-xl font-extrabold">{{
-              t('session.totalSelected', { amount: formatCurrency(totalSelectedAmount) })
-            }}</span>
-          </div>
-          <button
-            @click="handleCreateGroupPayment"
-            :disabled="isCreatingGroupPayment"
-            class="flex items-center px-6 py-2.5 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition active:scale-95 disabled:opacity-50 shadow-sm"
-          >
-            <Loader2 v-if="isCreatingGroupPayment" class="w-5 h-5 mr-2 animate-spin" />
-            <QrCode v-else class="w-5 h-5 mr-2" />
-            {{ t('session.groupPayButton') }}
-          </button>
-        </div>
-      </div>
-    </Transition>
+    <!-- Floating group payment bar -->
+    <SessionGroupPaymentBar
+      :selectedCount="selectedSnapshotIds.length"
+      :totalAmount="totalSelectedAmount"
+      :isCreating="isCreatingGroupPayment"
+      @create="handleCreateGroupPayment"
+    />
   </div>
 
   <PaymentQRModal
