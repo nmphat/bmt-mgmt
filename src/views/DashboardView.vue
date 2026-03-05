@@ -4,9 +4,10 @@ import { supabase } from '@/lib/supabase'
 import type { SessionSummary } from '@/types'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
-import { Plus, ChevronRight } from 'lucide-vue-next'
+import { Plus, ChevronRight, Calendar, Users, Clock } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
+import { formatCurrency } from '@/utils/formatters'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -36,16 +37,21 @@ async function fetchSessions() {
 
 function getStatusColor(status: string) {
   switch (status) {
-    case 'open':
-      return 'bg-blue-100 text-blue-800'
-    case 'waiting_for_payment':
-      return 'bg-orange-100 text-orange-800'
-    case 'done':
-      return 'bg-green-100 text-green-800'
-    case 'cancelled':
-      return 'bg-gray-100 text-gray-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
+    case 'open':             return 'bg-blue-100 text-blue-800'
+    case 'waiting_for_payment': return 'bg-orange-100 text-orange-800'
+    case 'done':             return 'bg-green-100 text-green-800'
+    case 'cancelled':        return 'bg-gray-100 text-gray-500'
+    default:                 return 'bg-gray-100 text-gray-500'
+  }
+}
+
+function getStatusBorder(status: string) {
+  switch (status) {
+    case 'open':             return 'border-l-blue-400'
+    case 'waiting_for_payment': return 'border-l-orange-400'
+    case 'done':             return 'border-l-green-400'
+    case 'cancelled':        return 'border-l-gray-300'
+    default:                 return 'border-l-gray-200'
   }
 }
 
@@ -57,54 +63,108 @@ onMounted(fetchSessions)
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-5">
       <h1 class="text-2xl font-bold text-gray-900">{{ t('dashboard.title') }}</h1>
+      <!-- Desktop create button -->
       <router-link
-        v-if="authStore.isAuthenticated"
+        v-if="authStore.isAdmin"
         to="/create-session"
-        class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+        class="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-sm text-sm font-medium"
       >
-        <Plus class="w-5 h-5 mr-2" />
+        <Plus class="w-4 h-4" />
         {{ t('dashboard.newSession') }}
       </router-link>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    <!-- Skeleton loading -->
+    <div v-if="loading" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="bg-white rounded-xl border border-gray-100 border-l-4 border-l-gray-200 p-4 animate-pulse"
+      >
+        <div class="flex justify-between mb-3">
+          <div class="h-5 bg-gray-200 rounded w-2/3" />
+          <div class="h-5 bg-gray-100 rounded-full w-16" />
+        </div>
+        <div class="h-4 bg-gray-100 rounded w-1/2 mb-4" />
+        <div class="flex gap-3">
+          <div class="h-4 bg-gray-100 rounded w-16" />
+          <div class="h-4 bg-gray-100 rounded w-20" />
+        </div>
+      </div>
     </div>
 
-    <div v-else-if="sessions.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
-      <p class="text-gray-500">{{ t('dashboard.noSessions') }}</p>
+    <!-- Empty -->
+    <div
+      v-else-if="sessions.length === 0"
+      class="text-center py-16 bg-white rounded-xl border border-gray-100"
+    >
+      <Calendar class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+      <p class="text-gray-400 font-medium">{{ t('dashboard.noSessions') }}</p>
     </div>
 
-    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Session cards -->
+    <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <router-link
         v-for="session in sessions"
         :key="session.id"
         :to="`/session/${session.id}`"
-        class="block bg-white rounded-lg shadow hover:shadow-md transition p-4 border border-gray-100"
+        class="block bg-white rounded-xl border border-gray-100 border-l-4 hover:shadow-md active:scale-[0.99] transition-all p-4"
+        :class="getStatusBorder(session.status)"
       >
-        <div class="flex justify-between items-start mb-2">
-          <h2 class="text-lg font-semibold text-gray-900">{{ session.title }}</h2>
+        <!-- Title + status badge -->
+        <div class="flex justify-between items-start gap-2 mb-1.5">
+          <h2 class="text-base font-semibold text-gray-900 leading-snug line-clamp-2">
+            {{ session.title }}
+          </h2>
           <span
-            :class="['px-2 py-1 text-xs font-medium rounded-full', getStatusColor(session.status)]"
+            class="flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full"
+            :class="getStatusColor(session.status)"
           >
             {{ getStatusLabel(session.status) }}
           </span>
         </div>
-        <p class="text-sm text-gray-600 mb-4 capitalize">
-          {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy', { locale: dateLocale }) }}
+
+        <!-- Date -->
+        <p class="text-sm text-gray-500 mb-3 flex items-center gap-1.5 capitalize">
+          <Calendar class="w-3.5 h-3.5 flex-shrink-0" />
+          {{ format(new Date(session.session_date), 'EEE, dd/MM/yyyy', { locale: dateLocale }) }}
         </p>
-        <div class="flex justify-between text-xs text-gray-500">
-          <span>{{ session.total_intervals }} {{ t('dashboard.intervals') }}</span>
-          <span>{{ session.total_registrations }} {{ t('dashboard.registrations') }}</span>
+
+        <!-- Stats row -->
+        <div class="flex items-center gap-3 text-xs text-gray-500">
+          <span class="flex items-center gap-1">
+            <Clock class="w-3.5 h-3.5" />
+            {{ session.total_intervals }} {{ t('dashboard.intervals') }}
+          </span>
+          <span class="flex items-center gap-1">
+            <Users class="w-3.5 h-3.5" />
+            {{ session.total_registrations }} {{ t('dashboard.registrations') }}
+          </span>
+          <span class="ml-auto flex items-center gap-1 font-medium text-gray-700">
+            {{ formatCurrency(session.court_fee_total + session.shuttle_fee_total) }}
+          </span>
         </div>
-        <div class="mt-4 flex items-center text-indigo-600 text-sm font-medium">
+
+        <!-- View link — desktop only (whole card is tappable on mobile) -->
+        <div class="hidden md:flex items-center mt-3 pt-3 border-t border-gray-50 text-indigo-600 text-xs font-medium">
           {{ t('dashboard.viewDetails') }}
-          <ChevronRight class="w-4 h-4 ml-1" />
+          <ChevronRight class="w-3.5 h-3.5 ml-0.5" />
         </div>
       </router-link>
     </div>
+
+    <!-- Mobile FAB -->
+    <router-link
+      v-if="authStore.isAdmin"
+      to="/create-session"
+      class="md:hidden fixed bottom-20 right-4 z-40 flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 active:scale-95 transition-all"
+      :title="t('dashboard.newSession')"
+    >
+      <Plus class="w-6 h-6" />
+    </router-link>
   </div>
 </template>
