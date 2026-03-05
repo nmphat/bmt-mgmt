@@ -4,9 +4,13 @@ import { Check, Loader2, X, AlertTriangle, Clock, Copy, Share2 } from 'lucide-vu
 import { getShortName, formatCurrency } from '@/utils/formatters'
 import { usePaymentPolling } from '@/composables/usePaymentPolling'
 import { useLangStore } from '@/stores/lang'
+import { useBankConfig } from '@/composables/useBankConfig'
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
+
+// Bank config — reads from DB, falls back to hardcoded TPBank
+const { activeBank } = useBankConfig()
 
 const props = defineProps<{
   // Generic Props to replace specific ones
@@ -45,14 +49,10 @@ const effectiveAmount = computed(
 )
 const effectiveIsOpen = computed(() => props.isOpen || props.show || false)
 
-// Bank Info
-const BANK_INFO_TP = { BANK_ID: 'TPB', ACCOUNT_NO: '10003392871', TEMPLATE: 'compact2' }
-const ACTIVE_BANK = BANK_INFO_TP
-
 // QR Generation
 const qrUrl = computed(() => {
   const addInfo = encodeURIComponent(`${effectiveCode.value}`)
-  return `https://img.vietqr.io/image/${ACTIVE_BANK.BANK_ID}-${ACTIVE_BANK.ACCOUNT_NO}-${ACTIVE_BANK.TEMPLATE}.png?amount=${effectiveAmount.value}&addInfo=${addInfo}`
+  return `https://img.vietqr.io/image/${activeBank.value.bank_id}-${activeBank.value.account_number}-${activeBank.value.template ?? 'compact2'}.png?amount=${effectiveAmount.value}&addInfo=${addInfo}`
 })
 
 // Polling

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { Share2, Copy, Check, Loader2, ArrowLeft } from 'lucide-vue-next'
 import { formatCurrency } from '@/utils/formatters'
 import { useLangStore } from '@/stores/lang'
+import { useBankConfig } from '@/composables/useBankConfig'
 import { ref } from 'vue'
 
 const route = useRoute()
@@ -13,13 +14,12 @@ const t = computed(() => langStore.t)
 const code = computed(() => (route.query.code as string) || '')
 const amount = computed(() => Number(route.query.amount) || 0)
 
-// Bank Info (Should ideally be shared/centralized)
-const BANK_INFO_TPB = { BANK_ID: 'TPB', ACCOUNT_NO: '10003392871', TEMPLATE: 'compact2' }
-const ACTIVE_BANK = BANK_INFO_TPB
+// Bank config — reads from DB, falls back to hardcoded TPBank
+const { activeBank } = useBankConfig()
 
 const qrUrl = computed(() => {
   const addInfo = encodeURIComponent(`${code.value}`)
-  return `https://img.vietqr.io/image/${ACTIVE_BANK.BANK_ID}-${ACTIVE_BANK.ACCOUNT_NO}-${ACTIVE_BANK.TEMPLATE}.png?amount=${amount.value}&addInfo=${addInfo}`
+  return `https://img.vietqr.io/image/${activeBank.value.bank_id}-${activeBank.value.account_number}-${activeBank.value.template ?? 'compact2'}.png?amount=${amount.value}&addInfo=${addInfo}`
 })
 
 const copied = ref(false)
