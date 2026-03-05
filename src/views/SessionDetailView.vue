@@ -335,8 +335,8 @@ const surplus = computed(() => {
 
   // Surplus = sum of rounding adjustments (CEIL to 1000đ per member)
   // = totalCollected - totalActualCosts (before rounding)
-  // Using costs array covers all cost types (court + shuttle + extra) in both
-  // price_per_hour mode and court_fee_total mode, without depending on session-level fields.
+  // Using costs array covers all cost types (court + shuttle + extra) without depending on
+  // session-level fields. Court cost = booking cost (price_per_hour) + court_fee_addon (Option C).
   const totalCollected = costs.value.reduce((sum, c) => sum + c.final_total, 0)
   const totalActual = costs.value.reduce(
     (sum, c) => sum + c.total_court_fee + c.total_shuttle_fee + c.total_extra_fee,

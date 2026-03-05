@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type { MemberSessionDetail, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
-import { ArrowLeft, CreditCard, QrCode } from 'lucide-vue-next'
+import { ArrowLeft, CreditCard, QrCode, CheckSquare } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import { useToast } from 'vue-toastification'
 import { format } from 'date-fns'
@@ -27,6 +27,36 @@ const showPaymentModal = ref(false)
 const selectedSnapshot = ref<any>(null) // using any to bypass type mismatch if needed, or cast
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
 const sessionIntervalsMap = ref<Record<string, string>>({}) // snapshot_id -> time string
+
+// ── Session selection for group QR ──────────────────────────────
+const selectedSnapshotIds = ref<string[]>([])
+
+const unpaidSessions = computed(() => sessions.value.filter((s) => s.status !== 'paid'))
+const hasSelection = computed(() => selectedSnapshotIds.value.length > 0)
+const allUnpaidSelected = computed(
+  () =>
+    unpaidSessions.value.length > 0 &&
+    unpaidSessions.value.every((s) => selectedSnapshotIds.value.includes(s.snapshot_id)),
+)
+const totalSelectedAmount = computed(() => {
+  return sessions.value
+    .filter((s) => selectedSnapshotIds.value.includes(s.snapshot_id))
+    .reduce((sum, s) => sum + (s.final_amount - s.paid_amount), 0)
+})
+
+function toggleSelectSession(snapshotId: string) {
+  const idx = selectedSnapshotIds.value.indexOf(snapshotId)
+  if (idx === -1) selectedSnapshotIds.value.push(snapshotId)
+  else selectedSnapshotIds.value.splice(idx, 1)
+}
+
+function toggleSelectAll() {
+  if (allUnpaidSelected.value) {
+    selectedSnapshotIds.value = []
+  } else {
+    selectedSnapshotIds.value = unpaidSessions.value.map((s) => s.snapshot_id)
+  }
+}
 
 async function fetchMemberDetails() {
   try {
@@ -154,13 +184,12 @@ async function fetchIntervalsForSessions(sessionsList: MemberSessionDetail[]) {
 
 async function handlePayAll() {
   try {
-    const unpaidSessions = sessions.value.filter((s) => s.status !== 'paid')
-    if (unpaidSessions.length === 0) {
+    if (unpaidSessions.value.length === 0) {
       toast.info(t.value('debt.noDebt'))
       return
     }
 
-    const ids = unpaidSessions.map((s) => s.snapshot_id)
+    const ids = unpaidSessions.value.map((s) => s.snapshot_id)
 
     const { data: groupData, error: rpcError } = await supabase.rpc('create_group_payment', {
       p_snapshot_ids: ids,
@@ -171,6 +200,23 @@ async function handlePayAll() {
     selectedGroupPayment.value = groupData
     selectedSnapshot.value = null
     showPaymentModal.value = true
+  } catch (error: any) {
+    console.error('Error creating group payment:', error)
+    toast.error(error.message)
+  }
+}
+
+async function handlePaySelected() {
+  if (selectedSnapshotIds.value.length === 0) return
+  try {
+    const { data: groupData, error: rpcError } = await supabase.rpc('create_group_payment', {
+      p_snapshot_ids: selectedSnapshotIds.value,
+    })
+    if (rpcError) throw rpcError
+    selectedGroupPayment.value = groupData
+    selectedSnapshot.value = null
+    showPaymentModal.value = true
+    selectedSnapshotIds.value = []
   } catch (error: any) {
     console.error('Error creating group payment:', error)
     toast.error(error.message)
@@ -279,16 +325,22 @@ onMounted(fetchMemberDetails)
             v-for="session in sessions"
             :key="session.snapshot_id"
             class="p-4 flex gap-3 items-start"
+            :class="{ 'bg-indigo-50/50': selectedSnapshotIds.includes(session.snapshot_id) }"
           >
-            <!-- Status dot -->
-            <div
-              class="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5"
-              :class="{
-                'bg-green-500': session.status === 'paid',
-                'bg-yellow-400': session.status === 'partial',
-                'bg-red-400': session.status === 'pending',
-              }"
-            />
+            <!-- Checkbox (unpaid only) or status dot -->
+            <div class="flex-shrink-0 mt-1">
+              <input
+                v-if="session.status !== 'paid'"
+                type="checkbox"
+                :checked="selectedSnapshotIds.includes(session.snapshot_id)"
+                @change="toggleSelectSession(session.snapshot_id)"
+                class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+              />
+              <div
+                v-else
+                class="w-2.5 h-2.5 rounded-full bg-green-500 mt-0.5"
+              />
+            </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
@@ -327,6 +379,17 @@ onMounted(fetchMemberDetails)
           <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
+              <!-- Select-all checkbox -->
+              <th scope="col" class="px-3 py-3 w-10">
+                <input
+                  v-if="unpaidSessions.length > 0"
+                  type="checkbox"
+                  :checked="allUnpaidSelected"
+                  @change="toggleSelectAll"
+                  class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  :title="allUnpaidSelected ? t('debt.clearSelection') : t('session.selectMembers')"
+                />
+              </th>
               <th
                 scope="col"
                 class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -378,7 +441,22 @@ onMounted(fetchMemberDetails)
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="session in sessions" :key="session.snapshot_id" class="hover:bg-gray-50">
+            <tr
+              v-for="session in sessions"
+              :key="session.snapshot_id"
+              class="hover:bg-gray-50 transition-colors"
+              :class="{ 'bg-indigo-50/50': selectedSnapshotIds.includes(session.snapshot_id) }"
+            >
+              <!-- Row checkbox -->
+              <td class="px-3 py-4 text-center">
+                <input
+                  v-if="session.status !== 'paid'"
+                  type="checkbox"
+                  :checked="selectedSnapshotIds.includes(session.snapshot_id)"
+                  @change="toggleSelectSession(session.snapshot_id)"
+                  class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                />
+              </td>
               <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
                   {{ session.session_title }}
@@ -451,5 +529,39 @@ onMounted(fetchMemberDetails)
       @close="showPaymentModal = false"
       @payment-complete="fetchMemberDetails"
     />
+
+    <!-- Floating group-QR action bar -->
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0 translate-y-4"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-4"
+    >
+      <div
+        v-if="hasSelection"
+        class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white rounded-full px-4 py-3 shadow-xl"
+      >
+        <CheckSquare class="w-4 h-4 text-indigo-400 shrink-0" />
+        <span class="text-sm font-medium whitespace-nowrap">
+          {{ t('debt.selectedCount', { count: selectedSnapshotIds.length }) }}
+          · {{ formatCurrency(totalSelectedAmount) }}
+        </span>
+        <button
+          @click="handlePaySelected"
+          class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-3 py-1.5 rounded-full transition"
+        >
+          <QrCode class="w-4 h-4" />
+          {{ t('debt.createGroupQR') }}
+        </button>
+        <button
+          @click="selectedSnapshotIds = []"
+          class="text-gray-400 hover:text-white text-xs px-2 py-1 rounded-full transition"
+        >
+          {{ t('debt.clearSelection') }}
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>

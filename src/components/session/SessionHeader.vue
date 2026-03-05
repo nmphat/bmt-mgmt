@@ -2,7 +2,17 @@
 import { ref, computed, watch } from 'vue'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
-import { ChevronLeft, Edit, X, Save, Lock, Loader2, Plus, Trash2, RefreshCcw } from 'lucide-vue-next'
+import {
+  ChevronLeft,
+  Edit,
+  X,
+  Save,
+  Lock,
+  Loader2,
+  Plus,
+  Trash2,
+  RefreshCcw,
+} from 'lucide-vue-next'
 import { useLangStore } from '@/stores/lang'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
@@ -33,6 +43,13 @@ const isEditingSession = ref(false)
 const isSavingSession = ref(false)
 const finalizeLoading = ref(false)
 
+/** True when the user has changed session start or end time in the edit form */
+const timesChanged = computed(
+  () =>
+    sessionForm.value.session_start !== toVNHHmm(props.session.start_time) ||
+    sessionForm.value.session_end !== toVNHHmm(props.session.end_time),
+)
+
 interface EditBookingSlot {
   id?: string
   court_name: string
@@ -40,10 +57,19 @@ interface EditBookingSlot {
   end_time: string
 }
 
+/** Convert ISO UTC string → "HH:mm" in Vietnam timezone (UTC+7) */
+function toVNHHmm(iso: string): string {
+  const vnMs = new Date(iso).getTime() + 7 * 3600 * 1000
+  return new Date(vnMs).toISOString().slice(11, 16)
+}
+
 const sessionForm = ref({
   title: props.session.title,
   status: props.session.status,
+  session_start: toVNHHmm(props.session.start_time), // HH:mm VN
+  session_end: toVNHHmm(props.session.end_time), // HH:mm VN
   price_per_hour: props.session.price_per_hour,
+  court_fee_addon: props.session.court_fee_addon ?? 0,
   shuttle_fee_total: props.session.shuttle_fee_total,
 })
 
@@ -56,7 +82,10 @@ watch(
       sessionForm.value = {
         title: s.title,
         status: s.status,
+        session_start: toVNHHmm(s.start_time),
+        session_end: toVNHHmm(s.end_time),
         price_per_hour: s.price_per_hour,
+        court_fee_addon: s.court_fee_addon ?? 0,
         shuttle_fee_total: s.shuttle_fee_total,
       }
     }
@@ -83,14 +112,19 @@ const totalCollected = computed(() => {
 
 function startEditing() {
   isEditingSession.value = true
+  // Use VN timezone (UTC+7) for time display, NOT browser local time
   editBookings.value = props.courtBookings.map((b) => ({
     id: b.id,
     court_name: b.court_name,
-    start_time: format(new Date(b.start_time), 'HH:mm'),
-    end_time: format(new Date(b.end_time), 'HH:mm'),
+    start_time: toVNHHmm(b.start_time),
+    end_time: toVNHHmm(b.end_time),
   }))
   if (editBookings.value.length === 0) {
-    editBookings.value.push({ court_name: 'Sân 1', start_time: '18:00', end_time: '20:00' })
+    editBookings.value.push({
+      court_name: 'Sân 1',
+      start_time: sessionForm.value.session_start,
+      end_time: sessionForm.value.session_end,
+    })
   }
 }
 
@@ -99,17 +133,20 @@ function cancelEditing() {
   sessionForm.value = {
     title: props.session.title,
     status: props.session.status,
+    session_start: toVNHHmm(props.session.start_time),
+    session_end: toVNHHmm(props.session.end_time),
     price_per_hour: props.session.price_per_hour,
+    court_fee_addon: props.session.court_fee_addon ?? 0,
     shuttle_fee_total: props.session.shuttle_fee_total,
   }
 }
 
 function addEditBooking() {
-  editBookings.value.push({
-    court_name: `Sân ${editBookings.value.length + 1}`,
-    start_time: '18:00',
-    end_time: '20:00',
-  })
+  const name = `Sân ${editBookings.value.length + 1}`
+  const start = sessionForm.value.session_start
+  const end = sessionForm.value.session_end
+  editBookings.value.push({ court_name: name, start_time: start, end_time: end })
+  toast.success(t.value('createSession.courtAdded', { name, start, end }))
 }
 
 function removeEditBooking(index: number) {
@@ -117,43 +154,106 @@ function removeEditBooking(index: number) {
   editBookings.value.splice(index, 1)
 }
 
+function isEditBookingOutOfBounds(booking: EditBookingSlot): boolean {
+  return (
+    booking.start_time < sessionForm.value.session_start ||
+    booking.end_time > sessionForm.value.session_end
+  )
+}
+
+function isEditBookingEndBeforeStart(booking: EditBookingSlot): boolean {
+  return booking.start_time >= booking.end_time
+}
+
+function validateEditBookingTime(index: number) {
+  const booking = editBookings.value[index]
+  if (!booking) return
+  if (booking.start_time >= booking.end_time) {
+    toast.error(t.value('createSession.courtEndTimeError'))
+    return
+  }
+  if (
+    booking.start_time < sessionForm.value.session_start ||
+    booking.end_time > sessionForm.value.session_end
+  ) {
+    toast.warning(t.value('createSession.courtTimeError'))
+  }
+}
+
 async function saveSession() {
   if (!authStore.isAuthenticated) return
+
+  // Validate session time
+  const sessionDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(
+    new Date(props.session.start_time),
+  )
+  const newStartUTC = new Date(`${sessionDate}T${sessionForm.value.session_start}:00+07:00`)
+  const newEndUTC = new Date(`${sessionDate}T${sessionForm.value.session_end}:00+07:00`)
+
+  if (newEndUTC <= newStartUTC) {
+    toast.error(t.value('createSession.endTimeError'))
+    return
+  }
+
+  // Validate court bookings are within session window
+  for (const b of editBookings.value) {
+    const bStart = new Date(`${sessionDate}T${b.start_time}:00+07:00`)
+    const bEnd = new Date(`${sessionDate}T${b.end_time}:00+07:00`)
+    if (bStart < newStartUTC || bEnd > newEndUTC || bStart >= bEnd) {
+      toast.error(t.value('createSession.courtTimeError'))
+      return
+    }
+  }
+
   try {
     isSavingSession.value = true
 
+    const timeChanged =
+      newStartUTC.getTime() !== new Date(props.session.start_time).getTime() ||
+      newEndUTC.getTime() !== new Date(props.session.end_time).getTime()
+
+    if (timeChanged) {
+      // Recreate intervals + update session start/end in one RPC
+      // (also calls refresh_interval_courts internally)
+      const { error: recreateErr } = await supabase.rpc('recreate_session_intervals', {
+        p_session_id: props.sessionId,
+        p_start_time: newStartUTC.toISOString(),
+        p_end_time: newEndUTC.toISOString(),
+      })
+      if (recreateErr) throw recreateErr
+    }
+
+    // Update session scalar fields
     const { error } = await supabase
       .from('sessions')
       .update({
         title: sessionForm.value.title,
         status: sessionForm.value.status,
         price_per_hour: sessionForm.value.price_per_hour,
+        court_fee_addon: sessionForm.value.court_fee_addon,
         shuttle_fee_total: sessionForm.value.shuttle_fee_total,
         updated_at: new Date().toISOString(),
       })
       .eq('id', props.sessionId)
     if (error) throw error
 
+    // Replace court bookings
     const { error: delErr } = await supabase
       .from('session_court_bookings')
       .delete()
       .eq('session_id', props.sessionId)
     if (delErr) throw delErr
 
-    const sessionDate =
-      props.session.session_date.split('T')[0] ||
-      format(new Date(props.session.session_date), 'yyyy-MM-dd')
-
     const newBookings = editBookings.value.map((b) => ({
       session_id: props.sessionId,
       court_name: b.court_name,
-      start_time: new Date(`${sessionDate}T${b.start_time}:00`).toISOString(),
-      end_time: new Date(`${sessionDate}T${b.end_time}:00`).toISOString(),
+      start_time: new Date(`${sessionDate}T${b.start_time}:00+07:00`).toISOString(),
+      end_time: new Date(`${sessionDate}T${b.end_time}:00+07:00`).toISOString(),
     }))
-
     const { error: insErr } = await supabase.from('session_court_bookings').insert(newBookings)
     if (insErr) throw insErr
 
+    // Always re-sync active_court_count (court booking times may have changed)
     await supabase.rpc('refresh_interval_courts', { p_session_id: props.sessionId })
 
     toast.success(t.value('toast.sessionUpdated'))
@@ -212,10 +312,7 @@ async function cancelSession() {
         <ChevronLeft class="w-4 h-4 mr-1" />
         {{ t('common.backToHome') }}
       </router-link>
-      <button
-        @click="$emit('refresh')"
-        class="p-2 text-gray-400 hover:text-indigo-600 transition"
-      >
+      <button @click="$emit('refresh')" class="p-2 text-gray-400 hover:text-indigo-600 transition">
         <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
       </button>
     </div>
@@ -231,7 +328,9 @@ async function cancelSession() {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="sm:col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('session.title') }}</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('session.title')
+          }}</label>
           <input
             v-model="sessionForm.title"
             type="text"
@@ -239,7 +338,38 @@ async function cancelSession() {
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('common.status') }}</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('createSession.startTime')
+          }}</label>
+          <input
+            v-model="sessionForm.session_start"
+            type="time"
+            class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('createSession.endTime')
+          }}</label>
+          <input
+            v-model="sessionForm.session_end"
+            type="time"
+            class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
+          />
+        </div>
+        <!-- Warning: changing session time clears attendance data -->
+        <div v-if="timesChanged" class="sm:col-span-2">
+          <div
+            class="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800"
+          >
+            <span class="mt-0.5">⚠️</span>
+            <span>{{ t('session.intervalsResetWarning') }}</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('common.status')
+          }}</label>
           <select
             v-model="sessionForm.status"
             class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
@@ -251,7 +381,9 @@ async function cancelSession() {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('session.pricePerHour') }}</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('session.pricePerHour')
+          }}</label>
           <input
             v-model.number="sessionForm.price_per_hour"
             type="number"
@@ -259,8 +391,22 @@ async function cancelSession() {
             class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
           />
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('session.courtFeeAddon')
+          }}</label>
+          <input
+            v-model.number="sessionForm.court_fee_addon"
+            type="number"
+            step="1000"
+            min="0"
+            class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
+          />
+        </div>
         <div class="sm:col-span-2 md:col-span-1">
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('session.shuttleFee') }}</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('session.shuttleFee')
+          }}</label>
           <input
             v-model.number="sessionForm.shuttle_fee_total"
             type="number"
@@ -268,6 +414,14 @@ async function cancelSession() {
             class="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2"
           />
         </div>
+      </div>
+      <!-- Warning: both cost sources active -->
+      <div
+        v-if="sessionForm.price_per_hour > 0 && sessionForm.court_fee_addon > 0"
+        class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800"
+      >
+        <span class="mt-0.5">⚠️</span>
+        <span>{{ t('session.courtFeeAddonWarning') }}</span>
       </div>
 
       <!-- Court Bookings -->
@@ -287,40 +441,64 @@ async function cancelSession() {
           <div
             v-for="(booking, index) in editBookings"
             :key="index"
-            class="flex items-end gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200"
+            class="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200"
           >
-            <div class="flex-1 min-w-0">
-              <label class="block text-xs text-gray-500 mb-1">{{ t('createSession.courtName') }}</label>
-              <input
-                v-model="booking.court_name"
-                type="text"
-                class="block w-full rounded-md border border-gray-300 text-sm px-3 py-1.5"
-              />
+            <div class="flex items-end gap-2">
+              <div class="flex-1 min-w-0">
+                <label class="block text-xs text-gray-500 mb-1">{{
+                  t('createSession.courtName')
+                }}</label>
+                <input
+                  v-model="booking.court_name"
+                  type="text"
+                  class="block w-full rounded-md border border-gray-300 text-sm px-3 py-1.5"
+                />
+              </div>
+              <div class="w-24">
+                <label class="block text-xs text-gray-500 mb-1">{{
+                  t('createSession.startTime')
+                }}</label>
+                <input
+                  v-model="booking.start_time"
+                  type="time"
+                  class="block w-full rounded-md border border-gray-300 text-sm px-2 py-1.5"
+                  @change="validateEditBookingTime(index)"
+                />
+              </div>
+              <div class="w-24">
+                <label class="block text-xs text-gray-500 mb-1">{{
+                  t('createSession.endTime')
+                }}</label>
+                <input
+                  v-model="booking.end_time"
+                  type="time"
+                  class="block w-full rounded-md border border-gray-300 text-sm px-2 py-1.5"
+                  @change="validateEditBookingTime(index)"
+                />
+              </div>
+              <button
+                type="button"
+                @click="removeEditBooking(index)"
+                :disabled="editBookings.length <= 1"
+                class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30"
+              >
+                <Trash2 class="w-4 h-4" />
+              </button>
             </div>
-            <div class="w-24">
-              <label class="block text-xs text-gray-500 mb-1">{{ t('createSession.startTime') }}</label>
-              <input
-                v-model="booking.start_time"
-                type="time"
-                class="block w-full rounded-md border border-gray-300 text-sm px-2 py-1.5"
-              />
-            </div>
-            <div class="w-24">
-              <label class="block text-xs text-gray-500 mb-1">{{ t('createSession.endTime') }}</label>
-              <input
-                v-model="booking.end_time"
-                type="time"
-                class="block w-full rounded-md border border-gray-300 text-sm px-2 py-1.5"
-              />
-            </div>
-            <button
-              type="button"
-              @click="removeEditBooking(index)"
-              :disabled="editBookings.length <= 1"
-              class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30"
+            <div
+              v-if="isEditBookingEndBeforeStart(booking)"
+              class="flex items-center gap-1.5 text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5"
             >
-              <Trash2 class="w-4 h-4" />
-            </button>
+              <span>&#x26A0;</span>
+              <span>{{ t('createSession.courtEndTimeError') }}</span>
+            </div>
+            <div
+              v-else-if="isEditBookingOutOfBounds(booking)"
+              class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5"
+            >
+              <span>&#x26A0;</span>
+              <span>{{ t('createSession.courtTimeError') }} ({{ sessionForm.session_start }} – {{ sessionForm.session_end }})</span>
+            </div>
           </div>
         </div>
       </div>
@@ -374,21 +552,39 @@ async function cancelSession() {
           <!-- Stats grid: responsive wrapping -->
           <div class="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-3 md:gap-6 text-sm">
             <div>
-              <span class="text-gray-500 block text-xs mb-0.5">{{ t('session.pricePerHour') }}</span>
-              <span class="font-semibold text-gray-900">{{ formatCurrency(session.price_per_hour) }}</span>
+              <span class="text-gray-500 block text-xs mb-0.5">{{
+                t('session.pricePerHour')
+              }}</span>
+              <span class="font-semibold text-gray-900">{{
+                formatCurrency(session.price_per_hour)
+              }}</span>
+            </div>
+            <div v-if="session.court_fee_addon > 0">
+              <span class="text-gray-500 block text-xs mb-0.5">{{
+                t('session.courtFeeAddon')
+              }}</span>
+              <span class="font-semibold text-gray-900">{{
+                formatCurrency(session.court_fee_addon)
+              }}</span>
             </div>
             <div>
-              <span class="text-gray-500 block text-xs mb-0.5">{{ t('session.courtBookings') }}</span>
+              <span class="text-gray-500 block text-xs mb-0.5">{{
+                t('session.courtBookings')
+              }}</span>
               <span class="font-semibold text-gray-900">
                 {{ courtBookings.length }} {{ t('session.courts') }}
               </span>
             </div>
             <div>
               <span class="text-gray-500 block text-xs mb-0.5">{{ t('session.shuttleFee') }}</span>
-              <span class="font-semibold text-gray-900">{{ formatCurrency(session.shuttle_fee_total) }}</span>
+              <span class="font-semibold text-gray-900">{{
+                formatCurrency(session.shuttle_fee_total)
+              }}</span>
             </div>
             <div v-if="session.status === 'waiting_for_payment' || session.status === 'done'">
-              <span class="text-indigo-600 block text-xs font-bold mb-0.5">{{ t('session.totalCollected') }}</span>
+              <span class="text-indigo-600 block text-xs font-bold mb-0.5">{{
+                t('session.totalCollected')
+              }}</span>
               <span class="font-bold text-indigo-700">{{ formatCurrency(totalCollected) }}</span>
             </div>
             <div>

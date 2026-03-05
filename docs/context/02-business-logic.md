@@ -22,21 +22,27 @@
 
 #### A. Tiền sân (court fee) — chia cho cả Ghost + Real
 
+**Option C — Additive model:** Tiền sân luôn là tổng của 2 nguồn cộng lại.
+
 ```
 Cho mỗi interval:
   denominator = real_present_count_in_interval + total_ghost_count
 
   Nếu member là Ghost HOẶC có mặt (is_present = true):
-    -- Mode chính (court_fee_total > 0):
-    court_cost_per_interval = (court_fee_total × active_court_count / total_court_units) / denominator
-    -- Fallback (court_fee_total = 0, dùng price_per_hour):
-    court_cost_per_interval = (price_per_hour / 2) × active_court_count / denominator
+    booking_cost = (price_per_hour / 2) × active_court_count / denominator
+    addon_cost   = (court_fee_addon × active_court_count / total_court_units) / denominator
+    court_cost_per_interval = booking_cost + addon_cost   ← luôn cộng cả 2
+
   Nếu không có mặt (và không phải ghost):
     court_cost_per_interval = 0
 ```
 
-> **Ưu tiên `court_fee_total`:** Hầu hết sessions đặt `court_fee_total` cố định (admin nhập thực tế). RPC dùng
-> `court_fee_total` khi > 0 (tương tự `shuttle_fee_total`), ngược lại fallback về `price_per_hour / 2 × courts`.
+| Sessions cũ  | `price_per_hour=0`, `court_fee_addon=300k`   | booking_cost=0, addon=300k → **300k** ✅       |
+| ------------ | -------------------------------------------- | --------------------------------------------- |
+| Sessions mới | `price_per_hour=120k/h`, `court_fee_addon=0` | booking_cost=đủ, addon=0 → **booking_cost** ✅ |
+| Mixed        | `price_per_hour>0`, `court_fee_addon>0`      | **cả hai cộng lại** (admin tự quản)           |
+
+> **`court_fee_addon`** (`sessions.court_fee_addon`): khoản phí sân cố định, chia đều theo weighted intervals.
 > **Ghost chịu tiền sân:** Đây là **feature có chủ đích** — người đăng ký nhưng không đến vẫn chiếm slot sân.
 
 #### B. Tiền cầu (shuttle fee) — chỉ chia cho Real attendees

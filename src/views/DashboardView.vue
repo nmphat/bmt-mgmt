@@ -17,6 +17,19 @@ const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 
 const sessions = ref<SessionSummary[]>([])
 const loading = ref(true)
+const statusFilter = ref<'all' | 'open' | 'waiting_for_payment' | 'done'>('all')
+
+const filteredSessions = computed(() => {
+  if (statusFilter.value === 'all') return sessions.value
+  return sessions.value.filter((s) => s.status === statusFilter.value)
+})
+
+const filterOptions = computed(() => [
+  { key: 'all',                  label: t.value('dashboard.filterAll') },
+  { key: 'open',                 label: t.value('dashboard.filterOpen') },
+  { key: 'waiting_for_payment',  label: t.value('dashboard.filterWaiting') },
+  { key: 'done',                 label: t.value('dashboard.filterDone') },
+])
 
 async function fetchSessions() {
   try {
@@ -78,6 +91,24 @@ onMounted(fetchSessions)
       </router-link>
     </div>
 
+    <!-- Filter pills -->
+    <div class="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-hide">
+      <button
+        v-for="opt in filterOptions"
+        :key="opt.key"
+        @click="statusFilter = opt.key as 'all' | 'open' | 'waiting_for_payment' | 'done'"
+        class="flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium transition-colors"
+        :class="statusFilter === opt.key
+          ? 'bg-indigo-600 text-white shadow-sm'
+          : 'bg-white border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600'"
+      >
+        {{ opt.label }}
+        <span v-if="opt.key !== 'all'" class="ml-1 opacity-75 text-xs">
+          ({{ sessions.filter(s => s.status === opt.key).length }})
+        </span>
+      </button>
+    </div>
+
     <!-- Skeleton loading -->
     <div v-if="loading" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div
@@ -97,7 +128,7 @@ onMounted(fetchSessions)
       </div>
     </div>
 
-    <!-- Empty -->
+    <!-- Empty (no sessions at all) -->
     <div
       v-else-if="sessions.length === 0"
       class="text-center py-16 bg-white rounded-xl border border-gray-100"
@@ -106,10 +137,19 @@ onMounted(fetchSessions)
       <p class="text-gray-400 font-medium">{{ t('dashboard.noSessions') }}</p>
     </div>
 
+    <!-- Empty (filter active) -->
+    <div
+      v-else-if="filteredSessions.length === 0"
+      class="text-center py-16 bg-white rounded-xl border border-gray-100"
+    >
+      <Calendar class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+      <p class="text-gray-400 font-medium">{{ t('dashboard.noSessionsFiltered') }}</p>
+    </div>
+
     <!-- Session cards -->
     <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <router-link
-        v-for="session in sessions"
+        v-for="session in filteredSessions"
         :key="session.id"
         :to="`/session/${session.id}`"
         class="block bg-white rounded-xl border border-gray-100 border-l-4 hover:shadow-md active:scale-[0.99] transition-all p-4"
@@ -145,7 +185,7 @@ onMounted(fetchSessions)
             {{ session.total_registrations }} {{ t('dashboard.registrations') }}
           </span>
           <span class="ml-auto flex items-center gap-1 font-medium text-gray-700">
-            {{ formatCurrency(session.court_fee_total + session.shuttle_fee_total) }}
+            {{ formatCurrency(session.total_court_cost + session.shuttle_fee_total) }}
           </span>
         </div>
 

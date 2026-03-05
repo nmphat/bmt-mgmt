@@ -2,13 +2,17 @@ export interface SessionSummary {
   id: string
   title: string
   status: 'open' | 'waiting_for_payment' | 'done' | 'cancelled'
-  session_date: string // ISO string
-  court_fee_total: number
+  start_time: string // ISO UTC timestamp
+  end_time: string // ISO UTC timestamp
+  session_date: string // date string (UTC date — use start_time for VN date calc)
+  court_fee_addon: number // fixed lump-sum added on top of booking cost
+  total_court_cost: number // computed: booking cost + court_fee_addon
   shuttle_fee_total: number
   price_per_hour: number
   default_court_count: number
   total_intervals: number
   total_registrations: number
+  total_collected: number
 }
 
 export interface MemberCost {
@@ -57,7 +61,6 @@ export interface Member {
   display_name: string
   role: 'admin' | 'member'
   is_active: boolean
-  is_permanent: boolean
 }
 
 export interface SessionRegistration {
@@ -128,11 +131,4 @@ export interface GroupPaymentData {
     name: string
     amount: number
   }[]
-}
-
-// Bank Config (Hardcode for now or fetch from DB)
-export const BANK_INFO = {
-  BANK_ID: 'TPB', // Example: MB, VCB, ACB
-  ACCOUNT_NO: '10003392871',
-  TEMPLATE: 'compact2',
 }
