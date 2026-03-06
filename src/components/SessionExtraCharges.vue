@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
@@ -31,6 +31,18 @@ const chargeForm = ref({
   amount: 0,
   note: '',
 })
+
+const allowedMemberIds = computed(() => new Set(props.members.map((m) => m.id)))
+
+watch(
+  () => props.members,
+  () => {
+    if (chargeForm.value.memberId && !allowedMemberIds.value.has(chargeForm.value.memberId)) {
+      chargeForm.value.memberId = ''
+    }
+  },
+  { deep: true },
+)
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -66,6 +78,10 @@ async function fetchCharges() {
 
 async function addCharge() {
   if (!chargeForm.value.memberId || chargeForm.value.amount === 0) return
+  if (!allowedMemberIds.value.has(chargeForm.value.memberId)) {
+    toast.error(t.value('toast.error', { message: t.value('session.registerError') }))
+    return
+  }
 
   try {
     submitting.value = true

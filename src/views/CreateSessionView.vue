@@ -122,7 +122,7 @@ async function createSession() {
       end_time: new Date(`${form.value.date}T${c.end}:00+07:00`).toISOString(),
     }))
 
-    const { error } = await supabase.rpc('create_session_with_bookings', {
+    const { data: createdSessionId, error } = await supabase.rpc('create_session_with_bookings', {
       p_title: form.value.title,
       p_start_time: new Date(startDateTime.value).toISOString(),
       p_end_time: new Date(endDateTime.value).toISOString(),
@@ -136,7 +136,15 @@ async function createSession() {
     if (error) throw error
 
     toast.success(t.value('toast.sessionCreated'))
-    router.push('/')
+    if (createdSessionId) {
+      await router.push({
+        name: 'session-detail',
+        params: { id: createdSessionId },
+        query: { openMemberDropdown: '1' },
+      })
+    } else {
+      await router.push('/')
+    }
   } catch (error: any) {
     console.error('Error creating session:', error)
     toast.error(error.message || t.value('session.updateError'))

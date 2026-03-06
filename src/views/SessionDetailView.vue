@@ -31,6 +31,7 @@ const langStore = useLangStore()
 const toast = useToast()
 const t = computed(() => langStore.t)
 const sessionId = route.params.id as string
+const shouldOpenMemberDropdown = computed(() => route.query.openMemberDropdown === '1')
 
 const session = ref<SessionSummary | null>(null)
 const intervals = ref<Interval[]>([])
@@ -75,6 +76,18 @@ const availableMembers = computed(() => {
   return allMembers.value
     .filter((m) => !registeredIds.has(m.id) && m.is_active)
     .sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+})
+
+const registeredMembers = computed(() => {
+  const memberMap = new Map<string, Member>()
+  for (const reg of registrations.value) {
+    if (reg.member) {
+      memberMap.set(reg.member_id, reg.member)
+    }
+  }
+  return Array.from(memberMap.values()).sort((a, b) =>
+    a.display_name.localeCompare(b.display_name, 'vi'),
+  )
 })
 
 async function fetchData(refreshCostsOnly = false) {
@@ -256,8 +269,19 @@ async function removeRegistration(memberId: string, name: string) {
 
     if (error) throw error
 
+    const { error: extraChargesError } = await supabase
+      .from('session_extra_charges')
+      .delete()
+      .eq('session_id', sessionId)
+      .eq('member_id', memberId)
+
+    if (extraChargesError) {
+      console.error('Error cleaning extra charges for removed member:', extraChargesError)
+    }
+
     toast.success(t.value('toast.registrationRemoved'))
     await fetchData(true)
+    await extraChargesRef.value?.fetchCharges()
   } catch (error: any) {
     toast.error(error.message || t.value('session.removeError'))
   }
@@ -515,6 +539,7 @@ onUnmounted(() => {
         :presence="presence"
         :availableMembers="availableMembers"
         :isRegistering="isRegistering"
+        :autoOpenMemberDropdown="shouldOpenMemberDropdown"
         @togglePresence="togglePresence"
         @toggleAbsent="toggleAbsent"
         @registerMembers="registerMembers"
@@ -533,7 +558,7 @@ onUnmounted(() => {
         v-if="session.status !== 'cancelled'"
         ref="extraChargesRef"
         :sessionId="sessionId"
-        :members="allMembers"
+        :members="registeredMembers"
         :isAdmin="authStore.isAuthenticated"
         :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
         @changed="handleExtraChargesChanged"

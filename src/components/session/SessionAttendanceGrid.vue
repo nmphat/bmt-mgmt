@@ -13,6 +13,7 @@ const props = defineProps<{
   presence: Record<string, Record<string, boolean>>
   availableMembers: Member[]
   isRegistering: boolean
+  autoOpenMemberDropdown?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -26,7 +27,7 @@ const langStore = useLangStore()
 const authStore = useAuthStore()
 const t = computed(() => langStore.t)
 
-const showMemberDropdown = ref(false)
+const showMemberDropdown = ref(props.autoOpenMemberDropdown ?? false)
 const selectedMemberIds = ref<string[]>([])
 const dropdownRef = ref<HTMLElement | null>(null)
 
