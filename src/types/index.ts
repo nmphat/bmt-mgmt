@@ -67,7 +67,6 @@ export interface SessionRegistration {
   id: string
   session_id: string
   member_id: string
-  is_registered_not_attended: boolean
   member?: Member
 }
 

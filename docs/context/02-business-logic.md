@@ -18,6 +18,8 @@
 | **Ghost member**  | Member đã đăng ký (`session_registrations`) nhưng `presence_count = 0` trong MỌI interval |
 | **Court unit**    | `SUM(active_court_count)` qua tất cả intervals của buổi                                   |
 
+> Nguồn sự thật attendance là `interval_presence`. Cờ `is_registered_not_attended` đã bị loại bỏ.
+
 ### Thuật toán tính tiền
 
 #### A. Tiền sân (court fee) — chia cho cả Ghost + Real

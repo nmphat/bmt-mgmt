@@ -108,10 +108,11 @@ WHERE interval_id = X AND member_id = Y
 
 **Presence matrix ở UI:** Bảng 2D `presence[memberId][intervalId] = boolean`
 
+> Không còn cờ `is_registered_not_attended` trong `session_registrations`. Toàn bộ logic vắng/có mặt dùng `interval_presence`.
+
 ### Ghost member tự động
 
-Sau khi tạo interval, member chưa có entry trong `interval_presence` → FE xử lý như `is_present = false`.  
-Ghost được detect trong RPC `calculate_session_costs` — xem `02-business-logic.md`.
+Member đăng ký nhưng `presence_count = 0` trong mọi interval sẽ được xem là Ghost bởi RPC `calculate_session_costs` — xem `02-business-logic.md`.
 
 ---
 

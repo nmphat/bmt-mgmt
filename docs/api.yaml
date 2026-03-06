@@ -39,9 +39,6 @@
                   { '$ref': '#/parameters/rowFilter.session_registrations.id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
-                  {
-                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
-                  },
                   { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
@@ -84,9 +81,6 @@
                   { '$ref': '#/parameters/rowFilter.session_registrations.id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
-                  {
-                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
-                  },
                   { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -100,9 +94,6 @@
                   { '$ref': '#/parameters/rowFilter.session_registrations.id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.session_id' },
                   { '$ref': '#/parameters/rowFilter.session_registrations.member_id' },
-                  {
-                    '$ref': '#/parameters/rowFilter.session_registrations.is_registered_not_attended',
-                  },
                   { '$ref': '#/parameters/rowFilter.session_registrations.created_at' },
                   { '$ref': '#/parameters/body.session_registrations' },
                   { '$ref': '#/parameters/preferReturn' },
@@ -237,11 +228,13 @@
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.session_id' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.session_title' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.start_time' },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.session_date' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.final_amount' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.court_fee_amount' },
                   {
                     '$ref': '#/parameters/rowFilter.view_member_session_details.shuttle_fee_amount',
                   },
+                  { '$ref': '#/parameters/rowFilter.view_member_session_details.extra_fee_amount' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.paid_amount' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.remaining_amount' },
                   { '$ref': '#/parameters/rowFilter.view_member_session_details.status' },
@@ -489,10 +482,14 @@
                   { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_addon' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_court_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_extra_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
@@ -538,10 +535,14 @@
                   { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_addon' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_court_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_extra_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -558,10 +559,14 @@
                   { '$ref': '#/parameters/rowFilter.view_session_summary.end_time' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.session_date' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.status' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.price_per_hour' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.court_fee_addon' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_court_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.shuttle_fee_total' },
-                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_extra_cost' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_registrations' },
+                  { '$ref': '#/parameters/rowFilter.view_session_summary.total_intervals' },
                   { '$ref': '#/parameters/rowFilter.view_session_summary.total_collected' },
                   { '$ref': '#/parameters/body.view_session_summary' },
                   { '$ref': '#/parameters/preferReturn' },
@@ -739,7 +744,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.title' },
                   { '$ref': '#/parameters/rowFilter.sessions.start_time' },
                   { '$ref': '#/parameters/rowFilter.sessions.end_time' },
-                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_addon' },
                   { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
                   { '$ref': '#/parameters/rowFilter.sessions.status' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
@@ -785,7 +790,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.title' },
                   { '$ref': '#/parameters/rowFilter.sessions.start_time' },
                   { '$ref': '#/parameters/rowFilter.sessions.end_time' },
-                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_addon' },
                   { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
                   { '$ref': '#/parameters/rowFilter.sessions.status' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
@@ -806,7 +811,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.title' },
                   { '$ref': '#/parameters/rowFilter.sessions.start_time' },
                   { '$ref': '#/parameters/rowFilter.sessions.end_time' },
-                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_total' },
+                  { '$ref': '#/parameters/rowFilter.sessions.court_fee_addon' },
                   { '$ref': '#/parameters/rowFilter.sessions.shuttle_fee_total' },
                   { '$ref': '#/parameters/rowFilter.sessions.status' },
                   { '$ref': '#/parameters/rowFilter.sessions.created_by' },
@@ -832,7 +837,6 @@
                   { '$ref': '#/parameters/rowFilter.members.display_name' },
                   { '$ref': '#/parameters/rowFilter.members.role' },
                   { '$ref': '#/parameters/rowFilter.members.is_active' },
-                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
                   { '$ref': '#/parameters/rowFilter.members.created_at' },
                   { '$ref': '#/parameters/rowFilter.members.updated_at' },
                   { '$ref': '#/parameters/select' },
@@ -874,7 +878,6 @@
                   { '$ref': '#/parameters/rowFilter.members.display_name' },
                   { '$ref': '#/parameters/rowFilter.members.role' },
                   { '$ref': '#/parameters/rowFilter.members.is_active' },
-                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
                   { '$ref': '#/parameters/rowFilter.members.created_at' },
                   { '$ref': '#/parameters/rowFilter.members.updated_at' },
                   { '$ref': '#/parameters/preferReturn' },
@@ -891,7 +894,6 @@
                   { '$ref': '#/parameters/rowFilter.members.display_name' },
                   { '$ref': '#/parameters/rowFilter.members.role' },
                   { '$ref': '#/parameters/rowFilter.members.is_active' },
-                  { '$ref': '#/parameters/rowFilter.members.is_permanent' },
                   { '$ref': '#/parameters/rowFilter.members.created_at' },
                   { '$ref': '#/parameters/rowFilter.members.updated_at' },
                   { '$ref': '#/parameters/body.members' },
@@ -1282,6 +1284,7 @@
                         'properties':
                           {
                             'p_bookings': { 'format': 'jsonb' },
+                            'p_court_fee_addon': { 'format': 'numeric', 'type': 'number' },
                             'p_created_by': { 'format': 'uuid', 'type': 'string' },
                             'p_end_time':
                               { 'format': 'timestamp with time zone', 'type': 'string' },
@@ -1378,6 +1381,39 @@
               'tags': ['(rpc) add_member_to_session_full_presence'],
             },
         },
+      '/rpc/remove_member_from_session':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_member_id': { 'format': 'uuid', 'type': 'string' },
+                            'p_session_id': { 'format': 'uuid', 'type': 'string' },
+                          },
+                        'required': ['p_session_id', 'p_member_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) remove_member_from_session'],
+            },
+        },
       '/rpc/calculate_session_costs':
         {
           'post':
@@ -1436,6 +1472,42 @@
               'tags': ['(rpc) finalize_session'],
             },
         },
+      '/rpc/recreate_session_intervals':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_end_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                            'p_session_id': { 'format': 'uuid', 'type': 'string' },
+                            'p_start_time':
+                              { 'format': 'timestamp with time zone', 'type': 'string' },
+                          },
+                        'required': ['p_session_id', 'p_start_time', 'p_end_time'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) recreate_session_intervals'],
+            },
+        },
     },
   'definitions':
     {
@@ -1447,24 +1519,22 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
-              'is_registered_not_attended':
-                { 'default': false, 'format': 'boolean', 'type': 'boolean' },
               'created_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
             },
@@ -1478,13 +1548,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1503,7 +1573,7 @@
             {
               'member_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1520,30 +1590,37 @@
             {
               'snapshot_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_title': { 'format': 'text', 'type': 'string' },
               'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
+              'session_date': { 'format': 'date', 'type': 'string' },
               'final_amount': { 'format': 'numeric', 'type': 'number' },
               'court_fee_amount': { 'format': 'numeric', 'type': 'number' },
               'shuttle_fee_amount': { 'format': 'numeric', 'type': 'number' },
+              'extra_fee_amount': { 'format': 'numeric', 'type': 'number' },
               'paid_amount': { 'format': 'numeric', 'type': 'number' },
               'remaining_amount': { 'format': 'numeric', 'type': 'number' },
-              'status': { 'format': 'text', 'type': 'string' },
+              'status':
+                {
+                  'enum': ['pending', 'partial', 'paid'],
+                  'format': 'public.payment_status',
+                  'type': 'string',
+                },
               'payment_code': { 'format': 'text', 'type': 'string' },
               'created_at': { 'format': 'timestamp with time zone', 'type': 'string' },
             },
@@ -1557,7 +1634,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1577,26 +1654,32 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'final_amount': { 'format': 'numeric', 'type': 'number' },
               'payment_code': { 'format': 'text', 'type': 'string' },
               'paid_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
-              'status': { 'default': 'pending', 'format': 'text', 'type': 'string' },
+              'status':
+                {
+                  'default': 'pending',
+                  'enum': ['pending', 'partial', 'paid'],
+                  'format': 'public.payment_status',
+                  'type': 'string',
+                },
               'created_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'court_fee_amount': { 'default': 0, 'format': 'numeric', 'type': 'number' },
@@ -1616,19 +1699,19 @@
               'is_present': { 'format': 'boolean', 'type': 'boolean' },
               'presence_id':
                 {
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'interval_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1641,7 +1724,7 @@
             {
               'id':
                 {
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1655,10 +1738,14 @@
                   'format': 'public.session_status',
                   'type': 'string',
                 },
-              'court_fee_total': { 'format': 'numeric', 'type': 'number' },
+              'price_per_hour': { 'format': 'numeric', 'type': 'number' },
+              'default_court_count': { 'format': 'integer', 'type': 'integer' },
+              'court_fee_addon': { 'format': 'numeric', 'type': 'number' },
+              'total_court_cost': { 'format': 'numeric', 'type': 'number' },
               'shuttle_fee_total': { 'format': 'numeric', 'type': 'number' },
-              'total_intervals': { 'format': 'bigint', 'type': 'integer' },
+              'total_extra_cost': { 'format': 'numeric', 'type': 'number' },
               'total_registrations': { 'format': 'bigint', 'type': 'integer' },
+              'total_intervals': { 'format': 'bigint', 'type': 'integer' },
               'total_collected': { 'format': 'numeric', 'type': 'number' },
             },
           'type': 'object',
@@ -1671,7 +1758,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1699,13 +1786,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'snapshot_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_costs_snapshot.id`.\u003Cfk table='session_costs_snapshot' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `session_costs_snapshot.id`.<fk table='session_costs_snapshot' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1726,14 +1813,14 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'title': { 'format': 'text', 'type': 'string' },
               'start_time': { 'format': 'timestamp with time zone', 'type': 'string' },
               'end_time': { 'format': 'timestamp with time zone', 'type': 'string' },
-              'court_fee_total': { 'default': 0, 'format': 'numeric', 'type': 'number' },
+              'court_fee_addon': { 'default': 0, 'format': 'numeric', 'type': 'number' },
               'shuttle_fee_total': { 'default': 0, 'format': 'numeric', 'type': 'number' },
               'status':
                 {
@@ -1760,7 +1847,7 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1774,7 +1861,6 @@
                   'type': 'string',
                 },
               'is_active': { 'default': true, 'format': 'boolean', 'type': 'boolean' },
-              'is_permanent': { 'default': false, 'format': 'boolean', 'type': 'boolean' },
               'created_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'updated_at':
@@ -1790,13 +1876,13 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1816,19 +1902,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'session_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.\u003Cfk table='sessions' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `sessions.id`.<fk table='sessions' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1847,19 +1933,19 @@
               'id':
                 {
                   'default': 'extensions.uuid_generate_v4()',
-                  'description': "Note:\nThis is a Primary Key.\u003Cpk/\u003E",
+                  'description': "Note:\nThis is a Primary Key.<pk/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'interval_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.\u003Cfk table='session_intervals' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `session_intervals.id`.<fk table='session_intervals' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
               'member_id':
                 {
-                  'description': "Note:\nThis is a Foreign Key to `members.id`.\u003Cfk table='members' column='id'/\u003E",
+                  'description': "Note:\nThis is a Foreign Key to `members.id`.<fk table='members' column='id'/>",
                   'format': 'uuid',
                   'type': 'string',
                 },
@@ -1985,13 +2071,6 @@
         { 'name': 'session_id', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.session_registrations.member_id':
         { 'name': 'member_id', 'required': false, 'in': 'query', 'type': 'string' },
-      'rowFilter.session_registrations.is_registered_not_attended':
-        {
-          'name': 'is_registered_not_attended',
-          'required': false,
-          'in': 'query',
-          'type': 'string',
-        },
       'rowFilter.session_registrations.created_at':
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'body.session_intervals':
@@ -2052,12 +2131,16 @@
         { 'name': 'session_title', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.start_time':
         { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.session_date':
+        { 'name': 'session_date', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.final_amount':
         { 'name': 'final_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.court_fee_amount':
         { 'name': 'court_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.shuttle_fee_amount':
         { 'name': 'shuttle_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_member_session_details.extra_fee_amount':
+        { 'name': 'extra_fee_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.paid_amount':
         { 'name': 'paid_amount', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_member_session_details.remaining_amount':
@@ -2162,14 +2245,22 @@
         { 'name': 'session_date', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_session_summary.status':
         { 'name': 'status', 'required': false, 'in': 'query', 'type': 'string' },
-      'rowFilter.view_session_summary.court_fee_total':
-        { 'name': 'court_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.price_per_hour':
+        { 'name': 'price_per_hour', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.default_court_count':
+        { 'name': 'default_court_count', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.court_fee_addon':
+        { 'name': 'court_fee_addon', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_court_cost':
+        { 'name': 'total_court_cost', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_session_summary.shuttle_fee_total':
         { 'name': 'shuttle_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
-      'rowFilter.view_session_summary.total_intervals':
-        { 'name': 'total_intervals', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_extra_cost':
+        { 'name': 'total_extra_cost', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_session_summary.total_registrations':
         { 'name': 'total_registrations', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.view_session_summary.total_intervals':
+        { 'name': 'total_intervals', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.view_session_summary.total_collected':
         { 'name': 'total_collected', 'required': false, 'in': 'query', 'type': 'string' },
       'body.group_payment_requests':
@@ -2231,8 +2322,8 @@
         { 'name': 'start_time', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.sessions.end_time':
         { 'name': 'end_time', 'required': false, 'in': 'query', 'type': 'string' },
-      'rowFilter.sessions.court_fee_total':
-        { 'name': 'court_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.court_fee_addon':
+        { 'name': 'court_fee_addon', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.sessions.shuttle_fee_total':
         { 'name': 'shuttle_fee_total', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.sessions.status':
@@ -2264,8 +2355,6 @@
         { 'name': 'role', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.members.is_active':
         { 'name': 'is_active', 'required': false, 'in': 'query', 'type': 'string' },
-      'rowFilter.members.is_permanent':
-        { 'name': 'is_permanent', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.members.created_at':
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.members.updated_at':

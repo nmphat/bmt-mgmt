@@ -333,27 +333,6 @@ async function togglePresence(memberId: string, intervalId: string) {
   }
 }
 
-async function toggleAbsent(reg: SessionRegistration) {
-  if (!authStore.isAuthenticated) return
-
-  const newValue = !reg.is_registered_not_attended
-
-  // Optimistic update
-  reg.is_registered_not_attended = newValue
-
-  const { error } = await supabase
-    .from('session_registrations')
-    .update({ is_registered_not_attended: newValue })
-    .eq('id', reg.id)
-
-  if (error) {
-    reg.is_registered_not_attended = !newValue
-    console.error('Error updating status:', error)
-  } else {
-    await fetchCosts()
-  }
-}
-
 const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
 
@@ -541,7 +520,6 @@ onUnmounted(() => {
         :isRegistering="isRegistering"
         :autoOpenMemberDropdown="shouldOpenMemberDropdown"
         @togglePresence="togglePresence"
-        @toggleAbsent="toggleAbsent"
         @registerMembers="registerMembers"
         @removeRegistration="removeRegistration"
       />

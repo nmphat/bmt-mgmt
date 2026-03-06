@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { format } from 'date-fns'
-import { UserX, UserPlus, Trash2, Loader2, ChevronLeft } from 'lucide-vue-next'
+import { UserPlus, Trash2, Loader2, ChevronLeft } from 'lucide-vue-next'
 import { useLangStore } from '@/stores/lang'
 import { useAuthStore } from '@/stores/auth'
 import type { SessionSummary, Interval, SessionRegistration, Member } from '@/types'
@@ -18,7 +18,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   togglePresence: [memberId: string, intervalId: string]
-  toggleAbsent: [reg: SessionRegistration]
   registerMembers: [memberIds: string[]]
   removeRegistration: [memberId: string, name: string]
 }>()
@@ -149,14 +148,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             >
               <span class="sr-only">{{ t('common.actions') }}</span>
             </th>
-            <!-- Absent column -->
-            <th
-              v-if="authStore.isAuthenticated && !isReadOnly"
-              scope="col"
-              class="px-2 py-3 w-14 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-            >
-              {{ t('session.absent') }}
-            </th>
             <!-- Interval columns -->
             <th
               v-for="interval in intervals"
@@ -174,21 +165,15 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           <tr
             v-for="reg in registrations"
             :key="reg.id"
-            :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
           >
             <!-- Sticky name cell -->
             <td
               class="sticky left-0 z-10 bg-white px-4 md:px-6 py-3 whitespace-nowrap text-sm md:text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
-              :class="{ 'bg-gray-50': reg.is_registered_not_attended }"
             >
               <div class="flex items-center gap-1">
                 <span class="truncate max-w-[90px] md:max-w-none">
                   {{ reg.member?.display_name }}
                 </span>
-                <span
-                  v-if="reg.is_registered_not_attended"
-                  class="text-xs text-red-500 italic shrink-0"
-                >({{ t('session.absent') }})</span>
               </div>
             </td>
 
@@ -206,21 +191,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
               </button>
             </td>
 
-            <!-- Absent toggle -->
-            <td
-              v-if="authStore.isAuthenticated && !isReadOnly"
-              class="px-2 py-3 text-center"
-            >
-              <button
-                @click="$emit('toggleAbsent', reg)"
-                class="text-gray-400 hover:text-red-600 transition focus:outline-none"
-                :class="{ 'text-red-600': reg.is_registered_not_attended }"
-                :title="t('session.markAbsentTooltip')"
-              >
-                <UserX class="w-5 h-5 mx-auto" />
-              </button>
-            </td>
-
             <!-- Presence cells -->
             <td
               v-for="interval in intervals"
@@ -233,7 +203,6 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                 @change="$emit('togglePresence', reg.member_id, interval.id)"
                 :disabled="
                   !authStore.isAuthenticated ||
-                  reg.is_registered_not_attended ||
                   isReadOnly
                 "
                 class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
