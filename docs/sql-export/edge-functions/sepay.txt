@@ -1,0 +1,126 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+console.info('SePay Webhook Server Started');
+
+Deno.serve(async (req: Request) => {
+  try {
+    // 1. CONFIG
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const sepayApiToken = Deno.env.get('SEPAY_API_TOKEN'); // Token bạn tự đặt trong SePay
+
+    // 2. CHECK AUTH (SePay gửi token trong Header Authorization hoặc bạn tự config)
+    // SePay cho phép bạn tự cấu hình header, giả sử bạn đặt header: "Authorization: Bearer <token>"
+    const authHeader = req.headers.get('Authorization');
+    if (sepayApiToken && authHeader !== `Apikey ${sepayApiToken}`) {
+       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+
+    // 3. PARSE BODY
+    const body = await req.json();
+    
+    // SePay có thể gửi 1 object (nếu tick chọn gửi từng giao dịch)
+    // Hoặc gửi mảng (nếu gộp). Code này xử lý trường hợp gửi từng giao dịch (Single mode - phổ biến nhất)
+    // Nếu SePay gửi mảng, bạn bọc đoạn dưới vào vòng lặp.
+    
+    // Chuẩn hóa thành mảng để dễ xử lý
+    const transactions = Array.isArray(body) ? body : [body];
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const logs: string[] = [];
+
+    for (const tx of transactions) {
+        // Lọc chỉ nhận tiền vào (transferType = 'in')
+        if (tx.transferType !== 'in') continue;
+
+        const content = (tx.content || '').toUpperCase(); // SePay dùng 'content'
+        const amount = Number(tx.transferAmount);         // SePay dùng 'transferAmount'
+        const tid = String(tx.referenceCode || tx.id);    // Mã tham chiếu
+
+        // --- LOGIC TÌM MÃ (REGEX) ---
+        // Tìm chuỗi CL hoặc GR theo sau là 6 ký tự.
+        // Nó sẽ khớp cả "CAULONG CL123456" lẫn "CL123456"
+        const match = content.match(/(CL|GR)[A-Z0-9]{6}/);
+
+        if (match) {
+            const paymentCode = match[0]; // VD: CL8F3A21 hoặc GR123456
+            console.log(`Found Code: ${paymentCode} | Amount: ${amount}`);
+
+            // A. Logic xử lý Single (CL) hoặc Group (GR)
+            if (paymentCode.startsWith('GR')) {
+                // ... Copy logic xử lý Group Payment ở bài trước vào đây ...
+                // (Tôi tóm tắt lại đoạn gọi DB cho gọn)
+                await handleGroupPayment(supabase, paymentCode, amount, tid, tx.content, logs);
+            } else {
+                // ... Logic xử lý Single Payment ...
+                await handleSinglePayment(supabase, paymentCode, amount, tid, tx.content, logs);
+            }
+        } else {
+            logs.push(`Ignored: No code found in content: ${content}`);
+        }
+    }
+
+    return new Response(JSON.stringify({ success: true, logs }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+});
+
+// --- HELPER FUNCTIONS (Để code gọn hơn) ---
+
+async function handleSinglePayment(supabase: any, code: string, amount: number, tid: string, raw: string, logs: string[]) {
+    const { data: snapshot } = await supabase.from('session_costs_snapshot').select('*').eq('payment_code', code).single();
+    if (!snapshot) return;
+
+    const { error } = await supabase.from('session_payments').insert({
+        snapshot_id: snapshot.id,
+        amount: amount,
+        transaction_id: tid,
+        raw_content: raw,
+        payment_method: 'transfer'
+    });
+
+    if (!error) {
+        const totalPaid = Number(snapshot.paid_amount || 0) + amount;
+        const status = totalPaid >= (Number(snapshot.final_amount) - 1000) ? 'paid' : 'partial';
+        await supabase.from('session_costs_snapshot').update({ paid_amount: totalPaid, status }).eq('id', snapshot.id);
+        logs.push(`Single Paid: ${code}`);
+    }
+}
+
+async function handleGroupPayment(supabase: any, code: string, amount: number, tid: string, raw: string, logs: string[]) {
+    const { data: groupReq } = await supabase.from('group_payment_requests').select('*').eq('group_code', code).single();
+    if (!groupReq) return;
+
+    const { data: snapshots } = await supabase.from('session_costs_snapshot').select('*').in('id', groupReq.snapshot_ids);
+    let remaining = amount;
+
+    for (const snap of snapshots || []) {
+        if (remaining <= 0) break;
+        const debt = Number(snap.final_amount) - Number(snap.paid_amount);
+        if (debt <= 0) continue;
+
+        const pay = Math.min(remaining, debt);
+        
+        await supabase.from('session_payments').insert({
+            snapshot_id: snap.id,
+            amount: pay,
+            transaction_id: `${tid}-${snap.id.substring(0,4)}`,
+            raw_content: raw,
+            note: `Group ${code}`,
+            payment_method: 'transfer'
+        });
+
+        const newPaid = Number(snap.paid_amount) + pay;
+        const status = newPaid >= (Number(snap.final_amount) - 1000) ? 'paid' : 'partial';
+        await supabase.from('session_costs_snapshot').update({ paid_amount: newPaid, status }).eq('id', snap.id);
+        
+        remaining -= pay;
+    }
+    logs.push(`Group Paid: ${code}`);
+}
