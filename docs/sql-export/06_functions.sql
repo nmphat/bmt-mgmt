@@ -54,11 +54,11 @@ CREATE OR REPLACE FUNCTION public.add_member_to_session_full_presence(p_session_
 AS $function$
 BEGIN
     -- 1. Đăng ký thành viên vào Session
-    -- Dùng ON CONFLICT để nếu có rồi thì update lại trạng thái, chưa có thì insert
-    INSERT INTO session_registrations (session_id, member_id, is_registered_not_attended)
-    VALUES (p_session_id, p_member_id, false)
+    -- Cột is_registered_not_attended đã bị loại bỏ, chỉ cần đảm bảo có registration row.
+    INSERT INTO session_registrations (session_id, member_id)
+    VALUES (p_session_id, p_member_id)
     ON CONFLICT (session_id, member_id) 
-    DO UPDATE SET is_registered_not_attended = false;
+    DO NOTHING;
 
     -- 2. Tick điểm danh (Present = True) cho TẤT CẢ interval của session này
     INSERT INTO interval_presence (interval_id, member_id, is_present)
@@ -78,11 +78,11 @@ AS $function$
 BEGIN
     -- 1. Batch Insert vào bảng Registration
     -- Dùng hàm unnest() để "bung" mảng ra thành các dòng dữ liệu
-    INSERT INTO session_registrations (session_id, member_id, is_registered_not_attended)
-    SELECT p_session_id, m_id, false
+    INSERT INTO session_registrations (session_id, member_id)
+    SELECT p_session_id, m_id
     FROM unnest(p_member_ids) AS m_id
     ON CONFLICT (session_id, member_id) 
-    DO UPDATE SET is_registered_not_attended = false;
+    DO NOTHING;
 
     -- 2. Batch Insert vào bảng Presence (Matrix bùng nổ)
     -- Tạo tổ hợp (Cross Join) giữa: Tất cả Intervals của Session x Tất cả Member vừa thêm
