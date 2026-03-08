@@ -37,3 +37,16 @@ This folder contains SQL files generated from your current Supabase database (`p
 - Transfer content must include code format:
   - `CLXXXXXX` for single payment
   - `GRXXXXXX` for group payment
+
+### code patterns
+
+![image](./img/cfg01.png)
+
+### webhook config
+
+![image](./img/cfg02.png)
+
+## for supase admin
+
+Step 1: create new user in `<project-ref>.supabase.co/auth/v1/admin/users` with email and password.
+Step 2: assign copy that user into `members` with role `admin`
