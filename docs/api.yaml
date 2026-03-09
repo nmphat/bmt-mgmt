@@ -669,6 +669,7 @@
                   { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
                   { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.note' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
                   { '$ref': '#/parameters/range' },
@@ -711,6 +712,7 @@
                   { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
                   { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.note' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
               'responses': { '204': { 'description': 'No Content' } },
@@ -727,6 +729,7 @@
                   { '$ref': '#/parameters/rowFilter.session_payments.raw_content' },
                   { '$ref': '#/parameters/rowFilter.session_payments.created_at' },
                   { '$ref': '#/parameters/rowFilter.session_payments.payment_method' },
+                  { '$ref': '#/parameters/rowFilter.session_payments.note' },
                   { '$ref': '#/parameters/body.session_payments' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -752,6 +755,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
                   { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.sessions.deleted_at' },
                   { '$ref': '#/parameters/select' },
                   { '$ref': '#/parameters/order' },
                   { '$ref': '#/parameters/range' },
@@ -798,6 +802,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
                   { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.sessions.deleted_at' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
               'responses': { '204': { 'description': 'No Content' } },
@@ -819,6 +824,7 @@
                   { '$ref': '#/parameters/rowFilter.sessions.updated_at' },
                   { '$ref': '#/parameters/rowFilter.sessions.price_per_hour' },
                   { '$ref': '#/parameters/rowFilter.sessions.default_court_count' },
+                  { '$ref': '#/parameters/rowFilter.sessions.deleted_at' },
                   { '$ref': '#/parameters/body.sessions' },
                   { '$ref': '#/parameters/preferReturn' },
                 ],
@@ -1131,6 +1137,35 @@
               'tags': ['interval_presence'],
             },
         },
+      '/rpc/gc_soft_deleted_sessions':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          { 'p_older_than': { 'format': 'interval', 'type': 'string' } },
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) gc_soft_deleted_sessions'],
+            },
+        },
       '/rpc/create_group_payment':
         {
           'post':
@@ -1233,6 +1268,43 @@
                 ],
               'responses': { '200': { 'description': 'OK' } },
               'tags': ['(rpc) batch_add_members_to_session'],
+            },
+        },
+      '/rpc/soft_delete_cancelled_sessions_bulk':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties':
+                          {
+                            'p_session_ids':
+                              {
+                                'format': 'uuid[]',
+                                'items': { 'type': 'string' },
+                                'type': 'array',
+                              },
+                          },
+                        'required': ['p_session_ids'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) soft_delete_cancelled_sessions_bulk'],
             },
         },
       '/rpc/add_manual_payment':
@@ -1441,6 +1513,64 @@
                 ],
               'responses': { '200': { 'description': 'OK' } },
               'tags': ['(rpc) calculate_session_costs'],
+            },
+        },
+      '/rpc/soft_delete_cancelled_session':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_session_id': { 'format': 'uuid', 'type': 'string' } },
+                        'required': ['p_session_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) soft_delete_cancelled_session'],
+            },
+        },
+      '/rpc/get_session_delete_impact':
+        {
+          'post':
+            {
+              'parameters':
+                [
+                  {
+                    'in': 'body',
+                    'name': 'args',
+                    'required': true,
+                    'schema':
+                      {
+                        'properties': { 'p_session_id': { 'format': 'uuid', 'type': 'string' } },
+                        'required': ['p_session_id'],
+                        'type': 'object',
+                      },
+                  },
+                  { '$ref': '#/parameters/preferParams' },
+                ],
+              'produces':
+                [
+                  'application/json',
+                  'application/vnd.pgrst.object+json;nulls=stripped',
+                  'application/vnd.pgrst.object+json',
+                ],
+              'responses': { '200': { 'description': 'OK' } },
+              'tags': ['(rpc) get_session_delete_impact'],
             },
         },
       '/rpc/finalize_session':
@@ -1802,6 +1932,7 @@
               'created_at':
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'payment_method': { 'default': 'transfer', 'format': 'text', 'type': 'string' },
+              'note': { 'format': 'text', 'type': 'string' },
             },
           'type': 'object',
         },
@@ -1836,6 +1967,7 @@
                 { 'default': 'now()', 'format': 'timestamp with time zone', 'type': 'string' },
               'price_per_hour': { 'default': 0, 'format': 'numeric', 'type': 'number' },
               'default_court_count': { 'default': 1, 'format': 'integer', 'type': 'integer' },
+              'deleted_at': { 'format': 'timestamp with time zone', 'type': 'string' },
             },
           'type': 'object',
         },
@@ -2307,6 +2439,8 @@
         { 'name': 'created_at', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.session_payments.payment_method':
         { 'name': 'payment_method', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.session_payments.note':
+        { 'name': 'note', 'required': false, 'in': 'query', 'type': 'string' },
       'body.sessions':
         {
           'name': 'sessions',
@@ -2338,6 +2472,8 @@
         { 'name': 'price_per_hour', 'required': false, 'in': 'query', 'type': 'string' },
       'rowFilter.sessions.default_court_count':
         { 'name': 'default_court_count', 'required': false, 'in': 'query', 'type': 'string' },
+      'rowFilter.sessions.deleted_at':
+        { 'name': 'deleted_at', 'required': false, 'in': 'query', 'type': 'string' },
       'body.members':
         {
           'name': 'members',

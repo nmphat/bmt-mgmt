@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type {
   SessionSummary,
@@ -26,6 +26,7 @@ import { useToast } from 'vue-toastification'
 import type { CostSnapshot } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const langStore = useLangStore()
 const toast = useToast()
@@ -68,6 +69,17 @@ const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
 const isFetching = ref(false)
 
+interface SessionDeleteImpact {
+  session_id: string
+  registrations_count: number
+  intervals_count: number
+  presence_count: number
+  court_bookings_count: number
+  extra_charges_count: number
+  snapshots_count: number
+  payments_count: number
+}
+
 
 let realtimeChannel: RealtimeChannel | null = null
 
@@ -103,7 +115,14 @@ async function fetchData(refreshCostsOnly = false) {
       .eq('id', sessionId)
       .single()
 
-    if (sessionError) throw sessionError
+    if (sessionError) {
+      if (sessionError.code === 'PGRST116') {
+        toast.error(t.value('session.sessionDeletedOrNotFound'))
+        router.replace('/sessions')
+        return
+      }
+      throw sessionError
+    }
     session.value = sessionData
 
     if (!refreshCostsOnly) {
@@ -284,6 +303,55 @@ async function removeRegistration(memberId: string, name: string) {
     await extraChargesRef.value?.fetchCharges()
   } catch (error: any) {
     toast.error(error.message || t.value('session.removeError'))
+  }
+}
+
+function buildDeleteImpactMessage(impact: SessionDeleteImpact) {
+  return [
+    t.value('session.deleteImpactTitle'),
+    `- ${t.value('session.deleteImpactRegistrations')}: ${impact.registrations_count}`,
+    `- ${t.value('session.deleteImpactIntervals')}: ${impact.intervals_count}`,
+    `- ${t.value('session.deleteImpactPresence')}: ${impact.presence_count}`,
+    `- ${t.value('session.deleteImpactBookings')}: ${impact.court_bookings_count}`,
+    `- ${t.value('session.deleteImpactExtraCharges')}: ${impact.extra_charges_count}`,
+    `- ${t.value('session.deleteImpactSnapshots')}: ${impact.snapshots_count}`,
+    `- ${t.value('session.deleteImpactPayments')}: ${impact.payments_count}`,
+    '',
+    t.value('session.deleteStepOneConfirm'),
+  ].join('\n')
+}
+
+async function deleteCancelledSession() {
+  if (!authStore.isAuthenticated) return
+  if (!session.value || session.value.status !== 'cancelled') return
+
+  try {
+    const { data: impactData, error: impactError } = await supabase.rpc('get_session_delete_impact', {
+      p_session_id: sessionId,
+    })
+
+    if (impactError) throw impactError
+
+    const impact = (Array.isArray(impactData) ? impactData[0] : impactData) as
+      | SessionDeleteImpact
+      | null
+
+    if (!impact) {
+      throw new Error(t.value('session.deleteImpactLoadError'))
+    }
+
+    if (!confirm(buildDeleteImpactMessage(impact))) return
+    if (!confirm(t.value('session.deleteStepTwoConfirm'))) return
+
+    const { error } = await supabase.rpc('soft_delete_cancelled_session', {
+      p_session_id: sessionId,
+    })
+    if (error) throw error
+
+    toast.success(t.value('toast.sessionDeleted'))
+    router.push('/sessions')
+  } catch (error: any) {
+    toast.error(error.message || t.value('session.deleteError'))
   }
 }
 
@@ -492,6 +560,7 @@ onUnmounted(() => {
         :loading="loading"
         @dataChanged="fetchData()"
         @refresh="fetchData()"
+        @deleteRequested="deleteCancelledSession"
       />
       <!-- Cancelled Banner -->
       <div v-if="session.status === 'cancelled'" class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded-r-md">

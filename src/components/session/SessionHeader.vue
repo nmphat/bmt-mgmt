@@ -31,6 +31,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   dataChanged: []
   refresh: []
+  deleteRequested: []
 }>()
 
 const langStore = useLangStore()
@@ -606,16 +607,26 @@ async function cancelSession() {
 
         <!-- Right: action buttons (desktop inline, mobile stacked below) -->
         <div
-          v-if="authStore.isAuthenticated && session.status === 'open'"
+          v-if="authStore.isAuthenticated && (session.status === 'open' || session.status === 'cancelled')"
           class="flex flex-row md:flex-col gap-2 md:shrink-0"
         >
           <button
+            v-if="session.status === 'cancelled'"
+            @click="$emit('deleteRequested')"
+            class="flex-1 md:flex-none flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-medium"
+          >
+            <Trash2 class="w-4 h-4 mr-1.5" />
+            {{ t('session.deleteCancelledSession') }}
+          </button>
+          <button
+            v-if="session.status === 'open'"
             @click="cancelSession"
             class="flex-1 md:flex-none flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition text-sm font-medium"
           >
             🚫 {{ t('session.cancelSession') }}
           </button>
           <button
+            v-if="session.status === 'open'"
             @click="finalizeSession"
             :disabled="finalizeLoading"
             class="flex-1 md:flex-none flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-sm font-medium disabled:opacity-50"
