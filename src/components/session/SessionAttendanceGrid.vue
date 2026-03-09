@@ -34,7 +34,9 @@ const formatTime = (iso: string) => format(new Date(iso), 'HH:mm')
 
 const isReadOnly = computed(
   () =>
-    props.session.status === 'waiting_for_payment' || props.session.status === 'done',
+    props.session.status === 'waiting_for_payment' ||
+    props.session.status === 'done' ||
+    props.session.status === 'cancelled',
 )
 
 function handleClickOutside(e: MouseEvent) {

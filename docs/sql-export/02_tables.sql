@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS public.sessions (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   price_per_hour numeric DEFAULT 0,
-  default_court_count integer DEFAULT 1
+  default_court_count integer DEFAULT 1,
+  deleted_at timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS public.session_intervals (

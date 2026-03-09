@@ -9,16 +9,18 @@ CREATE OR REPLACE VIEW public.view_attendance_log AS  SELECT s.title AS session_
    FROM (((interval_presence p
      JOIN session_intervals i ON ((i.id = p.interval_id)))
      JOIN sessions s ON ((s.id = i.session_id)))
-     JOIN members m ON ((m.id = p.member_id)));
+               JOIN members m ON ((m.id = p.member_id)))
+       WHERE (s.deleted_at IS NULL);
 
 CREATE OR REPLACE VIEW public.view_member_debt_summary AS  SELECT m.id AS member_id,
     m.display_name,
     m.user_id AS auth_user_id,
     count(scs.id) AS unpaid_session_count,
     sum((scs.final_amount - scs.paid_amount)) AS total_debt
-   FROM (session_costs_snapshot scs
-     JOIN members m ON ((m.id = scs.member_id)))
-  WHERE (scs.status <> 'paid'::payment_status)
+       FROM ((session_costs_snapshot scs
+         JOIN members m ON ((m.id = scs.member_id)))
+         JOIN sessions s ON ((s.id = scs.session_id)))
+  WHERE ((scs.status <> 'paid'::payment_status) AND (s.deleted_at IS NULL))
   GROUP BY m.id, m.display_name, m.user_id
  HAVING (sum((scs.final_amount - scs.paid_amount)) > (0)::numeric);
 
@@ -37,8 +39,9 @@ CREATE OR REPLACE VIEW public.view_member_session_details AS  SELECT scs.id AS s
     scs.status,
     scs.payment_code,
     scs.created_at
-   FROM (session_costs_snapshot scs
-     JOIN sessions s ON ((s.id = scs.session_id)));
+        FROM (session_costs_snapshot scs
+               JOIN sessions s ON ((s.id = scs.session_id)))
+       WHERE (s.deleted_at IS NULL);
 
 CREATE OR REPLACE VIEW public.view_session_summary AS  SELECT id,
     title,
@@ -65,4 +68,5 @@ CREATE OR REPLACE VIEW public.view_session_summary AS  SELECT id,
     COALESCE(( SELECT sum(sc.paid_amount) AS sum
            FROM session_costs_snapshot sc
           WHERE (sc.session_id = s.id)), (0)::numeric) AS total_collected
-   FROM sessions s;
+       FROM sessions s
+  WHERE (s.deleted_at IS NULL);
