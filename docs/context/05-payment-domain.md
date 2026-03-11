@@ -46,15 +46,10 @@ https://img.vietqr.io/image/{BANK_ID}-{ACCOUNT_NO}-{TEMPLATE}.png
   &addInfo={payment_code}  ← payment_code là "nội dung chuyển khoản"
 ```
 
-**Config hiện tại (hardcode ở FE):**
+**Config hiện tại:** FE đọc bank từ bảng `bank_config` qua `src/composables/useBankConfig.ts`.
 
-```typescript
-BANK_ID: 'TPB'           // TPBank
-ACCOUNT_NO: '10003392871'
-TEMPLATE: 'compact2'
-```
-
-> ⚠️ Config đang duplicate ở 2 nơi: `src/types/index.ts (BANK_INFO)` và `PaymentView.vue + PaymentQRModal.vue`
+- `activeBank` = bản ghi `is_active=true`
+- Nếu bảng rỗng hoặc query lỗi, fallback về TPBank hardcoded để không block luồng thanh toán
 
 ---
 
@@ -181,7 +176,7 @@ Khi `sessions.status != 'open'`. Raise EXCEPTION nếu vi phạm.
 - Hiển thị QR VietQR với đúng amount và nội dung chuyển khoản
 - Copy code vào clipboard
 - Share via Web Share API (cả QR image nếu browser hỗ trợ)
-- Polling real-time trạng thái thanh toán (dùng `check_qr_status` trực tiếp trong view, không qua composable tại đây — chỉ hiển thị thụ động)
+- Hiện tại `PaymentView` chủ yếu là trang share/public QR tĩnh. Polling trạng thái thanh toán đang được dùng chủ yếu trong `PaymentQRModal` qua `usePaymentPolling`.
 
 ---
 

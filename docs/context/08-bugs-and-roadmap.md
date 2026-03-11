@@ -7,7 +7,10 @@
 ## Trạng thái hiện tại (March 2026)
 
 - ✅ **Hoạt động ổn:** Auto-detect thanh toán từ QR (banking webhook + polling)
-- ✅ **Fixed:** Tính tiền sân sai (BUG-001 — court_fee_total thay vì price_per_hour)
+- ✅ **Fixed:** Tính tiền sân sai (BUG-001 — lệch logic trước khi có `court_fee_addon` additive model)
+- ✅ **Fixed:** `bank_config` đã có dữ liệu + FE có `useBankConfig` fallback
+- ✅ **Fixed:** `session_costs_snapshot.status` đã migrate sang enum `payment_status`
+- ✅ **Fixed:** `members.is_permanent` đã được remove
 - 🔧 **Đang rework:** Trang Create Session
 - ❌ **Bugs đã biết:** Mobile layout vỡ
 
@@ -20,15 +23,13 @@
 **Mô tả:** Sau khi update tính năng `active_court_count` theo từng interval (weighted) và thêm `session_extra_charges`, kết quả tính tiền bị sai.
 
 **Nguyên nhân gốc rễ (đã xác định):**
-RPC `calculate_session_costs` tính tiền sân từ `price_per_hour` thay vì `court_fee_total`. Hầu hết
-các session thực tế đặt `price_per_hour = 0` và nhập tổng tiền sân vào `court_fee_total`, khiến
-tiền sân luôn trả về 0 sau khi refactor.
+Trước khi chuẩn hóa sang mô hình `court_fee_addon`, RPC `calculate_session_costs` từng tính lệch do
+chỉ dựa vào `price_per_hour` ở một số case dữ liệu cũ.
 
-**Fix đã áp dụng (migration `fix_calculate_session_costs_court_fee_v2`):**
+**Fix đã áp dụng (chuẩn hiện tại):**
 
-- Khi `court_fee_total > 0`: phân bổ theo `court_fee_total × courts_in_interval / total_court_units`
-  (giống cách tính `shuttle_fee_total`) — đây là mode chính cho tất cả sessions thực tế
-- Khi `court_fee_total = 0`: fallback về `price_per_hour / 2 × courts` (hỗ trợ sessions kiểu cũ)
+- Dùng additive model: `booking_cost (price_per_hour)` + `court_fee_addon` theo weighted interval
+- Giữ fallback hợp lý khi `total_court_units = 0` để tránh lỗi chia 0
 - Ghost member, weighted intervals, extra charges: tất cả đều đúng
 
 **Verified:** So sánh RPC output với snapshots hiện có → discrepancy = 0 cho tất cả members.
@@ -67,41 +68,25 @@ tiền sân luôn trả về 0 sau khi refactor.
 
 ---
 
-### 🟡 BUG-004: `bank_config` bảng rỗng, hardcode bank info
+### 🟡 DEBT-004: Cần siết quyền thao tác admin ở một số UI path
 
-**Mô tả:** Thông tin ngân hàng (TPBank, số TK) đang hardcode ở 3 nơi trong FE.
-
-**Vị trí:** `src/types/index.ts`, `PaymentView.vue`, `PaymentQRModal.vue`
+**Mô tả:** Có chỗ dùng điều kiện `isAuthenticated` thay vì `isAdmin` cho thao tác nhạy cảm trên UI.
 
 **Cần làm:**
 
-- [ ] Tạo 1 constant/composable trung tâm cho BANK_INFO
-- [ ] Hoặc populate `bank_config` table và fetch từ DB
+- [ ] Rà toàn bộ action button theo chuẩn `authStore.isAdmin`
+- [ ] Bổ sung test regression cho matrix quyền admin/member/guest
 
 ---
 
-### 🟡 BUG-005: `snapshot.status` là `text` thay vì enum
+### 🟡 DEBT-005: Docs/API snapshot có độ trễ so với DB thật
 
-**Mô tả:** Field `session_costs_snapshot.status` dùng `text` ('pending'/'partial'/'paid') thay vì Postgres enum → dễ typo.
+**Mô tả:** Một số tài liệu từng lag sau các migration lớn (`payment_status`, `bank_config`, soft-delete).
 
 **Cần làm:**
 
-- [ ] Migration: tạo enum `payment_status` và alter column
-
----
-
-### 🟢 DEBT-001: `is_permanent` field chưa dùng
-
-**Mô tả:** `members.is_permanent` tồn tại nhưng không có logic nào dùng đến.
-
-**Quyết định:** Xóa khỏi `members` table và khỏi `Member` interface trong FE.
-
----
-
-### 🟢 DEBT-002: Leftover boilerplate
-
-- `src/stores/counter.ts` — boilerplate Vite, chưa xóa
-- `console.log('supabase', supabase)` trong `src/lib/supabase.ts`
+- [ ] Thêm checklist "update docs" ngay sau mỗi migration/RPC change
+- [ ] Cân nhắc xuất lại `docs/api.yaml` định kỳ
 
 ---
 
@@ -114,15 +99,14 @@ tiền sân luôn trả về 0 sau khi refactor.
 | **Responsive bảng**                    | Horizontal scroll + ẩn cột trên mobile | Tất cả views có table         |
 | **Checkbox chọn buổi** ở `/member/:id` | Chọn N buổi → tạo group QR             | `MemberDetailView.vue`        |
 | **Filter status** ở Dashboard          | Lọc open/waiting/done                  | `DashboardView.vue`           |
-| **Fix tính tiền**                      | Verify và fix BUG-001                  | RPC `calculate_session_costs` |
-| **Centralize BANK_INFO**               | Xóa duplicate                          | `types/index.ts`, Modals      |
+| **Quyền admin ở UI actions**           | Chặn member/guest bấm action nhạy cảm  | `SessionDetailView.vue`, components/session/* |
+| **Docs sync automation nhẹ**           | Chuẩn hóa quy trình update docs sau migration | `docs/context/*`        |
 
 ### P2 — Quan trọng nhưng không khẩn
 
 | Feature                                    | Mô tả                                              |
 | ------------------------------------------ | -------------------------------------------------- |
 | **Create Session rework**                  | Form mới theo design target ở `07-ui-ux-design.md` |
-| **Bottom nav bar**                         | Thay top nav bằng bottom nav (mobile-first)        |
 | **Member có thể xem session đã finalized** | Access control: non-auth xem status != 'open'      |
 | **Quick action "Tạo buổi"** ở Home         | Button nổi bật trên home page                      |
 | **Search session** trên Dashboard          | Tìm theo tên hoặc ngày                             |
@@ -135,8 +119,7 @@ tiền sân luôn trả về 0 sau khi refactor.
 | **Thông báo Zalo/Push** | Thông báo khi session mở, khi có tiền vào |
 | **Thống kê**            | Biểu đồ tần suất, tiền theo tháng         |
 | **Recurring session**   | Tạo lịch định kỳ (mỗi thứ 3)              |
-| **`bank_config` từ DB** | Fetch bank info thay vì hardcode          |
-| **Enum migration**      | `payment_status` enum thay vì text        |
+| **Docs/API CI check**   | Cảnh báo khi schema thay đổi nhưng docs chưa cập nhật |
 
 ---
 

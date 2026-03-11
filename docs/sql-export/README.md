@@ -19,6 +19,16 @@ This folder contains SQL files generated from your current Supabase database (`p
 - This bundle recreates only `public` schema objects (no seed data).
 - `auth.users` data is not included. Your friend needs to create users separately.
 - Edge Functions are not included in SQL. Deploy them separately (`casso-webhook`, `sepay-webhook`).
+- Current schema expects:
+  - enum `payment_status` for `session_costs_snapshot.status`
+  - column `sessions.deleted_at` for soft-delete flow
+  - column `session_payments.note` for manual-payment notes
+
+## Post-import sanity check
+
+- Verify `bank_config` has at least 1 active row (`is_active = true`) or FE will use fallback bank data.
+- Verify RPCs exist: `soft_delete_cancelled_session`, `soft_delete_cancelled_sessions_bulk`, `get_session_delete_impact`, `gc_soft_deleted_sessions`.
+- Verify Edge Functions are `ACTIVE` and `verify_jwt=false` for external webhooks.
 
 ## Webhook and SePay Setup
 

@@ -63,6 +63,7 @@ App mount → authStore.initialize()
 | Session Detail | `/session/:id`    | ❌ Public     | ❌     |
 | Members List   | `/members`        | ❌ Public     | ❌     |
 | Member Detail  | `/member/:id`     | ❌ Public     | ❌     |
+| Profile        | `/profile`        | ❌ Public     | ❌     |
 | **Payment**    | `/pay`            | ❌ **Public** | ❌     |
 
 > `/pay` là trang **public không cần login** — member/khách quét QR và thanh toán mà không cần tài khoản.

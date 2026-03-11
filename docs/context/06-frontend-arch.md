@@ -12,7 +12,7 @@
 | TypeScript         | strict                     | Type safety                    |
 | Vite               |                            | Build tool, dev server         |
 | Pinia              |                            | State management               |
-| Vue Router 4       |                            | Routing + guards               |
+| Vue Router         | v5.x                       | Routing + guards               |
 | Tailwind CSS       | v4 (via @tailwindcss/vite) | Styling                        |
 | Supabase JS        |                            | DB client, auth, realtime      |
 | date-fns           |                            | Date formatting (vi/en locale) |
@@ -28,7 +28,7 @@
 ```
 src/
 ├── main.ts                    # App entry, init Pinia + Router + app mount
-├── App.vue                    # Root: AppHeader + RouterView
+├── App.vue                    # Root: AppHeader + RouterView + BottomNav
 │
 ├── views/                     # Page-level components (1:1 với routes)
 │   ├── HomePage.vue            # / — Bảng nợ tổng hợp (HomeDebtTable)
@@ -38,10 +38,12 @@ src/
 │   ├── MemberView.vue          # /members — Danh sách thành viên
 │   ├── MemberDetailView.vue    # /member/:id — Lịch sử nợ của 1 member
 │   ├── PaymentView.vue         # /pay — Trang QR public (không cần login)
-│   └── LoginView.vue           # /login — Login form
+│   ├── LoginView.vue           # /login — Login form
+│   └── ProfileView.vue         # /profile — Profile + bank config management
 │
 ├── components/                # Shared/reusable components
 │   ├── AppHeader.vue           # Navigation bar, auth state, lang switch
+│   ├── BottomNav.vue           # Bottom tabs cho mobile
 │   ├── HomeDebtTable.vue       # Bảng tổng hợp nợ tất cả member
 │   ├── PaymentQRModal.vue      # Modal QR + polling (single & group)
 │   ├── ManualPaymentModal.vue  # Modal confirm manual payment
@@ -49,18 +51,18 @@ src/
 │   └── SessionExtraCharges.vue  # Component quản lý phụ phí trong session
 │
 ├── composables/
-│   └── usePaymentPolling.ts   # Polling logic cho QR status
+│   ├── usePaymentPolling.ts   # Polling logic cho QR status
+│   └── useBankConfig.ts       # Bank config từ DB + fallback
 │
 ├── stores/
 │   ├── auth.ts                # user, profile, isAdmin — xem 03-auth-and-roles.md
-│   ├── lang.ts                # currentLang, t() function (custom i18n)
-│   └── counter.ts             # Boilerplate (chưa dùng, có thể xóa)
+│   └── lang.ts                # currentLang, t() function (custom i18n)
 │
 ├── lib/
 │   └── supabase.ts            # Singleton supabase client
 │
 ├── types/
-│   └── index.ts               # Tất cả TypeScript interfaces + BANK_INFO constant
+│   └── index.ts               # Tất cả TypeScript interfaces
 │
 ├── utils/
 │   ├── formatters.ts          # formatCurrency(), getShortName()
@@ -114,10 +116,10 @@ setLang(lang: 'vi' | 'en')
 
 ## Navigation Structure
 
-**Target:** Bottom nav bar (mobile-first). **Hiện tại** đang dùng top nav — cần refactor.
+**Hiện tại:** App dùng đồng thời `AppHeader` + `BottomNav`.
 
 ```
-Bottom Nav tabs (target):
+Bottom Nav tabs (current):
   🏠 Home (/),  📅 Sessions (/sessions — admin only),  👥 Members (/members)
   👤 Login / Profile (top-right corner, không nằm trong bottom nav)
 ```
@@ -135,6 +137,7 @@ Bottom Nav tabs (target):
 | `members`        | `/members`        | ❌        | ❌          | Tất cả — admin thấy thêm action buttons                                                      |
 | `member-detail`  | `/member/:id`     | ❌        | ❌          | Tất cả — member tự xem của mình                                                              |
 | `payment`        | `/pay`            | ❌        | ❌          | **Public** — bất kỳ ai có link                                                               |
+| `profile`        | `/profile`        | ❌        | ❌          | Public route; UI phân nhánh theo trạng thái đăng nhập                                         |
 | `login`          | `/login`          | ❌        | ❌          | Tất cả                                                                                       |
 
 > **Content-based access** (không phải route-based): Một số trang accessible với tất cả, nhưng nội dung hiển thị khác nhau tùy `isAdmin` và `isAuthenticated`.
@@ -151,6 +154,8 @@ export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 ```
+
+Ngoài ra project có custom auth lock + custom visibility handler để tránh lỗi pending API sau khi alt-tab.
 
 **Sử dụng trực tiếp trong views/components** (không qua store riêng cho data).  
 Pattern: mỗi view tự fetch data cần thiết, không có global data store.
@@ -225,13 +230,7 @@ Các interface chính:
 | `GroupPaymentData`    | Output của `create_group_payment()`    |
 | `CourtBooking`        | `session_court_bookings`               |
 
-**Constant:**
-
-```typescript
-export const BANK_INFO = { BANK_ID: 'TPB', ACCOUNT_NO: '10003392871', TEMPLATE: 'compact2' }
-```
-
-> ⚠️ Đang bị duplicate trong `PaymentView.vue` và `PaymentQRModal.vue`. Nên refactor về 1 nguồn.
+**Bank config source:** `useBankConfig()` đọc từ `bank_config` (DB) và fallback cứng nếu cần.
 
 ---
 

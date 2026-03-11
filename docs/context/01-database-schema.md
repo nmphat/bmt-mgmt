@@ -45,7 +45,6 @@ Danh sách thành viên CLB. Liên kết với `auth.users` qua `user_id`.
 | `display_name` | text        | NO       |                    | Tên hiển thị             |
 | `role`         | user_role   | YES      | 'member'           | Enum: admin / member     |
 | `is_active`    | boolean     | YES      | true               | Có đang hoạt động không  |
-| `is_permanent` | boolean     | YES      | false              | **⚠️ Dư thừa, chưa dùng** |
 | `created_at`   | timestamptz | YES      | now()              |                          |
 | `updated_at`   | timestamptz | YES      | now()              |                          |
 
@@ -63,18 +62,19 @@ Mỗi row là 1 buổi đánh cầu lông.
 | `end_time`            | timestamptz    | NO       |                    | Giờ kết thúc                    |
 | `price_per_hour`      | numeric        | YES      | 0                  | Giá sân mỗi giờ (VND)           |
 | `default_court_count` | integer        | YES      | 1                  | Số sân mặc định                 |
-| `court_fee_total`     | numeric        | YES      | 0                  | Tổng tiền sân (có thể override) |
+| `court_fee_addon`     | numeric        | YES      | 0                  | Phụ phí sân cố định (cộng thêm theo weighted intervals) |
 | `shuttle_fee_total`   | numeric        | YES      | 0                  | Tổng tiền cầu cho buổi          |
 | `status`              | session_status | YES      | 'open'             | Enum — xem §Enums               |
 | `created_by`          | uuid           | YES      |                    | FK → auth.users.id              |
 | `created_at`          | timestamptz    | YES      | now()              |                                 |
 | `updated_at`          | timestamptz    | YES      | now()              |                                 |
+| `deleted_at`          | timestamptz    | YES      |                    | Soft-delete timestamp cho session đã hủy |
 
 ---
 
 ### `session_intervals`
 
-Mỗi row là 1 khung thời gian (~30 phút) trong buổi. Admin tạo thủ công.
+Mỗi row là 1 khung thời gian (~30 phút) trong buổi. Được tạo tự động khi tạo session.
 
 | Column               | Type        | Nullable | Default            | Ghi chú                              |
 | -------------------- | ----------- | -------- | ------------------ | ------------------------------------ |
@@ -147,7 +147,7 @@ Kết quả tính tiền đã được "lock". Mỗi row = chi phí của 1 memb
 | `extra_fee_amount`   | numeric     | YES      | 0                  | Phần phụ phí                                       |
 | `paid_amount`        | numeric     | YES      | 0                  | Đã trả bao nhiêu                                   |
 | `payment_code`       | text        | YES      |                    | UNIQUE. Prefix: CL... (single)                     |
-| `status`             | text        | YES      | 'pending'          | **⚠️ text (không phải enum)**: pending/partial/paid |
+| `status`             | payment_status | YES   | 'pending'          | Enum: pending/partial/paid |
 | `created_at`         | timestamptz | YES      | now()              |                                                    |
 
 **Derived:**
@@ -168,6 +168,7 @@ Log từng lần thanh toán thực tế (mỗi transaction = 1 row).
 | `transaction_id` | text        | YES      |                    | UNIQUE. ID từ ngân hàng        |
 | `raw_content`    | text        | YES      |                    | Raw data từ webhook ngân hàng  |
 | `payment_method` | text        | YES      | 'transfer'         | Phương thức thanh toán         |
+| `note`           | text        | YES      |                    | Ghi chú cho manual payment     |
 | `created_at`     | timestamptz | YES      | now()              |                                |
 
 ---
@@ -190,16 +191,7 @@ QR group — gom nhiều snapshot thành 1 mã thanh toán.
 
 ### `bank_config`
 
-Config ngân hàng. **Hiện tại bảng này RỖNG.**  
-Thông tin ngân hàng đang hardcode ở FE trong `src/types/index.ts`:
-
-```typescript
-export const BANK_INFO = {
-  BANK_ID: 'TPB',         // TPBank
-  ACCOUNT_NO: '10003392871',
-  TEMPLATE: 'compact2',
-}
-```
+Config ngân hàng cho VietQR. FE đọc từ bảng này qua composable `useBankConfig()` và dùng fallback cứng khi cần.
 
 | Column           | Type    | Nullable | Ghi chú             |
 | ---------------- | ------- | -------- | ------------------- |
@@ -234,6 +226,9 @@ CREATE TYPE session_status AS ENUM ('open', 'waiting_for_payment', 'done', 'canc
 
 -- user_role  
 CREATE TYPE user_role AS ENUM ('admin', 'member');
+
+-- payment_status
+CREATE TYPE payment_status AS ENUM ('pending', 'partial', 'paid');
 ```
 
 ---
@@ -246,10 +241,12 @@ Tổng hợp số liệu cho từng session (dùng ở Dashboard).
 
 **Computed columns:**
 
-- `total_court_cost` — tính từ `session_intervals.active_court_count × price_per_hour/2`
+- `total_court_cost` — tính từ booking cost (`active_court_count × price_per_hour/2`) + `court_fee_addon`
 - `total_extra_cost` — SUM từ `session_extra_charges`
-- `total_members` — COUNT từ `session_registrations`
+- `total_registrations` — COUNT từ `session_registrations`
 - `total_collected` — SUM paid_amount từ `session_costs_snapshot`
+
+> Các views summary/debt/details đều lọc `sessions.deleted_at IS NULL` để ẩn session đã soft-delete.
 
 ### `view_member_session_details`
 

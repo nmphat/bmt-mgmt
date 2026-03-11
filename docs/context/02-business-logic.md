@@ -76,7 +76,7 @@ final_total = CEIL((court_fee + shuttle_fee + extra_fee) / 1000) × 1000
 ### Ví dụ tính toán
 
 ```
-Buổi: court_fee_total = 300.000đ, shuttle_fee_total = 120.000đ
+Buổi: price_per_hour = 0, court_fee_addon = 300.000đ, shuttle_fee_total = 120.000đ
 2 intervals: interval 1 active_court_count=2, interval 2 active_court_count=1
 total_court_units = 3
 
@@ -159,7 +159,8 @@ SELECT
   status, price_per_hour,
   
   -- Tổng chi phí sân (tính lại từ intervals)
-  COALESCE(SUM(si.active_court_count × price_per_hour/2)) AS total_court_cost,
+  COALESCE(SUM(si.active_court_count × price_per_hour/2), 0)
+    + COALESCE(court_fee_addon, 0) AS total_court_cost,
   
   shuttle_fee_total,
   
@@ -167,7 +168,7 @@ SELECT
   COALESCE(SUM(ex.amount)) AS total_extra_cost,
   
   -- Số thành viên đã đăng ký
-  COUNT(r.id) AS total_members,
+  COUNT(r.id) AS total_registrations,
   
   -- Tổng tiền đã thu được
   COALESCE(SUM(sc.paid_amount)) AS total_collected
@@ -217,6 +218,11 @@ JOIN sessions s ON s.id = scs.session_id
 | `check_qr_status`                     | p_code                                                       | jsonb   | Polling status — xem §trên                           |
 | `add_manual_payment`                  | p_snapshot_id, p_amount, p_note                              | void    | Confirm thanh toán thủ công                          |
 | `refresh_interval_courts`             | p_session_id                                                 | void    | Recalculate active_court_count từ court bookings     |
+| `recreate_session_intervals`          | p_session_id                                                 | void    | Xóa/tạo lại intervals 30p theo giờ session hiện tại  |
+| `get_session_delete_impact`           | p_session_id                                                 | TABLE   | Preview số records sẽ bị dọn khi xóa session hủy     |
+| `soft_delete_cancelled_session`       | p_session_id                                                 | jsonb   | Xóa dữ liệu liên quan rồi đánh dấu deleted_at         |
+| `soft_delete_cancelled_sessions_bulk` | p_session_ids[]                                              | TABLE   | Bulk soft-delete tối đa 50 sessions / lần gọi        |
+| `gc_soft_deleted_sessions`            | p_older_than interval                                        | integer | Cron cleanup hard-delete session đã soft-delete cũ    |
 
 ### Triggers (Functions + Trigger)
 

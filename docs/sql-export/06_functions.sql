@@ -6,47 +6,57 @@ DECLARE
     v_final_amount NUMERIC;
     v_current_paid NUMERIC;
     v_new_paid NUMERIC;
-    v_new_status TEXT;
 BEGIN
+    IF p_snapshot_id IS NULL THEN
+        RAISE EXCEPTION 'p_snapshot_id is required';
+    END IF;
+
+    IF p_amount IS NULL OR p_amount <= 0 THEN
+        RAISE EXCEPTION 'p_amount must be > 0';
+    END IF;
+
     -- 1. Lấy thông tin hiện tại của khoản nợ
-    SELECT final_amount, paid_amount 
+    SELECT final_amount, paid_amount
     INTO v_final_amount, v_current_paid
     FROM session_costs_snapshot
-    WHERE id = p_snapshot_id;
+    WHERE id = p_snapshot_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Snapshot not found: %', p_snapshot_id;
+    END IF;
 
     -- 2. Insert vào bảng Payments
-    -- Tự sinh transaction_id để không bị trùng (CASH + Time)
     INSERT INTO session_payments (
         snapshot_id,
         amount,
         transaction_id,
         raw_content,
-        payment_method -- Cần đảm bảo bảng session_payments có cột này, nếu chưa thì mặc định hiểu là cash
+        payment_method,
+        note
     )
     VALUES (
         p_snapshot_id,
         p_amount,
-        'CASH-' || floor(extract(epoch from now())), -- VD: CASH-1701234567
+        'CASH-' || to_char(clock_timestamp(), 'YYYYMMDDHH24MISSMS') || '-' || substr(md5(random()::text), 1, 6),
         p_note,
-        'cash' -- Nếu bạn chưa tạo cột payment_method thì bỏ dòng này đi, ghi vào note là được
+        'cash',
+        p_note
     );
 
     -- 3. Cập nhật lại Snapshot
     v_new_paid := COALESCE(v_current_paid, 0) + p_amount;
-    
-    IF v_new_paid >= v_final_amount THEN
-        v_new_status := 'paid';
-    ELSE
-        v_new_status := 'partial';
-    END IF;
 
     UPDATE session_costs_snapshot
-    SET 
+    SET
         paid_amount = v_new_paid,
-        status = v_new_status
+        status = CASE
+            WHEN v_new_paid >= v_final_amount THEN 'paid'::public.payment_status
+            ELSE 'partial'::public.payment_status
+        END
     WHERE id = p_snapshot_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.add_member_to_session_full_presence(p_session_id uuid, p_member_id uuid)
  RETURNS void
