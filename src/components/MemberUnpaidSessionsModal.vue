@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { X, Calendar, Banknote, ChevronRight } from 'lucide-vue-next'
 import { useLangStore } from '@/stores/lang'
 import { format } from 'date-fns'
@@ -11,10 +11,42 @@ const props = defineProps<{
   snapshots: any[]
 }>()
 
-const emit = defineEmits(['close', 'select-snapshot'])
+const emit = defineEmits<{
+  (e: 'close'): void
+  (e: 'select-snapshot', snapshot: any): void
+  (
+    e: 'batch-manual-payment',
+    payload: { snapshotIds: string[]; amount: number; note: string },
+  ): void
+}>()
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
 const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
+
+const selectedSnapshotIds = ref<string[]>([])
+const batchNote = ref('')
+
+const selectedSnapshots = computed(() =>
+  props.snapshots.filter((s) => selectedSnapshotIds.value.includes(s.id)),
+)
+
+const selectedRemainingTotal = computed(() =>
+  selectedSnapshots.value.reduce((sum, s) => sum + (s.final_amount - s.paid_amount), 0),
+)
+
+const computedBatchAmount = computed(() => selectedRemainingTotal.value)
+
+const canSubmitBatch = computed(() => selectedSnapshotIds.value.length > 0 && computedBatchAmount.value > 0)
+
+watch(
+  () => props.show,
+  (show) => {
+    if (!show) return
+    // Default to all unpaid sessions of this member when opening the modal.
+    selectedSnapshotIds.value = props.snapshots.map((s) => s.id)
+    batchNote.value = t.value('payment.cash')
+  },
+)
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
@@ -26,6 +58,24 @@ const formatCurrency = (value: number) => {
 
 function handleSelect(snapshot: any) {
   emit('select-snapshot', snapshot)
+}
+
+function toggleSnapshot(snapshotId: string) {
+  const idx = selectedSnapshotIds.value.indexOf(snapshotId)
+  if (idx === -1) {
+    selectedSnapshotIds.value.push(snapshotId)
+  } else {
+    selectedSnapshotIds.value.splice(idx, 1)
+  }
+}
+
+function handleBatchManualPayment() {
+  if (!canSubmitBatch.value) return
+  emit('batch-manual-payment', {
+    snapshotIds: [...selectedSnapshotIds.value],
+    amount: computedBatchAmount.value,
+    note: batchNote.value || t.value('payment.cash'),
+  })
 }
 </script>
 
@@ -71,10 +121,17 @@ function handleSelect(snapshot: any) {
             <div
               v-for="snapshot in snapshots"
               :key="snapshot.id"
-              class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
-              @click="handleSelect(snapshot)"
+              class="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-md transition-all"
             >
               <div class="flex justify-between items-center">
+                <div class="mr-3 flex-shrink-0" @click.stop>
+                  <input
+                    type="checkbox"
+                    :checked="selectedSnapshotIds.includes(snapshot.id)"
+                    @change="toggleSnapshot(snapshot.id)"
+                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </div>
                 <div class="flex-1 min-w-0 pr-4">
                   <h4 class="text-base font-bold text-gray-900 truncate">
                     {{ snapshot.sessions?.title }}
@@ -99,9 +156,13 @@ function handleSelect(snapshot: any) {
                       {{ t('debt.remaining') }}
                     </div>
                   </div>
-                  <ChevronRight
-                    class="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition"
-                  />
+                  <button
+                    @click="handleSelect(snapshot)"
+                    class="p-1 rounded hover:bg-indigo-50"
+                    :title="t('payment.cashPay')"
+                  >
+                    <ChevronRight class="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition" />
+                  </button>
                 </div>
               </div>
 
@@ -115,6 +176,46 @@ function handleSelect(snapshot: any) {
                 </span>
               </div>
             </div>
+          </div>
+
+          <div v-if="selectedSnapshotIds.length > 0" class="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-indigo-900">
+                {{ t('payment.batchSelectedCount', { count: selectedSnapshotIds.length }) }}
+              </span>
+              <span class="text-sm font-bold text-indigo-700">
+                {{ formatCurrency(selectedRemainingTotal) }}
+              </span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ t('payment.batchAmountCollected') }}</label>
+              <input
+                :value="computedBatchAmount"
+                type="number"
+                readonly
+                class="w-full rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ t('payment.note') }}</label>
+              <input
+                v-model="batchNote"
+                type="text"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+
+            <button
+              type="button"
+              :disabled="!canSubmitBatch"
+              @click="handleBatchManualPayment"
+              class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-4 py-2.5 bg-green-600 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              <Banknote class="w-4 h-4 mr-2" />
+              {{ t('payment.confirmBatchPayment') }}
+            </button>
           </div>
         </div>
 

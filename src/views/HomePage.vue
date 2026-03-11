@@ -122,6 +122,65 @@ function handleSelectSnapshot(snapshot: any) {
   showManualModal.value = true
 }
 
+async function handleBatchManualPayment(payload: {
+  snapshotIds: string[]
+  amount: number
+  note: string
+}) {
+  if (!payload.snapshotIds.length) return
+  if (payload.amount <= 0) {
+    toast.error(t.value('payment.amountPositiveError'))
+    return
+  }
+
+  try {
+    loading.value = true
+
+    // Keep original list order shown in modal and allocate from top to bottom.
+    const selected = selectedMemberSnapshots.value.filter((s) => payload.snapshotIds.includes(s.id))
+    let remaining = payload.amount
+    let successCount = 0
+
+    for (const snapshot of selected) {
+      if (remaining <= 0) break
+
+      const debt = Math.max(0, (snapshot.final_amount || 0) - (snapshot.paid_amount || 0))
+      if (debt <= 0) continue
+
+      const payAmount = Math.min(debt, remaining)
+
+      const { error } = await supabase.rpc('add_manual_payment', {
+        p_snapshot_id: snapshot.id,
+        p_amount: payAmount,
+        p_note: payload.note,
+      })
+
+      if (error) throw error
+
+      remaining -= payAmount
+      successCount += 1
+    }
+
+    if (successCount === 0) {
+      toast.info(t.value('debt.noDebt'))
+      return
+    }
+
+    if (remaining > 0) {
+      toast.info(t.value('payment.batchUnallocatedAmount', { amount: remaining.toLocaleString('vi-VN') }))
+    }
+
+    toast.success(t.value('payment.batchManualPaymentSuccess', { count: successCount }))
+    showCashUnpaidModal.value = false
+    await handlePaymentComplete()
+  } catch (error: any) {
+    console.error('Error adding batch manual payment:', error)
+    toast.error(t.value('toast.error', { message: error.message }))
+  } finally {
+    loading.value = false
+  }
+}
+
 async function createPaymentForMembers(memberIds: string[]) {
   try {
     // 1. Get all unpaid snapshot IDs for these members with details
@@ -235,6 +294,7 @@ onMounted(fetchDebts)
       :snapshots="selectedMemberSnapshots"
       @close="showCashUnpaidModal = false"
       @select-snapshot="handleSelectSnapshot"
+      @batch-manual-payment="handleBatchManualPayment"
     />
 
     <ManualPaymentModal
