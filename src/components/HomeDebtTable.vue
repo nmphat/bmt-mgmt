@@ -5,6 +5,7 @@ import { useLangStore } from '@/stores/lang'
 import { QrCode, Banknote, ChevronDown, ChevronUp } from 'lucide-vue-next'
 import { getShortName } from '@/utils/formatters'
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{
   members: MemberDebtSummary[]
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
@@ -68,6 +70,10 @@ const totalSelectedDebt = computed(() => {
 const handlePayGroup = () => {
   emit('pay-group', selectedMemberIds.value)
 }
+
+const goToMemberDetail = (memberId: string) => {
+  router.push(`/member/${memberId}`)
+}
 </script>
 
 <template>
@@ -107,9 +113,13 @@ const handlePayGroup = () => {
               >
                 {{ member.display_name.charAt(0).toUpperCase() }}
               </div>
-              <span class="font-medium text-gray-900 truncate">
+              <button
+                type="button"
+                @click.stop="goToMemberDetail(member.member_id)"
+                class="font-medium text-gray-900 truncate hover:text-indigo-600 transition text-left"
+              >
                 {{ getShortName(member.display_name) }}
-              </span>
+              </button>
             </div>
             <div class="mt-1 flex flex-col sm:block-row items-center gap-2">
               <span class="text-red-600 font-bold text-sm">

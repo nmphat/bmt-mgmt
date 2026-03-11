@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, LogIn, User, Languages, Wallet, Menu, X } from 'lucide-vue-next'
+import { LogOut, User, Languages, Wallet, Menu, X } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
@@ -59,10 +59,6 @@ async function handleLogout() {
   router.push('/login')
 }
 
-function handleLogin() {
-  router.push('/login')
-}
-
 function selectLang(lang: 'vi' | 'en') {
   langStore.setLang(lang)
 }
@@ -110,7 +106,7 @@ onMounted(() => {
       </router-link>
 
       <!-- Navigation -->
-      <nav v-if="authStore.isAuthenticated" class="hidden md:flex items-center gap-6 mx-6">
+      <nav class="hidden md:flex items-center gap-6 mx-6">
         <router-link
           to="/"
           active-class="text-indigo-600"
@@ -198,15 +194,7 @@ onMounted(() => {
           </div>
         </template>
 
-        <template v-else>
-          <button
-            @click="handleLogin"
-            class="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm transition hover:shadow-md"
-          >
-            <LogIn class="w-4 h-4" />
-            <span>{{ t('auth.login') }}</span>
-          </button>
-        </template>
+        <template v-else />
 
         <!-- Hamburger Button (tablet/desktop fallback — BottomNav handles mobile) -->
         <button
@@ -260,15 +248,7 @@ onMounted(() => {
             {{ t('nav.members') }}
           </router-link>
         </template>
-        <template v-else>
-          <button
-            @click="handleLogin"
-            class="w-full flex items-center justify-center gap-2 px-4 py-3 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition"
-          >
-            <LogIn class="w-5 h-5" />
-            <span>{{ t('auth.login') }}</span>
-          </button>
-        </template>
+        <template v-else />
 
         <!-- Debt Badge in Mobile Menu -->
         <div

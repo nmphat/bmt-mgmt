@@ -606,7 +606,7 @@ onUnmounted(() => {
         ref="extraChargesRef"
         :sessionId="sessionId"
         :members="registeredMembers"
-        :isAdmin="authStore.isAuthenticated"
+        :isAdmin="authStore.isAdmin"
         :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
         @changed="handleExtraChargesChanged"
         class="mb-6"

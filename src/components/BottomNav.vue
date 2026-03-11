@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
-import { Home, CalendarDays, Users, User, LogIn } from 'lucide-vue-next'
+import { Home, CalendarDays, Users, User } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -30,14 +30,12 @@ const navItems = computed<NavItem[]>(() => {
     },
   ]
 
-  if (authStore.isAdmin) {
-    items.push({
-      key: 'sessions',
-      label: () => t.value('nav.sessions'),
-      icon: CalendarDays,
-      to: '/sessions',
-    })
-  }
+  items.push({
+    key: 'sessions',
+    label: () => t.value('nav.sessions'),
+    icon: CalendarDays,
+    to: '/sessions',
+  })
 
   items.push({
     key: 'members',
@@ -52,13 +50,6 @@ const navItems = computed<NavItem[]>(() => {
       label: () => t.value('auth.profile'),
       icon: User,
       to: '/profile',
-    })
-  } else if (!authStore.isAuthenticated) {
-    items.push({
-      key: 'login',
-      label: () => t.value('auth.login'),
-      icon: LogIn,
-      to: '/login',
     })
   }
 

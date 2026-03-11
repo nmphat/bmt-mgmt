@@ -7,8 +7,10 @@ import { useLangStore } from '@/stores/lang'
 import { Check, X, Edit, Save, Trash2, UserPlus, Loader2 } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const langStore = useLangStore()
 const toast = useToast()
 const t = computed(() => langStore.t)
@@ -147,6 +149,10 @@ async function saveEdit(id: string) {
 }
 
 onMounted(fetchMembers)
+
+function goToMemberDetail(id: string) {
+  router.push(`/member/${id}`)
+}
 </script>
 
 <template>
@@ -289,7 +295,15 @@ onMounted(fetchMembers)
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-semibold text-gray-900 text-sm truncate">{{ member.display_name }}</span>
+                <button
+                  v-if="editingMemberId !== member.id"
+                  type="button"
+                  @click="goToMemberDetail(member.id)"
+                  class="font-semibold text-gray-900 text-sm truncate hover:text-indigo-600 transition text-left"
+                >
+                  {{ member.display_name }}
+                </button>
+                <span v-else class="font-semibold text-gray-900 text-sm truncate">{{ member.display_name }}</span>
                 <span
                   class="px-1.5 py-0.5 text-[10px] font-bold rounded-full"
                   :class="member.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
@@ -360,7 +374,14 @@ onMounted(fetchMembers)
                   type="text"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                 />
-                <span v-else class="font-medium">{{ member.display_name }}</span>
+                <button
+                  v-else
+                  type="button"
+                  @click="goToMemberDetail(member.id)"
+                  class="font-medium hover:text-indigo-600 transition text-left"
+                >
+                  {{ member.display_name }}
+                </button>
               </td>
 
               <!-- Role -->

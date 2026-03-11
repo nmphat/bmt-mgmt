@@ -60,21 +60,37 @@ const filteredSessions = computed(() => {
 
 const cancelledSessions = computed(() => sessions.value.filter((s) => s.status === 'cancelled'))
 
-const filterOptions = computed(() => [
-  { key: 'all',                  label: t.value('dashboard.filterAll') },
-  { key: 'open',                 label: t.value('dashboard.filterOpen') },
-  { key: 'waiting_for_payment',  label: t.value('dashboard.filterWaiting') },
-  { key: 'done',                 label: t.value('dashboard.filterDone') },
-  { key: 'cancelled',            label: t.value('dashboard.filterCancelled') },
-])
+const filterOptions = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return [
+      { key: 'all', label: t.value('dashboard.filterAll') },
+      { key: 'waiting_for_payment', label: t.value('dashboard.filterWaiting') },
+      { key: 'done', label: t.value('dashboard.filterDone') },
+    ]
+  }
+
+  return [
+    { key: 'all', label: t.value('dashboard.filterAll') },
+    { key: 'open', label: t.value('dashboard.filterOpen') },
+    { key: 'waiting_for_payment', label: t.value('dashboard.filterWaiting') },
+    { key: 'done', label: t.value('dashboard.filterDone') },
+    { key: 'cancelled', label: t.value('dashboard.filterCancelled') },
+  ]
+})
 
 async function fetchSessions() {
   try {
     loading.value = true
-    const { data, error } = await supabase
+    let query = supabase
       .from('view_session_summary')
       .select('*')
       .order('session_date', { ascending: false })
+
+    if (!authStore.isAuthenticated) {
+      query = query.in('status', ['waiting_for_payment', 'done'])
+    }
+
+    const { data, error } = await query
 
     if (error) throw error
     sessions.value = data || []

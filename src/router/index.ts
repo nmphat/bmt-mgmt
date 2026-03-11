@@ -13,7 +13,6 @@ const router = createRouter({
       path: '/sessions',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
-      meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
       path: '/member/:id',
