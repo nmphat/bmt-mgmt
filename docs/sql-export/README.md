@@ -2,6 +2,12 @@
 
 This folder contains SQL files generated from your current Supabase database (`public` schema) so your friend can recreate an equivalent system.
 
+## Source of truth
+
+- This folder is the only database source of truth for this repo.
+- `supabase/migrations` is intentionally empty and not used.
+- Every DB/RPC/RLS change must be updated directly in these SQL files.
+
 ## Run order
 
 1. `00_extensions.sql`
@@ -18,7 +24,7 @@ This folder contains SQL files generated from your current Supabase database (`p
 
 - This bundle recreates only `public` schema objects (no seed data).
 - `auth.users` data is not included. Your friend needs to create users separately.
-- Edge Functions are not included in SQL. Deploy them separately (`casso-webhook`, `sepay-webhook`).
+- Edge Functions are not included in SQL. Deploy them separately (`sepay-webhook` is the standard provider; `casso-webhook` is legacy only).
 - Current schema expects:
   - enum `payment_status` for `session_costs_snapshot.status`
   - column `sessions.deleted_at` for soft-delete flow
