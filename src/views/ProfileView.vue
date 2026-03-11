@@ -25,8 +25,15 @@ const langStore = useLangStore()
 const router = useRouter()
 const t = computed(() => langStore.t)
 
-const { configs, activeBank, loading: bankLoading, usingFallback, setActive, addConfig, removeConfig } =
-  useBankConfig()
+const {
+  configs,
+  activeBank,
+  loading: bankLoading,
+  usingFallback,
+  setActive,
+  addConfig,
+  removeConfig,
+} = useBankConfig()
 
 // ── Debt overview ──────────────────────────────────────────
 const myDebt = ref(0)
@@ -139,11 +146,7 @@ const isAdmin = computed(() => authStore.isAdmin)
             <p class="text-sm text-gray-500 truncate">{{ authStore.user?.email }}</p>
             <span
               class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-              :class="
-                isAdmin
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'bg-gray-100 text-gray-600'
-              "
+              :class="isAdmin ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
             >
               {{ isAdmin ? t('common.admin') : t('common.member') }}
             </span>
@@ -188,7 +191,10 @@ const isAdmin = computed(() => authStore.isAdmin)
       </div>
 
       <!-- ── Bank config (admin only) ───────────────────── -->
-      <div v-if="isAdmin" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div
+        v-if="isAdmin"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+      >
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <CreditCard class="w-4 h-4 text-gray-400" />
@@ -217,7 +223,9 @@ const isAdmin = computed(() => authStore.isAdmin)
           <div v-if="showAddForm" class="px-5 py-4 bg-gray-50 border-b border-gray-100 space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('profile.bankId') }}</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                  t('profile.bankId')
+                }}</label>
                 <input
                   v-model="bankForm.bank_id"
                   placeholder="TPB, MB, VCB..."
@@ -225,7 +233,9 @@ const isAdmin = computed(() => authStore.isAdmin)
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('profile.templateLabel') }}</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                  t('profile.templateLabel')
+                }}</label>
                 <input
                   v-model="bankForm.template"
                   placeholder="compact2"
@@ -233,7 +243,9 @@ const isAdmin = computed(() => authStore.isAdmin)
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('profile.accountNumber') }}</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                  t('profile.accountNumber')
+                }}</label>
                 <input
                   v-model="bankForm.account_number"
                   placeholder="10003392871"
@@ -241,7 +253,9 @@ const isAdmin = computed(() => authStore.isAdmin)
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('profile.accountName') }}</label>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                  t('profile.accountName')
+                }}</label>
                 <input
                   v-model="bankForm.account_name"
                   placeholder="NGUYEN VAN A"
@@ -288,21 +302,14 @@ const isAdmin = computed(() => authStore.isAdmin)
           </div>
 
           <!-- Bank config rows -->
-          <div
-            v-for="config in configs"
-            :key="config.id"
-            class="px-5 py-4 flex items-center gap-3"
-          >
+          <div v-for="config in configs" :key="config.id" class="px-5 py-4 flex items-center gap-3">
             <!-- Active indicator -->
             <button
               @click="handleSetActive(config.id)"
               class="flex-shrink-0 transition hover:scale-110"
               :title="t('profile.activateBank')"
             >
-              <CheckCircle2
-                v-if="config.is_active"
-                class="w-5 h-5 text-green-500"
-              />
+              <CheckCircle2 v-if="config.is_active" class="w-5 h-5 text-green-500" />
               <Circle v-else class="w-5 h-5 text-gray-300 hover:text-indigo-400" />
             </button>
 
@@ -317,7 +324,9 @@ const isAdmin = computed(() => authStore.isAdmin)
                   {{ t('profile.activeLabel') }}
                 </span>
               </div>
-              <p class="text-xs text-gray-500 truncate">{{ config.account_number }} · {{ config.account_name }}</p>
+              <p class="text-xs text-gray-500 truncate">
+                {{ config.account_number }} · {{ config.account_name }}
+              </p>
             </div>
 
             <!-- Delete -->

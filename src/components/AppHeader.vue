@@ -197,10 +197,7 @@ onMounted(() => {
         <template v-else />
 
         <!-- Hamburger Button (tablet/desktop fallback — BottomNav handles mobile) -->
-        <button
-          @click="toggleMobileMenu"
-          class="hidden"
-        >
+        <button @click="toggleMobileMenu" class="hidden">
           <Menu v-if="!isMobileMenuOpen" class="w-6 h-6" />
           <X v-else class="w-6 h-6" />
         </button>

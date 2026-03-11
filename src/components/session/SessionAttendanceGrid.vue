@@ -59,7 +59,9 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 <template>
   <div class="bg-white rounded-lg shadow-sm mb-6 border border-gray-100">
     <!-- Section header -->
-    <div class="px-4 md:px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div
+      class="px-4 md:px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+    >
       <div class="flex items-center gap-2">
         <h2 class="text-lg md:text-xl font-semibold text-gray-900">
           {{ t('session.attendanceMatrix') }}
@@ -164,10 +166,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <tr
-            v-for="reg in registrations"
-            :key="reg.id"
-          >
+          <tr v-for="reg in registrations" :key="reg.id">
             <!-- Sticky name cell -->
             <td
               class="sticky left-0 z-10 bg-white px-4 md:px-6 py-3 whitespace-nowrap text-sm md:text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
@@ -180,10 +179,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </td>
 
             <!-- Remove button -->
-            <td
-              v-if="authStore.isAuthenticated && !isReadOnly"
-              class="px-2 py-3 text-center"
-            >
+            <td v-if="authStore.isAuthenticated && !isReadOnly" class="px-2 py-3 text-center">
               <button
                 @click="$emit('removeRegistration', reg.member_id, reg.member?.display_name || '')"
                 class="text-gray-300 hover:text-red-500 transition focus:outline-none"
@@ -194,19 +190,12 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             </td>
 
             <!-- Presence cells -->
-            <td
-              v-for="interval in intervals"
-              :key="interval.id"
-              class="px-3 py-3 text-center"
-            >
+            <td v-for="interval in intervals" :key="interval.id" class="px-3 py-3 text-center">
               <input
                 type="checkbox"
                 :checked="presence[reg.member_id]?.[interval.id] || false"
                 @change="$emit('togglePresence', reg.member_id, interval.id)"
-                :disabled="
-                  !authStore.isAuthenticated ||
-                  isReadOnly
-                "
+                :disabled="!authStore.isAuthenticated || isReadOnly"
                 class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </td>

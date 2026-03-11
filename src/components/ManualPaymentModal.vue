@@ -185,7 +185,10 @@ async function handleConfirm() {
           </div>
         </div>
 
-        <div class="bg-gray-50 px-5 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2" style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)">
+        <div
+          class="bg-gray-50 px-5 py-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2"
+          style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)"
+        >
           <button
             @click="emit('close')"
             :disabled="isSubmitting"

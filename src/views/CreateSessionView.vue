@@ -358,7 +358,10 @@ async function createSession() {
                 class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5"
               >
                 <span>&#x26A0;</span>
-                <span>{{ t('createSession.courtTimeError') }} ({{ form.startTime }} – {{ form.endTime }})</span>
+                <span
+                  >{{ t('createSession.courtTimeError') }} ({{ form.startTime }} –
+                  {{ form.endTime }})</span
+                >
               </div>
             </div>
           </div>

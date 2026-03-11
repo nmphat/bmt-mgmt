@@ -34,8 +34,7 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 })
 const formatCurrency = (v: number) => currencyFormatter.format(v)
 
-const getBreakdown = (memberId: string) =>
-  props.costs.find((c) => c.member_id === memberId)
+const getBreakdown = (memberId: string) => props.costs.find((c) => c.member_id === memberId)
 
 const statusClass = (status: string) => ({
   'bg-green-100 text-green-800': status === 'paid',
@@ -54,7 +53,9 @@ const statusLabel = (status: string) =>
 <template>
   <div class="bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
     <div class="px-4 md:px-6 py-4 border-b border-gray-100 bg-gray-50">
-      <h2 class="text-lg md:text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
+      <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+        {{ t('session.paymentTable') }}
+      </h2>
     </div>
 
     <!-- ── Mobile cards (< md) ── -->
@@ -91,11 +92,15 @@ const statusLabel = (status: string) =>
         <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
           <div>
             <span class="text-gray-500">{{ t('session.mustPay') }}: </span>
-            <span class="font-bold text-indigo-700">{{ formatCurrency(snapshot.final_amount) }}</span>
+            <span class="font-bold text-indigo-700">{{
+              formatCurrency(snapshot.final_amount)
+            }}</span>
           </div>
           <div>
             <span class="text-gray-500">{{ t('payment.paid') }}: </span>
-            <span class="font-semibold text-green-600">{{ formatCurrency(snapshot.paid_amount) }}</span>
+            <span class="font-semibold text-green-600">{{
+              formatCurrency(snapshot.paid_amount)
+            }}</span>
           </div>
           <div v-if="snapshot.status !== 'paid'">
             <span class="text-gray-500">{{ t('payment.remaining') ?? 'Còn' }}: </span>
@@ -108,16 +113,19 @@ const statusLabel = (status: string) =>
         <!-- Row 3: breakdown chips -->
         <div class="flex flex-wrap gap-2 text-xs text-gray-500">
           <span class="bg-gray-100 rounded px-2 py-0.5">
-            {{ t('session.courtFee') }}: {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+            {{ t('session.courtFee') }}:
+            {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
           </span>
           <span class="bg-gray-100 rounded px-2 py-0.5">
-            {{ t('session.shuttleFee') }}: {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+            {{ t('session.shuttleFee') }}:
+            {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
           </span>
           <span
             v-if="getBreakdown(snapshot.member_id)?.total_extra_fee"
             class="bg-gray-100 rounded px-2 py-0.5"
           >
-            {{ t('session.extraFee') }}: {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_extra_fee || 0) }}
+            {{ t('session.extraFee') }}:
+            {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_extra_fee || 0) }}
           </span>
           <span class="bg-gray-100 rounded px-2 py-0.5">
             {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }} intervals
@@ -159,31 +167,58 @@ const statusLabel = (status: string) =>
         <thead class="bg-gray-50">
           <tr>
             <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
-            <th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('common.member') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.mustPay') }}
             </th>
-            <th scope="col" class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.intervalsAbbr') }}
             </th>
-            <th scope="col" class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.courtFee') }}
             </th>
-            <th scope="col" class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.shuttleFee') }}
             </th>
-            <th scope="col" class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.extraFee') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('payment.paid') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('common.status') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.pay') }}
             </th>
           </tr>

@@ -7,16 +7,14 @@ import { useLangStore } from '@/stores/lang'
 import { ArrowLeft, CreditCard, QrCode, CheckSquare } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import { useToast } from 'vue-toastification'
-import { format } from 'date-fns'
-import { vi, enUS } from 'date-fns/locale'
 import { mergeTimeIntervals } from '@/utils/time'
+import { formatDisplayDate, formatDisplayDateTime } from '@/utils/dateFormatters'
 
 const route = useRoute()
 const router = useRouter()
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
 const toast = useToast()
-const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 
 const memberId = route.params.id as string
 const memberName = ref('')
@@ -336,19 +334,24 @@ onMounted(fetchMemberDetails)
                 @change="toggleSelectSession(session.snapshot_id)"
                 class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
               />
-              <div
-                v-else
-                class="w-2.5 h-2.5 rounded-full bg-green-500 mt-0.5"
-              />
+              <div v-else class="w-2.5 h-2.5 rounded-full bg-green-500 mt-0.5" />
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <p class="text-sm font-semibold text-gray-900 truncate">{{ session.session_title }}</p>
+                  <p class="text-sm font-semibold text-gray-900 truncate">
+                    {{ session.session_title }}
+                  </p>
                   <p class="text-xs text-gray-400 mt-0.5">
-                    {{ format(new Date(session.start_time), 'dd/MM/yyyy', { locale: dateLocale }) }}
-                    <span v-if="sessionIntervalsMap[session.snapshot_id] && sessionIntervalsMap[session.snapshot_id] !== '-'"
-                      class="ml-1 text-gray-400">· {{ sessionIntervalsMap[session.snapshot_id] }}</span>
+                    {{ formatDisplayDate(session.start_time, langStore.currentLang) }}
+                    <span
+                      v-if="
+                        sessionIntervalsMap[session.snapshot_id] &&
+                        sessionIntervalsMap[session.snapshot_id] !== '-'
+                      "
+                      class="ml-1 text-gray-400"
+                      >· {{ sessionIntervalsMap[session.snapshot_id] }}</span
+                    >
                   </p>
                 </div>
                 <button
@@ -363,12 +366,16 @@ onMounted(fetchMemberDetails)
                 <span
                   class="px-2 py-0.5 text-[10px] font-bold rounded-full"
                   :class="getStatusColor(session.status)"
-                >{{ getStatusLabel(session.status) }}</span>
-                <span class="text-xs text-gray-500">{{ formatCurrency(session.final_amount) }}</span>
+                  >{{ getStatusLabel(session.status) }}</span
+                >
+                <span class="text-xs text-gray-500">{{
+                  formatCurrency(session.final_amount)
+                }}</span>
                 <span
                   v-if="session.remaining_amount > 0"
                   class="text-xs font-bold text-red-600 ml-auto"
-                >-{{ formatCurrency(session.remaining_amount) }}</span>
+                  >-{{ formatCurrency(session.remaining_amount) }}</span
+                >
               </div>
             </div>
           </div>
@@ -377,148 +384,153 @@ onMounted(fetchMemberDetails)
         <!-- Desktop table -->
         <div class="hidden md:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <!-- Select-all checkbox -->
-              <th scope="col" class="px-3 py-3 w-10">
-                <input
-                  v-if="unpaidSessions.length > 0"
-                  type="checkbox"
-                  :checked="allUnpaidSelected"
-                  @change="toggleSelectAll"
-                  class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                  :title="allUnpaidSelected ? t('debt.clearSelection') : t('session.selectMembers')"
-                />
-              </th>
-              <th
-                scope="col"
-                class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('debt.sessionName') }}
-              </th>
-              <th
-                scope="col"
-                class="hidden sm:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('debt.cost') }}
-              </th>
-              <th
-                scope="col"
-                class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('session.time') }}
-              </th>
-              <th
-                scope="col"
-                class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('session.courtFee') }}
-              </th>
-              <th
-                scope="col"
-                class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('session.shuttleFee') }}
-              </th>
-              <th
-                scope="col"
-                class="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('debt.remaining') }}
-              </th>
-              <th
-                scope="col"
-                class="hidden sm:table-cell px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('debt.status') }}
-              </th>
-              <th
-                scope="col"
-                class="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('debt.action') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="session in sessions"
-              :key="session.snapshot_id"
-              class="hover:bg-gray-50 transition-colors"
-              :class="{ 'bg-indigo-50/50': selectedSnapshotIds.includes(session.snapshot_id) }"
-            >
-              <!-- Row checkbox -->
-              <td class="px-3 py-4 text-center">
-                <input
-                  v-if="session.status !== 'paid'"
-                  type="checkbox"
-                  :checked="selectedSnapshotIds.includes(session.snapshot_id)"
-                  @change="toggleSelectSession(session.snapshot_id)"
-                  class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                />
-              </td>
-              <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
-                  {{ session.session_title }}
-                </div>
-                <div class="text-[10px] sm:text-xs text-gray-500">
-                  {{
-                    format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', { locale: dateLocale })
-                  }}
-                </div>
-              </td>
-              <td
-                class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
-              >
-                {{ formatCurrency(session.final_amount) }}
-              </td>
-              <td
-                class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500"
-              >
-                {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
-              </td>
-              <td
-                class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
-              >
-                {{ formatCurrency(session.court_fee_amount) }}
-              </td>
-              <td
-                class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
-              >
-                {{ formatCurrency(session.shuttle_fee_amount) }}
-              </td>
-              <td
-                class="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
-              >
-                <span class="sm:hidden">{{
-                  formatCurrency(session.remaining_amount).replace(' ₫', '')
-                }}</span>
-                <span class="hidden sm:inline">{{ formatCurrency(session.remaining_amount) }}</span>
-              </td>
-              <td class="hidden sm:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-center">
-                <span
-                  class="px-1.5 sm:px-2 inline-flex text-[10px] sm:text-xs leading-5 font-semibold rounded-full"
-                  :class="getStatusColor(session.status)"
+            <thead class="bg-gray-50">
+              <tr>
+                <!-- Select-all checkbox -->
+                <th scope="col" class="px-3 py-3 w-10">
+                  <input
+                    v-if="unpaidSessions.length > 0"
+                    type="checkbox"
+                    :checked="allUnpaidSelected"
+                    @change="toggleSelectAll"
+                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                    :title="
+                      allUnpaidSelected ? t('debt.clearSelection') : t('session.selectMembers')
+                    "
+                  />
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  {{ getStatusLabel(session.status) }}
-                </span>
-              </td>
-              <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                <button
-                  v-if="session.status !== 'paid'"
-                  @click="handleSinglePay(session)"
-                  class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 sm:p-2 rounded-full hover:bg-indigo-100 transition"
-                  :title="t('payment.scanQR')"
+                  {{ t('debt.sessionName') }}
+                </th>
+                <th
+                  scope="col"
+                  class="hidden sm:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  <QrCode class="w-4 h-4 sm:w-5 h-5" />
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        </div><!-- /desktop table -->
-      </template><!-- /v-else -->
+                  {{ t('debt.cost') }}
+                </th>
+                <th
+                  scope="col"
+                  class="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.time') }}
+                </th>
+                <th
+                  scope="col"
+                  class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.courtFee') }}
+                </th>
+                <th
+                  scope="col"
+                  class="hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.shuttleFee') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('debt.remaining') }}
+                </th>
+                <th
+                  scope="col"
+                  class="hidden sm:table-cell px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('debt.status') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('debt.action') }}
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                v-for="session in sessions"
+                :key="session.snapshot_id"
+                class="hover:bg-gray-50 transition-colors"
+                :class="{ 'bg-indigo-50/50': selectedSnapshotIds.includes(session.snapshot_id) }"
+              >
+                <!-- Row checkbox -->
+                <td class="px-3 py-4 text-center">
+                  <input
+                    v-if="session.status !== 'paid'"
+                    type="checkbox"
+                    :checked="selectedSnapshotIds.includes(session.snapshot_id)"
+                    @change="toggleSelectSession(session.snapshot_id)"
+                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                </td>
+                <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                  <div
+                    class="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none"
+                  >
+                    {{ session.session_title }}
+                  </div>
+                  <div class="text-[10px] sm:text-xs text-gray-500">
+                    {{ formatDisplayDateTime(session.start_time, langStore.currentLang) }}
+                  </div>
+                </td>
+                <td
+                  class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+                >
+                  {{ formatCurrency(session.final_amount) }}
+                </td>
+                <td
+                  class="hidden md:table-cell px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500"
+                >
+                  {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
+                </td>
+                <td
+                  class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+                >
+                  {{ formatCurrency(session.court_fee_amount) }}
+                </td>
+                <td
+                  class="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+                >
+                  {{ formatCurrency(session.shuttle_fee_amount) }}
+                </td>
+                <td
+                  class="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
+                >
+                  <span class="sm:hidden">{{
+                    formatCurrency(session.remaining_amount).replace(' ₫', '')
+                  }}</span>
+                  <span class="hidden sm:inline">{{
+                    formatCurrency(session.remaining_amount)
+                  }}</span>
+                </td>
+                <td class="hidden sm:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-center">
+                  <span
+                    class="px-1.5 sm:px-2 inline-flex text-[10px] sm:text-xs leading-5 font-semibold rounded-full"
+                    :class="getStatusColor(session.status)"
+                  >
+                    {{ getStatusLabel(session.status) }}
+                  </span>
+                </td>
+                <td class="px-3 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <button
+                    v-if="session.status !== 'paid'"
+                    @click="handleSinglePay(session)"
+                    class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 sm:p-2 rounded-full hover:bg-indigo-100 transition"
+                    :title="t('payment.scanQR')"
+                  >
+                    <QrCode class="w-4 h-4 sm:w-5 h-5" />
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /desktop table --> </template
+      ><!-- /v-else -->
     </div>
 
     <PaymentQRModal

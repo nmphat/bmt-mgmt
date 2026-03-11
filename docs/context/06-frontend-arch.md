@@ -191,6 +191,13 @@ const channel = supabase
 onUnmounted(() => supabase.removeChannel(channel))
 ```
 
+### Sessions list (`/sessions`) pattern
+
+- FE gọi RPC `search_sessions_list` để lấy data theo page (cursor-based)
+- Search + date filter + status filter được sync vào URL query (`q`, `from`, `to`, `status`)
+- Infinite scroll dùng `IntersectionObserver` + composite cursor (`status_rank`, `session_date`, `id`)
+- Guest chỉ query status `waiting_for_payment` và `done`
+
 ---
 
 ## i18n Pattern (Custom)

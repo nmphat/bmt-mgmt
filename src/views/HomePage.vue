@@ -167,7 +167,9 @@ async function handleBatchManualPayment(payload: {
     }
 
     if (remaining > 0) {
-      toast.info(t.value('payment.batchUnallocatedAmount', { amount: remaining.toLocaleString('vi-VN') }))
+      toast.info(
+        t.value('payment.batchUnallocatedAmount', { amount: remaining.toLocaleString('vi-VN') }),
+      )
     }
 
     toast.success(t.value('payment.batchManualPaymentSuccess', { count: successCount }))

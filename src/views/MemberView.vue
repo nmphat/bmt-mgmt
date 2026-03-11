@@ -274,15 +274,25 @@ function goToMemberDetail(id: string) {
                 <option value="admin">{{ t('member.adminRole') }}</option>
               </select>
               <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                <input v-model="editForm.is_active" type="checkbox" class="rounded border-gray-300 text-indigo-600 h-4 w-4" />
+                <input
+                  v-model="editForm.is_active"
+                  type="checkbox"
+                  class="rounded border-gray-300 text-indigo-600 h-4 w-4"
+                />
                 {{ t('member.active') }}
               </label>
             </div>
             <div class="flex gap-2 pt-1">
-              <button @click="saveEdit(member.id)" class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+              <button
+                @click="saveEdit(member.id)"
+                class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              >
                 <Save class="w-3.5 h-3.5" />{{ t('common.save') }}
               </button>
-              <button @click="cancelEdit" class="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+              <button
+                @click="cancelEdit"
+                class="flex-1 flex items-center justify-center gap-1.5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+              >
                 <X class="w-3.5 h-3.5" />{{ t('common.cancel') }}
               </button>
             </div>
@@ -290,7 +300,9 @@ function goToMemberDetail(id: string) {
 
           <!-- View mode -->
           <div v-else class="flex items-center p-3 gap-3">
-            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-base flex-shrink-0">
+            <div
+              class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-base flex-shrink-0"
+            >
               {{ member.display_name.charAt(0).toUpperCase() }}
             </div>
             <div class="flex-1 min-w-0">
@@ -303,23 +315,41 @@ function goToMemberDetail(id: string) {
                 >
                   {{ member.display_name }}
                 </button>
-                <span v-else class="font-semibold text-gray-900 text-sm truncate">{{ member.display_name }}</span>
+                <span v-else class="font-semibold text-gray-900 text-sm truncate">{{
+                  member.display_name
+                }}</span>
                 <span
                   class="px-1.5 py-0.5 text-[10px] font-bold rounded-full"
-                  :class="member.role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
-                >{{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}</span>
+                  :class="
+                    member.role === 'admin'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'bg-gray-100 text-gray-600'
+                  "
+                  >{{
+                    member.role === 'admin' ? t('member.adminRole') : t('member.memberRole')
+                  }}</span
+                >
               </div>
               <div class="flex items-center gap-2 mt-0.5">
-                <span v-if="member.is_active" class="text-[10px] text-green-600 font-medium">● {{ t('member.active') }}</span>
-                <span v-else class="text-[10px] text-gray-400 font-medium">○ {{ t('member.active') }}</span>
-
+                <span v-if="member.is_active" class="text-[10px] text-green-600 font-medium"
+                  >● {{ t('member.active') }}</span
+                >
+                <span v-else class="text-[10px] text-gray-400 font-medium"
+                  >○ {{ t('member.active') }}</span
+                >
               </div>
             </div>
             <div v-if="authStore.isAuthenticated" class="flex items-center gap-1 flex-shrink-0">
-              <button @click="startEdit(member)" class="p-2 text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition">
+              <button
+                @click="startEdit(member)"
+                class="p-2 text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+              >
                 <Edit class="w-4 h-4" />
               </button>
-              <button @click="deleteMember(member.id, member.display_name)" class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition">
+              <button
+                @click="deleteMember(member.id, member.display_name)"
+                class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+              >
                 <Trash2 class="w-4 h-4" />
               </button>
             </div>
@@ -328,143 +358,145 @@ function goToMemberDetail(id: string) {
       </div>
 
       <!-- Desktop table -->
-      <div class="hidden md:block bg-white shadow-sm rounded-lg border border-gray-100 overflow-hidden">
+      <div
+        class="hidden md:block bg-white shadow-sm rounded-lg border border-gray-100 overflow-hidden"
+      >
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('member.name') }}
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('member.role') }}
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('member.active') }}
-              </th>
-              <th
-                v-if="authStore.isAuthenticated"
-                scope="col"
-                class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('common.actions') }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="member in members"
-              :key="member.id"
-              :class="{ 'bg-gray-50': editingMemberId === member.id }"
-            >
-              <!-- Name -->
-              <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900">
-                <input
-                  v-if="editingMemberId === member.id"
-                  v-model="editForm.display_name"
-                  type="text"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
-                />
-                <button
-                  v-else
-                  type="button"
-                  @click="goToMemberDetail(member.id)"
-                  class="font-medium hover:text-indigo-600 transition text-left"
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  {{ member.display_name }}
-                </button>
-              </td>
-
-              <!-- Role -->
-              <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500">
-                <select
-                  v-if="editingMemberId === member.id"
-                  v-model="editForm.role"
-                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
+                  {{ t('member.name') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  <option value="member">{{ t('member.memberRole') }}</option>
-                  <option value="admin">{{ t('member.adminRole') }}</option>
-                </select>
-                <span
-                  v-else
-                  :class="[
-                    'px-2 py-1 text-sm font-medium rounded-full',
-                    member.role === 'admin'
-                      ? 'bg-indigo-100 text-indigo-800'
-                      : 'bg-gray-100 text-gray-800',
-                  ]"
+                  {{ t('member.role') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
-                </span>
-              </td>
-
-              <!-- Is Active -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-500">
-                <div v-if="editingMemberId === member.id" class="flex justify-center">
+                  {{ t('member.active') }}
+                </th>
+                <th
+                  v-if="authStore.isAuthenticated"
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('common.actions') }}
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                v-for="member in members"
+                :key="member.id"
+                :class="{ 'bg-gray-50': editingMemberId === member.id }"
+              >
+                <!-- Name -->
+                <td class="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                   <input
-                    v-model="editForm.is_active"
-                    type="checkbox"
-                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                    v-if="editingMemberId === member.id"
+                    v-model="editForm.display_name"
+                    type="text"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                   />
-                </div>
-                <div v-else>
-                  <Check v-if="member.is_active" class="w-5 h-5 text-green-500 mx-auto" />
-                  <X v-else class="w-5 h-5 text-gray-300 mx-auto" />
-                </div>
-              </td>
+                  <button
+                    v-else
+                    type="button"
+                    @click="goToMemberDetail(member.id)"
+                    class="font-medium hover:text-indigo-600 transition text-left"
+                  >
+                    {{ member.display_name }}
+                  </button>
+                </td>
 
-              <!-- Actions -->
-              <td
-                v-if="authStore.isAuthenticated"
-                class="px-6 py-4 whitespace-nowrap text-right text-base font-medium"
-              >
-                <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
-                  <button
-                    @click="saveEdit(member.id)"
-                    class="text-green-600 hover:text-green-900"
-                    :title="t('common.save')"
+                <!-- Role -->
+                <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500">
+                  <select
+                    v-if="editingMemberId === member.id"
+                    v-model="editForm.role"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                   >
-                    <Save class="w-5 h-5" />
-                  </button>
-                  <button
-                    @click="cancelEdit"
-                    class="text-red-600 hover:text-red-900"
-                    :title="t('common.cancel')"
+                    <option value="member">{{ t('member.memberRole') }}</option>
+                    <option value="admin">{{ t('member.adminRole') }}</option>
+                  </select>
+                  <span
+                    v-else
+                    :class="[
+                      'px-2 py-1 text-sm font-medium rounded-full',
+                      member.role === 'admin'
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : 'bg-gray-100 text-gray-800',
+                    ]"
                   >
-                    <X class="w-5 h-5" />
-                  </button>
-                </div>
-                <div v-else class="flex justify-end gap-3">
-                  <button
-                    @click="startEdit(member)"
-                    class="text-indigo-600 hover:text-indigo-900"
-                    :title="t('common.edit')"
-                  >
-                    <Edit class="w-5 h-5" />
-                  </button>
-                  <button
-                    @click="deleteMember(member.id, member.display_name)"
-                    class="text-gray-400 hover:text-red-600"
-                    :title="t('common.delete')"
-                  >
-                    <Trash2 class="w-5 h-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                    {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
+                  </span>
+                </td>
+
+                <!-- Is Active -->
+                <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-500">
+                  <div v-if="editingMemberId === member.id" class="flex justify-center">
+                    <input
+                      v-model="editForm.is_active"
+                      type="checkbox"
+                      class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
+                  <div v-else>
+                    <Check v-if="member.is_active" class="w-5 h-5 text-green-500 mx-auto" />
+                    <X v-else class="w-5 h-5 text-gray-300 mx-auto" />
+                  </div>
+                </td>
+
+                <!-- Actions -->
+                <td
+                  v-if="authStore.isAuthenticated"
+                  class="px-6 py-4 whitespace-nowrap text-right text-base font-medium"
+                >
+                  <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
+                    <button
+                      @click="saveEdit(member.id)"
+                      class="text-green-600 hover:text-green-900"
+                      :title="t('common.save')"
+                    >
+                      <Save class="w-5 h-5" />
+                    </button>
+                    <button
+                      @click="cancelEdit"
+                      class="text-red-600 hover:text-red-900"
+                      :title="t('common.cancel')"
+                    >
+                      <X class="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div v-else class="flex justify-end gap-3">
+                    <button
+                      @click="startEdit(member)"
+                      class="text-indigo-600 hover:text-indigo-900"
+                      :title="t('common.edit')"
+                    >
+                      <Edit class="w-5 h-5" />
+                    </button>
+                    <button
+                      @click="deleteMember(member.id, member.display_name)"
+                      class="text-gray-400 hover:text-red-600"
+                      :title="t('common.delete')"
+                    >
+                      <Trash2 class="w-5 h-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
     </template>
   </div>
 </template>

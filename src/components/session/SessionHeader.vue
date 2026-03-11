@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { format } from 'date-fns'
-import { vi, enUS } from 'date-fns/locale'
 import {
   ChevronLeft,
   Edit,
@@ -18,6 +16,7 @@ import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { useToast } from 'vue-toastification'
 import type { SessionSummary, CourtBooking, MemberCost, CostSnapshot } from '@/types'
+import { formatDisplayDate, formatDisplayTime } from '@/utils/dateFormatters'
 
 const props = defineProps<{
   session: SessionSummary
@@ -38,7 +37,6 @@ const langStore = useLangStore()
 const authStore = useAuthStore()
 const toast = useToast()
 const t = computed(() => langStore.t)
-const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 
 const isEditingSession = ref(false)
 const isSavingSession = ref(false)
@@ -101,10 +99,9 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
 
 const formatCurrency = (v: number) => currencyFormatter.format(v)
 
-const formatSessionDate = (iso: string) =>
-  format(new Date(iso), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
+const formatSessionDate = (iso: string) => formatDisplayDate(iso, langStore.currentLang)
 
-const formatTime = (iso: string) => format(new Date(iso), 'HH:mm')
+const formatTime = (iso: string) => formatDisplayTime(iso)
 
 const totalCollected = computed(() => {
   if (props.costs.length > 0) return props.costs.reduce((s, c) => s + c.final_total, 0)
@@ -498,7 +495,10 @@ async function cancelSession() {
               class="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5"
             >
               <span>&#x26A0;</span>
-              <span>{{ t('createSession.courtTimeError') }} ({{ sessionForm.session_start }} – {{ sessionForm.session_end }})</span>
+              <span
+                >{{ t('createSession.courtTimeError') }} ({{ sessionForm.session_start }} –
+                {{ sessionForm.session_end }})</span
+              >
             </div>
           </div>
         </div>
@@ -607,7 +607,10 @@ async function cancelSession() {
 
         <!-- Right: action buttons (desktop inline, mobile stacked below) -->
         <div
-          v-if="authStore.isAuthenticated && (session.status === 'open' || session.status === 'cancelled')"
+          v-if="
+            authStore.isAuthenticated &&
+            (session.status === 'open' || session.status === 'cancelled')
+          "
           class="flex flex-row md:flex-col gap-2 md:shrink-0"
         >
           <button

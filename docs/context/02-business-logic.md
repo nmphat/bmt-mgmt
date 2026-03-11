@@ -178,6 +178,31 @@ FROM sessions s
 
 ---
 
+## RPC: `search_sessions_list(...)`
+
+**Mục đích:** API list cho trang `/sessions` với fuzzy search title + filter + cursor pagination.
+
+**Input chính:**
+
+- `p_query text` — từ khóa tìm theo `title` (fuzzy qua `pg_trgm`)
+- `p_status text[]` — mảng status cần lọc
+- `p_start_date date`, `p_end_date date` — khoảng ngày
+- `p_limit int` — page size
+- `p_cursor_status_rank`, `p_cursor_session_date`, `p_cursor_id` — cursor composite cho infinite scroll
+
+**Output:** Trả ra cùng shape với `view_session_summary` + `status_rank` để FE lấy cursor trang kế tiếp.
+
+**Sort:** `status_rank ASC` → `session_date DESC` → `id DESC`
+
+**Search condition:**
+
+- `lower(title) LIKE %query%` hoặc
+- `similarity(lower(title), lower(query)) >= threshold`
+
+> Thiết kế này giữ compatibility với UX status-priority hiện tại, đồng thời cho infinite scroll ổn định (không duplicate giữa các page).
+
+---
+
 ## View: `view_member_session_details`
 
 **Dùng ở:** Trang Member Detail — xem lịch sử nợ/đã trả của 1 member
@@ -223,6 +248,7 @@ JOIN sessions s ON s.id = scs.session_id
 | `soft_delete_cancelled_session`       | p_session_id                                                 | jsonb   | Xóa dữ liệu liên quan rồi đánh dấu deleted_at         |
 | `soft_delete_cancelled_sessions_bulk` | p_session_ids[]                                              | TABLE   | Bulk soft-delete tối đa 50 sessions / lần gọi        |
 | `gc_soft_deleted_sessions`            | p_older_than interval                                        | integer | Cron cleanup hard-delete session đã soft-delete cũ    |
+| `search_sessions_list`                | p_query, p_status[], p_start_date, p_end_date, p_limit, cursor fields | TABLE | Fuzzy search + filter + cursor pagination cho dashboard sessions |
 
 ### Triggers (Functions + Trigger)
 

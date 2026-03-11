@@ -80,7 +80,6 @@ interface SessionDeleteImpact {
   payments_count: number
 }
 
-
 let realtimeChannel: RealtimeChannel | null = null
 
 const availableMembers = computed(() => {
@@ -326,15 +325,18 @@ async function deleteCancelledSession() {
   if (!session.value || session.value.status !== 'cancelled') return
 
   try {
-    const { data: impactData, error: impactError } = await supabase.rpc('get_session_delete_impact', {
-      p_session_id: sessionId,
-    })
+    const { data: impactData, error: impactError } = await supabase.rpc(
+      'get_session_delete_impact',
+      {
+        p_session_id: sessionId,
+      },
+    )
 
     if (impactError) throw impactError
 
-    const impact = (Array.isArray(impactData) ? impactData[0] : impactData) as
-      | SessionDeleteImpact
-      | null
+    const impact = (
+      Array.isArray(impactData) ? impactData[0] : impactData
+    ) as SessionDeleteImpact | null
 
     if (!impact) {
       throw new Error(t.value('session.deleteImpactLoadError'))
@@ -563,7 +565,10 @@ onUnmounted(() => {
         @deleteRequested="deleteCancelledSession"
       />
       <!-- Cancelled Banner -->
-      <div v-if="session.status === 'cancelled'" class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded-r-md">
+      <div
+        v-if="session.status === 'cancelled'"
+        class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-6 rounded-r-md"
+      >
         <p class="text-sm text-gray-700">{{ t('session.cancelledMessage') }}</p>
       </div>
 

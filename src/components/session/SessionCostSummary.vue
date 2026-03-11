@@ -30,15 +30,13 @@ const formatCurrency = (v: number) => currencyFormatter.format(v)
 
     <!-- ── Mobile cards (< md) ── -->
     <div class="md:hidden divide-y divide-gray-100">
-      <div
-        v-for="cost in costs"
-        :key="cost.member_id"
-        class="p-4 flex flex-col gap-2"
-      >
+      <div v-for="cost in costs" :key="cost.member_id" class="p-4 flex flex-col gap-2">
         <!-- Name + total -->
         <div class="flex items-center justify-between">
           <span class="font-semibold text-gray-900">{{ cost.display_name }}</span>
-          <span class="font-bold text-gray-900 text-base">{{ formatCurrency(cost.final_total) }}</span>
+          <span class="font-bold text-gray-900 text-base">{{
+            formatCurrency(cost.final_total)
+          }}</span>
         </div>
         <!-- Breakdown chips -->
         <div class="flex flex-wrap gap-2 text-xs text-gray-500">
@@ -69,22 +67,40 @@ const formatCurrency = (v: number) => currencyFormatter.format(v)
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('common.member') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.total') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.numIntervals') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.courtFee') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.shuttleFee') }}
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
+            <th
+              scope="col"
+              class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+            >
               {{ t('session.extraFee') }}
             </th>
           </tr>

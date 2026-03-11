@@ -81,6 +81,93 @@ BEGIN
 END;
 $function$
 
+CREATE OR REPLACE FUNCTION public.search_sessions_list(
+    p_query text DEFAULT NULL,
+    p_status text[] DEFAULT NULL,
+    p_start_date date DEFAULT NULL,
+    p_end_date date DEFAULT NULL,
+    p_limit integer DEFAULT 18,
+    p_cursor_status_rank integer DEFAULT NULL,
+    p_cursor_session_date date DEFAULT NULL,
+    p_cursor_id uuid DEFAULT NULL
+)
+ RETURNS TABLE(
+    id uuid,
+    title text,
+    start_time timestamptz,
+    end_time timestamptz,
+    session_date date,
+    status public.session_status,
+    price_per_hour numeric,
+    total_court_cost numeric,
+    shuttle_fee_total numeric,
+    total_extra_cost numeric,
+    total_registrations bigint,
+    total_intervals bigint,
+    total_collected numeric,
+    status_rank integer
+ )
+ LANGUAGE plpgsql
+ SECURITY INVOKER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+    v_query text := nullif(trim(p_query), '');
+    v_limit integer := greatest(1, least(coalesce(p_limit, 18), 100));
+    v_similarity_threshold real := 0.2;
+BEGIN
+    RETURN QUERY
+    WITH base AS (
+        SELECT
+            vss.*,
+            CASE vss.status
+                WHEN 'open'::public.session_status THEN 0
+                WHEN 'waiting_for_payment'::public.session_status THEN 1
+                WHEN 'done'::public.session_status THEN 2
+                WHEN 'cancelled'::public.session_status THEN 3
+            END AS rank_value
+        FROM public.view_session_summary vss
+        WHERE (p_status IS NULL OR COALESCE(array_length(p_status, 1), 0) = 0 OR vss.status::text = ANY (p_status))
+          AND (p_start_date IS NULL OR vss.session_date >= p_start_date)
+          AND (p_end_date IS NULL OR vss.session_date <= p_end_date)
+          AND (
+              v_query IS NULL
+              OR lower(vss.title) LIKE '%' || lower(v_query) || '%'
+              OR similarity(lower(vss.title), lower(v_query)) >= v_similarity_threshold
+          )
+    ),
+    paged AS (
+        SELECT *
+        FROM base b
+        WHERE (
+            p_cursor_status_rank IS NULL
+            OR b.rank_value > p_cursor_status_rank
+            OR (b.rank_value = p_cursor_status_rank AND b.session_date < p_cursor_session_date)
+            OR (b.rank_value = p_cursor_status_rank AND b.session_date = p_cursor_session_date AND b.id < p_cursor_id)
+        )
+        ORDER BY b.rank_value ASC, b.session_date DESC, b.id DESC
+        LIMIT v_limit
+    )
+    SELECT
+        p.id,
+        p.title,
+        p.start_time,
+        p.end_time,
+        p.session_date,
+        p.status,
+        p.price_per_hour,
+        p.total_court_cost,
+        p.shuttle_fee_total,
+        p.total_extra_cost,
+        p.total_registrations,
+        p.total_intervals,
+        p.total_collected,
+        p.rank_value AS status_rank
+    FROM paged p
+    ORDER BY p.rank_value ASC, p.session_date DESC, p.id DESC;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.batch_add_members_to_session(p_session_id uuid, p_member_ids uuid[])
  RETURNS void
  LANGUAGE plpgsql

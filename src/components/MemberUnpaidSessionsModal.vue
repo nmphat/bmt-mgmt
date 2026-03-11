@@ -2,8 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { X, Calendar, Banknote, ChevronRight } from 'lucide-vue-next'
 import { useLangStore } from '@/stores/lang'
-import { format } from 'date-fns'
-import { vi, enUS } from 'date-fns/locale'
+import { formatDisplayDateTime } from '@/utils/dateFormatters'
 
 const props = defineProps<{
   show: boolean
@@ -21,7 +20,6 @@ const emit = defineEmits<{
 }>()
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
-const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 
 const selectedSnapshotIds = ref<string[]>([])
 const batchNote = ref('')
@@ -36,7 +34,9 @@ const selectedRemainingTotal = computed(() =>
 
 const computedBatchAmount = computed(() => selectedRemainingTotal.value)
 
-const canSubmitBatch = computed(() => selectedSnapshotIds.value.length > 0 && computedBatchAmount.value > 0)
+const canSubmitBatch = computed(
+  () => selectedSnapshotIds.value.length > 0 && computedBatchAmount.value > 0,
+)
 
 watch(
   () => props.show,
@@ -140,9 +140,7 @@ function handleBatchManualPayment() {
                     <Calendar class="w-3.5 h-3.5" />
                     <span>
                       {{
-                        format(new Date(snapshot.sessions?.start_time), 'dd/MM/yyyy HH:mm', {
-                          locale: dateLocale,
-                        })
+                        formatDisplayDateTime(snapshot.sessions?.start_time, langStore.currentLang)
                       }}
                     </span>
                   </div>
@@ -161,7 +159,9 @@ function handleBatchManualPayment() {
                     class="p-1 rounded hover:bg-indigo-50"
                     :title="t('payment.cashPay')"
                   >
-                    <ChevronRight class="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition" />
+                    <ChevronRight
+                      class="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition"
+                    />
                   </button>
                 </div>
               </div>
@@ -178,7 +178,10 @@ function handleBatchManualPayment() {
             </div>
           </div>
 
-          <div v-if="selectedSnapshotIds.length > 0" class="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 space-y-3">
+          <div
+            v-if="selectedSnapshotIds.length > 0"
+            class="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 space-y-3"
+          >
             <div class="flex items-center justify-between">
               <span class="text-sm font-semibold text-indigo-900">
                 {{ t('payment.batchSelectedCount', { count: selectedSnapshotIds.length }) }}
@@ -189,7 +192,9 @@ function handleBatchManualPayment() {
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ t('payment.batchAmountCollected') }}</label>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{
+                t('payment.batchAmountCollected')
+              }}</label>
               <input
                 :value="computedBatchAmount"
                 type="number"
@@ -199,7 +204,9 @@ function handleBatchManualPayment() {
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-1">{{ t('payment.note') }}</label>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">{{
+                t('payment.note')
+              }}</label>
               <input
                 v-model="batchNote"
                 type="text"
@@ -219,7 +226,10 @@ function handleBatchManualPayment() {
           </div>
         </div>
 
-        <div class="bg-gray-50 px-5 py-4 sm:px-6 flex justify-end" style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)">
+        <div
+          class="bg-gray-50 px-5 py-4 sm:px-6 flex justify-end"
+          style="padding-bottom: calc(env(safe-area-inset-bottom) + 1rem)"
+        >
           <button
             @click="emit('close')"
             type="button"
