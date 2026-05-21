@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, LogIn, User, Languages, Wallet } from 'lucide-vue-next'
+import { LogOut, Wallet } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
@@ -47,10 +47,6 @@ async function fetchMyDebt() {
 
 async function handleLogout() {
   await authStore.signOut()
-  router.push('/login')
-}
-
-function handleLogin() {
   router.push('/login')
 }
 
@@ -211,16 +207,6 @@ onMounted(() => {
               </button>
             </div>
           </div>
-        </template>
-
-        <template v-else>
-          <button
-            @click="handleLogin"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-sm transition hover:shadow-md"
-          >
-            <LogIn class="w-4 h-4" />
-            <span>{{ t('auth.login') }}</span>
-          </button>
         </template>
       </div>
     </div>
