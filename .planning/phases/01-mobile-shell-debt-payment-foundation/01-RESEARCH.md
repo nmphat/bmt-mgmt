@@ -331,20 +331,20 @@ Manual validation is still required by phase context: type-check/build plus gues
 5. **Wave 4: Member debt entry points + i18n/access sweep**  
    Polish `MemberDetailView.vue` enough for single-session/pay-all QR consistency; add all locale keys; verify routes and admin gates. [VERIFIED: `MemberDetailView.vue`, `messages.ts`]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should MemberView mutations use `isAdmin` instead of `isAuthenticated`?**
+1. **RESOLVED: Should MemberView mutations use `isAdmin` instead of `isAuthenticated`?**
    - What we know: Phase decision says admins can add/edit/delete members. [VERIFIED: `01-CONTEXT.md`]
    - Current code gates member CRUD with `authStore.isAuthenticated`, not `isAdmin`. [VERIFIED: `MemberView.vue`]
-   - Recommendation: Planner should include an explicit access-control task to align UI gates to `isAdmin` unless user confirms authenticated non-admin members may manage members.
+   - Resolution: Phase 1 plan 01 includes an explicit access-control task to align member CRUD visibility and handler guards to `authStore.isAdmin`.
 
-2. **Should `ManualPaymentModal.vue` be completed in Phase 1 or deferred to Phase 3?**
+2. **RESOLVED: Should `ManualPaymentModal.vue` be completed in Phase 1 or deferred to Phase 3?**
    - What we know: Phase context includes cash sheet decisions and double confirmation, but Phase 3 owns ADMIN-05 payment modal polish. [VERIFIED: `01-CONTEXT.md`, `.planning/REQUIREMENTS.md`]
-   - Recommendation: In Phase 1, only change manual cash if touched by shared sheet primitive or admin preservation; otherwise record as Phase 3 follow-up.
+   - Resolution: Phase 1 plan 04 updates only existing admin cash behavior needed for the approved bottom-sheet and double-confirmation contract; broader admin/payment polish remains deferred to Phase 3.
 
-3. **Can automated tests be added despite nyquist disabled?**
+3. **RESOLVED: Can automated tests be added despite nyquist disabled?**
    - What we know: No test framework is configured and nyquist validation is disabled. [VERIFIED: shell check, `.planning/config.json`]
-   - Recommendation: Plan manual validation plus `pnpm type-check` and `pnpm build`; optional Vitest setup should not block Phase 1.
+   - Resolution: Phase 1 plan 05 requires manual validation plus `pnpm type-check` and `pnpm build`; adding a test framework is not required for Phase 1.
 
 ## Assumptions Log
 
