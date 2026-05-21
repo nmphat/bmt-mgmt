@@ -47,15 +47,15 @@ This is a preservation-first UI refactor:
 
 1. Guest can open the home page without login, immediately understand member debt from `view_member_debt_summary`, use loading/empty/load-more states, and navigate to member debt details.
 2. Guest can create single-member, single-session, and grouped debt QR payments from home/member debt entry points using existing payment contracts without frontend recalculating debt amounts.
-3. User can navigate changed mobile screens through a role-aware bottom shell/header without route access drift, admin-action leakage, or blocked primary actions at 360-430px.
+3. User can navigate changed mobile screens through a public Home/Members/Sessions bottom shell and compact header without unapproved route access drift, admin-action leakage, or blocked primary actions at 360-430px.
 4. User can switch Vietnamese/English and see all new shell, debt, payment, auth, and state labels translated in both locales.
 5. Developer can verify route/access behavior, feature inventory, no-regression checklist, and Supabase contract preservation before moving to Phase 2.
 
 **Validation Notes**:
 
 - Open Design guides mobile hierarchy, bottom navigation, cards, safe-area CTAs, and bottom-sheet patterns only.
-- Preserve guest access to `/`, `/member/:id`, `/session/:id`, and `/members` as currently allowed.
-- Preserve current protected behavior for admin-only destinations.
+- Preserve guest access to `/`, `/member/:id`, `/session/:id`, `/members`, and approved public read-only `/sessions`.
+- Preserve protected behavior for `/create-session` and all mutation/admin-only actions.
 - Preserve Supabase contracts: `view_member_debt_summary`, `view_member_session_details`, and `create_group_payment`.
 - Stop ship if QR amount/content/copy code is wrong, if guest debt requires login, or if bottom nav/floating bars cover payment actions.
 
@@ -101,7 +101,7 @@ This is a preservation-first UI refactor:
 
 **Success Criteria** (what must be TRUE):
 
-1. Admin can view the sessions list, navigate to session detail, and create sessions through the existing guarded routes and `create_session_with_intervals` flow with validation and feedback preserved.
+1. User can view the sessions list read-only, navigate to session detail, and admins can create sessions through the guarded `create_session_with_intervals` flow with validation and feedback preserved.
 2. User can view the member list on mobile, and currently authorized users can add, edit, and delete members without losing role, active, permanent, create-another, loading, toast, or confirmation behavior.
 3. User can use QR and manual payment dialogs as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, payment polling, refresh behavior, or admin-only cash payment gates.
 4. User can view converted mobile card layouts without losing financial fields, status fields, route actions, or desktop-table information.
@@ -109,7 +109,7 @@ This is a preservation-first UI refactor:
 
 **Validation Notes**:
 
-- Preserve `/sessions`, `/create-session`, `/members`, `/member/:id`, `/login`, and payment modal behavior.
+- Preserve `/sessions` public read-only behavior, `/create-session` admin guard, `/members`, `/member/:id`, `/login`, and payment modal behavior.
 - Preserve Supabase contracts: `create_session_with_intervals`, member CRUD table behavior, payment polling/refresh behavior, and manual payment flow.
 - Stop ship if table-to-card layouts omit financial/status/action fields, payment sheets lose accessibility semantics, or any new UI string exists in only one locale.
 - Final validation should include no-regression guardrails from all phases.

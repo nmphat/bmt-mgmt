@@ -41,7 +41,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 ### Admin and Supporting Screens
 
-- [ ] **ADMIN-01**: Admin can view the sessions list, see session cards with status/date/interval/registration counts, and navigate to session detail while current `/sessions` guard behavior remains intact.
+- [ ] **ADMIN-01**: User can view the sessions list read-only, see session cards with status/date/interval/registration counts, and navigate to session detail while create/mutation actions remain admin-only.
 - [ ] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_intervals`, with end-time validation and loading/error/success feedback preserved.
 - [ ] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active, permanent, and create-another behavior preserved.
 - [ ] **ADMIN-04**: User can log in, see login errors, log out, access profile/member link, see authenticated debt badge, and use header actions after the shell refactor.
@@ -76,7 +76,6 @@ Explicitly excluded from this milestone.
 |---------|--------|
 | Backend business logic rewrite | Existing Supabase RPCs/views own cost, session creation, payment grouping, and manual payment logic |
 | Database schema change | UI refactor can use current contracts; prototype-only fields are deferred |
-| Public `/sessions` access | Current router protects `/sessions`; changing this is product/access scope |
 | Frontend fee allocation | Violates backend boundary and risks wrong shared-cost behavior |
 | Prototype-only overdue/late debt filters | Current frontend does not have reliable backend fields for these states |
 | Guest manual transfer confirmation | Current behavior is QR polling and admin manual cash payment |

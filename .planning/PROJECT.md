@@ -60,6 +60,7 @@ Members and guests can understand what they owe and pay it quickly, while admins
 - The current codebase is a Vue 3 + TypeScript + TailwindCSS SPA with Supabase as the data/auth/realtime backend. Business logic must remain in Supabase RPCs and views.
 - Known codebase concern: `SessionDetailView.vue` is monolithic and mixes attendance, costs, payments, member registration, realtime, polling, and session editing. This milestone should refactor UI without changing business semantics.
 - Current GSD setup started with codebase mapping only; this milestone initializes the primary GSD project/requirements/roadmap docs.
+- Phase 1 discussion explicitly approved `/sessions` as public read-only while keeping create/mutation/admin actions protected.
 
 ## Constraints
 
@@ -79,6 +80,7 @@ Members and guests can understand what they owe and pay it quickly, while admins
 | Keep a 3-phase coarse roadmap | User requested coarse mode and exactly 3 phases | — Pending |
 | Refactor UI before changing backend contracts | Current backend already owns business logic; UI risk is losing flows during redesign | — Pending |
 | Prioritize guest debt/payment path | User identified guest no-login debt payment as the most important use case in Open Design instructions | — Pending |
+| Hide login UI and make `/sessions` public read-only | Only admins need login; current sessions list can behave read-only for guests while admin actions remain protected | Phase 1 decision |
 
 ## Evolution
 
