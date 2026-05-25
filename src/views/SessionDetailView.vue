@@ -1199,8 +1199,73 @@ onUnmounted(() => {
             <span class="text-xs font-normal text-gray-500">({{ t('session.live') }})</span>
           </h2>
         </div>
-        <div v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'" class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+        <div v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'">
+          <div
+            v-if="costs.length === 0"
+            class="p-6 text-sm text-gray-500 md:hidden"
+          >
+            {{ t('session.liveCostsEmpty') }}
+          </div>
+          <div v-else class="space-y-4 p-4 md:hidden">
+            <div class="rounded-2xl border border-green-100 bg-green-50 p-4">
+              <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
+              <p class="mt-1 text-2xl font-bold text-green-700 tabular-nums">
+                {{ formatCurrency(surplus) }}
+              </p>
+              <p class="mt-1 text-sm text-green-700">{{ t('session.live') }}</p>
+            </div>
+
+            <article
+              v-for="cost in costs"
+              :key="cost.member_id"
+              class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-base font-bold text-gray-900">
+                    {{ cost.display_name }}
+                  </h3>
+                  <p class="mt-1 text-sm font-semibold text-gray-500">
+                    {{ t('session.live') }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-bold text-gray-500">{{ t('session.total') }}</p>
+                  <p class="text-2xl font-bold text-indigo-700 tabular-nums">
+                    {{ formatCurrency(cost.final_total) }}
+                  </p>
+                </div>
+              </div>
+
+              <dl class="mt-4 grid grid-cols-1 gap-3 text-sm">
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.numIntervals') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">{{ cost.intervals_count }}</dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.courtFee') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">
+                    {{ formatCurrency(cost.total_court_fee) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.shuttleFee') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">
+                    {{ formatCurrency(cost.total_shuttle_fee) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-green-50 px-3 py-2">
+                  <dt class="font-bold text-green-800">{{ t('session.surplusFund') }}</dt>
+                  <dd class="font-bold text-green-700 tabular-nums">
+                    {{ formatCurrency(surplus) }}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+
+          <div class="hidden overflow-x-auto md:block">
+            <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
                 <th
@@ -1265,7 +1330,8 @@ onUnmounted(() => {
                 </td>
               </tr>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
         <div
           v-else
