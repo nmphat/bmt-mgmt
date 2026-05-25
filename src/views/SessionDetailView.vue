@@ -238,7 +238,7 @@ async function fetchSnapshotData() {
 }
 
 async function finalizeSession() {
-  if (!authStore.isAuthenticated || !session.value) return
+  if (!authStore.isAdmin || !session.value) return
   if (!confirm(t.value('session.finalizeConfirm'))) return
 
   try {
@@ -258,7 +258,7 @@ async function finalizeSession() {
 }
 
 async function cancelSession() {
-  if (!authStore.isAuthenticated || !session.value) return
+  if (!authStore.isAdmin || !session.value) return
   if (!confirm(t.value('session.cancelConfirm'))) return
 
   try {
@@ -289,7 +289,7 @@ function openCashPayment(snapshot: CostSnapshot, name: string) {
 }
 
 async function saveSession() {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
 
   try {
     isSavingSession.value = true
@@ -318,6 +318,7 @@ async function saveSession() {
 }
 
 async function registerMembers() {
+  if (!authStore.isAdmin) return
   if (selectedMemberIds.value.length === 0) return
 
   try {
@@ -354,6 +355,7 @@ async function registerMembers() {
 }
 
 async function removeRegistration(regId: string, name: string) {
+  if (!authStore.isAdmin) return
   if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
@@ -378,7 +380,7 @@ async function fetchCosts() {
 }
 
 async function togglePresence(memberId: string, intervalId: string) {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
 
   const currentMemberPresence = presence.value[memberId]
   if (!currentMemberPresence) return
@@ -415,7 +417,7 @@ async function togglePresence(memberId: string, intervalId: string) {
 }
 
 async function toggleAbsent(reg: SessionRegistration) {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
 
   const newValue = !reg.is_registered_not_attended
 
@@ -613,7 +615,7 @@ onUnmounted(() => {
     <div v-else-if="session">
       <div class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
         <!-- Edit Mode -->
-        <div v-if="isEditingSession && authStore.isAuthenticated" class="space-y-4">
+        <div v-if="isEditingSession && authStore.isAdmin" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
             <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
@@ -694,7 +696,7 @@ onUnmounted(() => {
               <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
               <button
                 v-if="
-                  authStore.isAuthenticated &&
+                  authStore.isAdmin &&
                   session.status !== 'done' &&
                   session.status !== 'cancelled' &&
                   session.status !== 'waiting_for_payment'
@@ -755,7 +757,7 @@ onUnmounted(() => {
           </div>
 
           <div
-            v-if="authStore.isAuthenticated && session.status === 'open'"
+            v-if="authStore.isAdmin && session.status === 'open'"
             class="flex items-center gap-2"
           >
             <button
@@ -964,14 +966,14 @@ onUnmounted(() => {
         >
           <div class="flex items-center gap-2">
             <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendanceMatrix') }}</h2>
-            <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-500 italic">{{
+            <span v-if="!authStore.isAdmin" class="text-xs text-gray-500 italic">{{
               t('session.readOnly')
             }}</span>
           </div>
           <!-- Add Members to Session -->
           <div
             v-if="
-              authStore.isAuthenticated &&
+              authStore.isAdmin &&
               session.status !== 'waiting_for_payment' &&
               session.status !== 'done'
             "
@@ -1043,7 +1045,7 @@ onUnmounted(() => {
                 </th>
                 <th
                   v-if="
-                    authStore.isAuthenticated &&
+                    authStore.isAdmin &&
                     session.status !== 'waiting_for_payment' &&
                     session.status !== 'done'
                   "
@@ -1054,7 +1056,7 @@ onUnmounted(() => {
                 </th>
                 <th
                   v-if="
-                    authStore.isAuthenticated &&
+                    authStore.isAdmin &&
                     session.status !== 'waiting_for_payment' &&
                     session.status !== 'done'
                   "
@@ -1093,7 +1095,7 @@ onUnmounted(() => {
                 </td>
                 <td
                   v-if="
-                    authStore.isAuthenticated &&
+                    authStore.isAdmin &&
                     session.status !== 'waiting_for_payment' &&
                     session.status !== 'done'
                   "
@@ -1109,7 +1111,7 @@ onUnmounted(() => {
                 </td>
                 <td
                   v-if="
-                    authStore.isAuthenticated &&
+                    authStore.isAdmin &&
                     session.status !== 'waiting_for_payment' &&
                     session.status !== 'done'
                   "
@@ -1135,7 +1137,7 @@ onUnmounted(() => {
                       :checked="presence[reg.member_id]?.[interval.id] || false"
                       @change="togglePresence(reg.member_id, interval.id)"
                       :disabled="
-                        !authStore.isAuthenticated ||
+                        !authStore.isAdmin ||
                         reg.is_registered_not_attended ||
                         session.status === 'waiting_for_payment' ||
                         session.status === 'done'
