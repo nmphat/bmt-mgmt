@@ -877,6 +877,7 @@ onUnmounted(() => {
                 : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
             "
             :aria-label="tab.ariaLabel"
+            :aria-controls="tab.id"
             :aria-current="activeSection === tab.id ? 'true' : undefined"
             @click="scrollToSection(tab.id)"
           >
@@ -1345,7 +1346,7 @@ onUnmounted(() => {
         >
           <div class="flex flex-col">
             <span class="text-sm font-medium opacity-90">{{
-              t('session.payGroup', { count: selectedSnapshotIds.length })
+              t('session.groupPaymentBar', { count: selectedSnapshotIds.length })
             }}</span>
             <span class="text-xl font-extrabold">{{
               t('session.totalSelected', { amount: formatCurrency(totalSelectedAmount) })
