@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-session-detail-task-cockpit-03-PLAN.md
-last_updated: "2026-05-25T11:31:46.568Z"
+stopped_at: Completed 02-session-detail-task-cockpit-04-PLAN.md
+last_updated: "2026-05-25T11:36:21.834Z"
 last_activity: 2026-05-25
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-20)
 ## Current Position
 
 Phase: 02 (session-detail-task-cockpit) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-05-25
 
@@ -63,6 +63,7 @@ Progress: ██████████ 100%
 | Phase 02-session-detail-task-cockpit P01 | 162s | 3 tasks | 3 files |
 | Phase 02-session-detail-task-cockpit P02 | 222 | 3 tasks | 1 files |
 | Phase 02-session-detail-task-cockpit P03 | 149 | 3 tasks | 1 files |
+| Phase 02-session-detail-task-cockpit P04 | 300 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 02-session-detail-task-cockpit]: Plan 03 keeps attendance section work in SessionDetailView.vue to avoid behavior drift in the highest-risk attendance surface.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 adds mobile attendance cards as an additive layout while preserving the desktop interval matrix.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 reuses existing attendance Supabase handlers and adds no schema changes or frontend fee logic.
+- [Phase 02-session-detail-task-cockpit]: Plan 04 preserved backend-owned amounts by displaying calculate_session_costs and session_costs_snapshot fields only.
+- [Phase 02-session-detail-task-cockpit]: Plan 04 uses additive mobile cards plus preserved desktop tables for costs and payments.
+- [Phase 02-session-detail-task-cockpit]: Plan 04 removed session-detail bottom-6 group payment offset in favor of the Phase 2 safe-area offset above bottom nav.
 
 ### Pending Todos
 
@@ -123,7 +127,7 @@ Known high-risk areas to watch during planning:
 
 ## Session Continuity
 
-Last session: 2026-05-25T11:31:46.566Z
-Stopped at: Completed 02-session-detail-task-cockpit-03-PLAN.md
+Last session: 2026-05-25T11:36:21.829Z
+Stopped at: Completed 02-session-detail-task-cockpit-04-PLAN.md
 Resume file: None
 Next command: `/gsd-plan-phase 1`

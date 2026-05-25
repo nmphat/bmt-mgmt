@@ -32,10 +32,10 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 - [x] **SESS-04**: Admin can add active members to a session and remove registered members without changing `add_member_to_session_full_presence` or `session_registrations` behavior.
 - [x] **SESS-05**: Admin can toggle interval-level attendance for every registered member and interval, with guest/read-only/done/waiting/absent disabled states preserved.
 - [x] **SESS-06**: Admin can mark a registered member as registered-but-absent through `is_registered_not_attended`, and the UI preserves that state separately from member removal.
-- [ ] **SESS-07**: User can view live cost summary from `calculate_session_costs`, including member total, interval count, court fee, shuttle fee, and surplus fund.
-- [ ] **SESS-08**: User can view finalized payment snapshots for waiting-for-payment and done sessions, including must-pay amount, paid amount, payment status, interval count, court fee, shuttle fee, and surplus.
-- [ ] **SESS-09**: User can create single QR payments and authenticated/admin group QR payments from session snapshots using existing snapshot and `create_group_payment` behavior.
-- [ ] **SESS-10**: Admin can record manual cash payment from session snapshots using the existing `add_manual_payment` flow, with non-admin access prevented.
+- [x] **SESS-07**: User can view live cost summary from `calculate_session_costs`, including member total, interval count, court fee, shuttle fee, and surplus fund.
+- [x] **SESS-08**: User can view finalized payment snapshots for waiting-for-payment and done sessions, including must-pay amount, paid amount, payment status, interval count, court fee, shuttle fee, and surplus.
+- [x] **SESS-09**: User can create single QR payments and authenticated/admin group QR payments from session snapshots using existing snapshot and `create_group_payment` behavior.
+- [x] **SESS-10**: Admin can record manual cash payment from session snapshots using the existing `add_manual_payment` flow, with non-admin access prevented.
 - [ ] **SESS-11**: User can rely on realtime updates, polling/manual refresh fallback, and payment completion refresh without duplicate timers or stale visible state after navigation.
 - [x] **SESS-12**: User can use the session detail screen as task-focused mobile sections for overview, attendance, costs, and payments while preserving all current session operations.
 
@@ -105,10 +105,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-04 | Phase 2 | Complete |
 | SESS-05 | Phase 2 | Complete |
 | SESS-06 | Phase 2 | Complete |
-| SESS-07 | Phase 2 | Pending |
-| SESS-08 | Phase 2 | Pending |
-| SESS-09 | Phase 2 | Pending |
-| SESS-10 | Phase 2 | Pending |
+| SESS-07 | Phase 2 | Complete |
+| SESS-08 | Phase 2 | Complete |
+| SESS-09 | Phase 2 | Complete |
+| SESS-10 | Phase 2 | Complete |
 | SESS-11 | Phase 2 | Pending |
 | SESS-12 | Phase 2 | Complete |
 | ADMIN-01 | Phase 3 | Pending |
