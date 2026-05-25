@@ -902,74 +902,90 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Attendance Matrix -->
+      <!-- Attendance -->
       <section id="attendance-section" class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24">
         <div
-          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+          class="px-6 py-4 border-b border-gray-100 bg-gray-50"
         >
-          <div class="flex items-center gap-2">
-            <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendanceMatrix') }}</h2>
-            <span v-if="attendanceLockMessage" class="text-xs text-gray-500 italic">{{
+          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendance') }}</h2>
+          <p v-if="attendanceLockMessage" class="mt-1 text-sm text-gray-600">
+            <Lock class="inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
+            {{
               attendanceLockMessage
-            }}</span>
-          </div>
-          <!-- Add Members to Session -->
+            }}
+          </p>
+        </div>
+
+        <!-- Add Members to Session -->
+        <div class="border-b border-gray-100 p-4 sm:p-6">
           <div
             v-if="isSessionEditable"
-            class="flex items-center gap-2 w-full sm:w-auto relative"
+            class="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4"
             ref="dropdownRef"
           >
-            <div class="relative w-full sm:w-64">
-              <button
-                @click="showMemberDropdown = !showMemberDropdown"
-                class="flex items-center justify-between w-full rounded-md border-gray-300 shadow-sm bg-white border px-3 py-1.5 text-sm cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              >
-                <span v-if="selectedMemberIds.length === 0" class="text-gray-500">{{
-                  t('session.selectMembers')
-                }}</span>
-                <span v-else class="text-gray-900 font-medium">{{
-                  t('session.selectedCount', { count: selectedMemberIds.length })
-                }}</span>
-                <ChevronLeft
-                  class="w-4 h-4 text-gray-400 transition-transform duration-200"
-                  :class="showMemberDropdown ? 'rotate-90' : '-rotate-90'"
-                />
-              </button>
-              <!-- Custom Checkbox Dropdown -->
-              <div
-                v-if="showMemberDropdown"
-                class="absolute z-[60] left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
-              >
-                <div
-                  v-if="availableMembers.length === 0"
-                  class="p-3 text-base text-gray-500 italic text-center"
-                >
-                  {{ t('session.noMoreMembers') }}
-                </div>
-                <label
-                  v-for="m in availableMembers"
-                  :key="m.id"
-                  class="flex items-center px-3 py-2 hover:bg-indigo-50 cursor-pointer transition select-none"
-                >
-                  <input
-                    type="checkbox"
-                    :value="m.id"
-                    v-model="selectedMemberIds"
-                    class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-3"
-                  />
-                  <span class="text-base text-gray-700">{{ m.display_name }}</span>
-                </label>
-              </div>
+            <div class="mb-3 flex items-center gap-2">
+              <UserPlus class="h-5 w-5 text-indigo-600" aria-hidden="true" />
+              <h3 class="text-base font-semibold text-gray-900">{{ t('session.addMembersTitle') }}</h3>
             </div>
-            <button
-              @click="registerMembers"
-              :disabled="selectedMemberIds.length === 0 || isRegistering"
-              class="flex items-center px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50 whitespace-nowrap text-base font-medium shadow-sm"
-            >
-              <UserPlus v-if="!isRegistering" class="w-4 h-4 mr-1.5" />
-              <Loader2 v-else class="w-4 h-4 mr-1.5 animate-spin" />
-              {{ isRegistering ? t('common.loading') : t('session.register') }}
-            </button>
+            <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
+              <div class="relative w-full sm:w-80">
+                <button
+                  type="button"
+                  @click="showMemberDropdown = !showMemberDropdown"
+                  class="flex min-h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-4 py-2 text-left text-sm shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  <span v-if="selectedMemberIds.length === 0" class="text-gray-500">{{
+                    t('session.selectMembers')
+                  }}</span>
+                  <span v-else class="font-medium text-gray-900">{{
+                    t('session.selectedCount', { count: selectedMemberIds.length })
+                  }}</span>
+                  <ChevronLeft
+                    class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                    :class="showMemberDropdown ? 'rotate-90' : '-rotate-90'"
+                  />
+                </button>
+                <!-- Custom Checkbox Dropdown -->
+                <div
+                  v-if="showMemberDropdown"
+                  class="absolute z-[60] left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg animate-in fade-in zoom-in-95 duration-100"
+                >
+                  <div
+                    v-if="availableMembers.length === 0"
+                    class="p-3 text-center text-base italic text-gray-500"
+                  >
+                    {{ t('session.noMoreMembers') }}
+                  </div>
+                  <label
+                    v-for="m in availableMembers"
+                    :key="m.id"
+                    class="flex min-h-11 cursor-pointer select-none items-center px-3 py-2 transition hover:bg-indigo-50"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="m.id"
+                      v-model="selectedMemberIds"
+                      class="mr-3 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    />
+                    <span class="text-base text-gray-700">{{ m.display_name }}</span>
+                  </label>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="registerMembers"
+                :disabled="selectedMemberIds.length === 0 || isRegistering"
+                class="flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+              >
+                <UserPlus v-if="!isRegistering" class="mr-1.5 h-4 w-4" />
+                <Loader2 v-else class="mr-1.5 h-4 w-4 animate-spin" />
+                {{ isRegistering ? t('common.loading') : t('session.register') }}
+              </button>
+            </div>
+          </div>
+          <div v-else-if="attendanceLockMessage" class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
+            {{ attendanceLockMessage }}
           </div>
         </div>
         <div class="overflow-x-auto">
