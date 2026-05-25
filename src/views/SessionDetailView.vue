@@ -494,6 +494,10 @@ const formatTime = (isoString: string) => {
   return format(new Date(isoString), 'HH:mm')
 }
 
+const presentIntervalCount = (memberId: string) => {
+  return Object.values(presence.value[memberId] || {}).filter(Boolean).length
+}
+
 const formatSessionDate = (isoString: string) => {
   return format(new Date(isoString), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
 }
@@ -987,6 +991,98 @@ onUnmounted(() => {
             <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
             {{ attendanceLockMessage }}
           </div>
+        </div>
+        <div class="space-y-4 p-4 md:hidden">
+          <div
+            v-if="registrations.length === 0"
+            class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5 text-center text-sm text-gray-600"
+          >
+            {{ t('session.noRegisteredMembers') }}
+          </div>
+          <article
+            v-for="reg in registrations"
+            :key="reg.id"
+            class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+            :class="{ 'bg-gray-50 opacity-90': reg.is_registered_not_attended }"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="text-base font-semibold text-gray-900">
+                  {{ reg.member?.display_name }}
+                </h3>
+                <p class="mt-1 text-sm font-medium text-gray-600">
+                  {{ t('session.presentIntervals') }}:
+                  <span class="tabular-nums text-gray-900">
+                    {{ presentIntervalCount(reg.member_id) }}/{{ intervals.length }}
+                  </span>
+                </p>
+              </div>
+              <span
+                v-if="reg.is_registered_not_attended"
+                class="rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-600"
+              >
+                {{ t('session.absent') }}
+              </span>
+            </div>
+
+            <p
+              v-if="reg.is_registered_not_attended || attendanceLockMessage"
+              class="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
+            >
+              <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
+              {{
+                reg.is_registered_not_attended
+                  ? t('session.absent')
+                  : attendanceLockMessage
+              }}
+            </p>
+
+            <div v-if="isSessionEditable" class="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                @click="toggleAbsent(reg)"
+                class="flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                :class="
+                  reg.is_registered_not_attended
+                    ? 'border-red-200 bg-red-50 text-red-700'
+                    : 'border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:text-red-700'
+                "
+                :aria-pressed="reg.is_registered_not_attended ? 'true' : 'false'"
+              >
+                <UserX class="mr-1.5 h-4 w-4" aria-hidden="true" />
+                {{ t('session.markAbsent') }}
+              </button>
+              <button
+                type="button"
+                @click="removeRegistration(reg.id, reg.member?.display_name || '')"
+                class="flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              >
+                <Trash2 class="mr-1.5 h-4 w-4" aria-hidden="true" />
+                {{ t('common.remove') }}
+              </button>
+            </div>
+
+            <div class="mt-4 space-y-2">
+              <label
+                v-for="interval in intervals"
+                :key="interval.id"
+                class="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+                :class="{ 'opacity-70': !isSessionEditable || reg.is_registered_not_attended }"
+              >
+                <span class="text-sm font-medium text-gray-700">
+                  {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
+                </span>
+                <input
+                  type="checkbox"
+                  :checked="presence[reg.member_id]?.[interval.id] || false"
+                  @change="togglePresence(reg.member_id, interval.id)"
+                  :disabled="!isSessionEditable || reg.is_registered_not_attended"
+                  class="h-6 w-6 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  :aria-label="`${reg.member?.display_name || t('common.member')} ${formatTime(interval.start_time)} - ${formatTime(interval.end_time)}`"
+                />
+              </label>
+            </div>
+          </article>
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
