@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 01 UI-SPEC approved
 last_updated: "2026-05-21T09:42:30.498Z"
-last_activity: 2026-05-21 -- Phase 01 planning complete
+last_activity: 2026-05-25 - Completed quick task 260525-m9g: browser harness smoke test and screenshots
 progress:
   total_phases: 3
   completed_phases: 0
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-20)
 Phase: 1 of 3 — Mobile Shell + Debt/Payment Foundation
 Plan: —
 Status: Ready to execute
-Last activity: 2026-05-21 -- Phase 01 planning complete
+Last activity: 2026-05-25 - Completed quick task 260525-m9g: browser harness smoke test and screenshots
 
 Progress: ░░░░░░░░░░ 0%
 
@@ -83,6 +83,12 @@ Known high-risk areas to watch during planning:
 - Session detail refactor must not drop attendance, absent flags, snapshots, payments, realtime, polling, or admin gates.
 - Bottom navigation and floating payment CTAs must not overlap key actions on 360-430px screens.
 - Open Design is directional only; current routes, permissions, and Supabase behavior remain source of truth.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260525-m9g | Browser harness smoke test, cert bypass, and mobile/desktop screenshots for `http://localhost:5173/`. | 2026-05-25 | pending | [260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing](./quick/260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing/) |
 
 ## Session Continuity
 
