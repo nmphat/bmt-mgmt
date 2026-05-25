@@ -84,6 +84,28 @@ const selectedSnapshotIds = ref<string[]>([])
 const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
 const isFetching = ref(false)
+const activeSection = ref('overview-section')
+const lastStatusForActiveSection = ref<string | null>(null)
+
+type SessionSectionId = 'overview-section' | 'attendance-section' | 'costs-section' | 'payments-section'
+
+const getDefaultActiveSection = (status?: string): SessionSectionId => {
+  if (status === 'open') return 'attendance-section'
+  if (status === 'waiting_for_payment' || status === 'done') return 'payments-section'
+  return 'overview-section'
+}
+
+const sectionTabs = computed<{ id: SessionSectionId; label: string; ariaLabel: string }[]>(() => [
+  { id: 'overview-section', label: t.value('session.overview'), ariaLabel: t.value('session.overview') },
+  { id: 'attendance-section', label: t.value('session.attendance'), ariaLabel: t.value('session.attendance') },
+  { id: 'costs-section', label: t.value('session.costs'), ariaLabel: t.value('session.costs') },
+  { id: 'payments-section', label: t.value('session.payments'), ariaLabel: t.value('session.payments') },
+])
+
+function scrollToSection(sectionId: SessionSectionId) {
+  activeSection.value = sectionId
+  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 // Cache formatters for performance
 const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
@@ -150,6 +172,11 @@ async function fetchData(refreshCostsOnly = false) {
 
     if (sessionError) throw sessionError
     session.value = sessionData
+
+    if (sessionData && lastStatusForActiveSection.value !== sessionData.status) {
+      activeSection.value = getDefaultActiveSection(sessionData.status)
+      lastStatusForActiveSection.value = sessionData.status
+    }
 
     if (sessionData) {
       sessionForm.value = {
@@ -473,6 +500,31 @@ const formatSessionDate = (isoString: string) => {
 const getStatusLabel = (status: string) => {
   return t.value(`common.${status}`)
 }
+
+const getStatusChipClass = (status: string) =>
+  status === 'done'
+    ? 'bg-green-100 text-green-800'
+    : status === 'waiting_for_payment'
+      ? 'bg-orange-100 text-orange-800'
+      : status === 'cancelled'
+        ? 'bg-gray-100 text-gray-800'
+        : 'bg-blue-100 text-blue-800'
+
+const totalCollected = computed(() => {
+  if (costs.value.length > 0) {
+    return costs.value.reduce((sum, c) => sum + c.final_total, 0)
+  }
+
+  return snapshots.value.reduce((sum, s) => sum + s.final_amount, 0)
+})
+
+const overviewMessage = computed(() => {
+  if (isSessionCancelled.value) return t.value('session.cancelledSessionHint')
+  if (isSessionFinalized.value) return t.value('session.lockedSessionHint')
+  if (!authStore.isAuthenticated) return t.value('session.readOnlyHint')
+  if (isReadOnlyViewer.value) return t.value('session.adminOnlyHint')
+  return ''
+})
 
 const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
