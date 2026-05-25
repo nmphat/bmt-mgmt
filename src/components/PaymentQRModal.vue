@@ -46,9 +46,8 @@ const qrUrl = computed(() => {
 })
 
 async function copyPaymentCode() {
-  const code = props.groupData ? props.groupData.group_code : props.snapshot?.payment_code
-  if (!code) return
-  await navigator.clipboard.writeText(code)
+  if (!paymentInfo.value) return
+  await navigator.clipboard.writeText(paymentInfo.value)
   copied.value = true
   setTimeout(() => {
     copied.value = false
@@ -108,6 +107,7 @@ async function checkPaymentStatus(): Promise<boolean> {
 }
 
 function startPolling() {
+  if (!props.show) return
   if (pollTimer.value) return
   if (props.isPaid || isPaymentComplete.value) return
 
@@ -128,6 +128,11 @@ function stopPolling() {
   }
 }
 
+function handleClose() {
+  stopPolling()
+  emit('close')
+}
+
 // Watch for modal show/hide to start/stop polling
 watch(
   () => props.show,
@@ -136,6 +141,10 @@ watch(
       startPolling()
     } else {
       stopPolling()
+      copied.value = false
+      if (!newShow) {
+        isPaymentComplete.value = false
+      }
     }
   },
 )
@@ -149,27 +158,27 @@ onUnmounted(() => {
 <template>
   <div
     v-if="show"
-    class="fixed inset-0 z-[100] overflow-y-auto"
+    class="fixed inset-0 z-[100]"
     aria-labelledby="modal-title"
     role="dialog"
     aria-modal="true"
   >
     <div
-      class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+      class="flex min-h-screen items-end justify-center px-0 text-center sm:items-center sm:px-4 sm:py-8"
     >
       <!-- Background overlay -->
       <div
         class="fixed inset-0 transition-opacity bg-gray-500/75"
         aria-hidden="true"
-        @click="emit('close')"
+        @click="handleClose"
       ></div>
 
       <!-- Modal panel -->
       <div
-        class="relative z-10 inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-h-[calc(100vh-4rem)] sm:max-w-lg sm:rounded-lg"
       >
-        <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
-          <div class="flex justify-between items-start mb-4">
+        <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
+          <div class="flex items-start justify-between gap-3">
             <h3 class="text-xl font-bold text-gray-900" id="modal-title">
               {{
                 isPaid || isPaymentComplete
@@ -180,30 +189,31 @@ onUnmounted(() => {
               }}
             </h3>
             <button
-              @click="emit('close')"
-              class="text-gray-400 hover:text-gray-600 focus:outline-none"
+              type="button"
+              @click="handleClose"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              :aria-label="t('common.cancel')"
             >
               <X class="w-6 h-6" />
             </button>
           </div>
+        </div>
 
-          <div v-if="snapshot || groupData" class="mt-4 flex flex-col items-center">
+        <div class="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6">
+          <div v-if="snapshot || groupData" class="flex flex-col items-center">
             <!-- Paid State -->
-            <div v-if="isPaid || isPaymentComplete" class="py-8 flex flex-col items-center">
+            <div
+              v-if="isPaid || isPaymentComplete"
+              class="py-8 flex flex-col items-center"
+              aria-live="polite"
+            >
               <div
                 class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce"
               >
                 <Check class="w-12 h-12 text-green-600 stroke-[3px]" />
               </div>
               <p class="text-2xl font-bold text-gray-900 mb-2">{{ t('payment.thanks') }}</p>
-              <p
-                class="text-gray-600 text-center"
-                v-html="
-                  props.groupData
-                    ? t('payment.manualPaymentSuccess')
-                    : t('payment.recordingSuccess', { name: memberName })
-                "
-              ></p>
+              <p class="text-gray-600 text-center">{{ t('payment.qrSuccess') }}</p>
             </div>
 
             <!-- Pending State -->
@@ -227,14 +237,6 @@ onUnmounted(() => {
                   "
                   class="w-64 h-64 object-contain"
                 />
-                <div
-                  class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-white/10 backdrop-blur-[2px] cursor-zoom-in"
-                >
-                  <span
-                    class="bg-white/90 px-3 py-1 rounded-full text-xs font-medium text-gray-700 shadow-sm border border-gray-100"
-                    >{{ t('payment.scanToPayManual') }}</span
-                  >
-                </div>
               </div>
 
               <div class="w-full space-y-4">
@@ -245,7 +247,7 @@ onUnmounted(() => {
                     }}</span>
                     <button
                       @click="copyPaymentCode"
-                      class="text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1 text-xs font-medium"
+                      class="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <template v-if="!copied">
                         <Copy class="w-3 h-3" /> {{ t('payment.copyCode') }}
@@ -256,7 +258,7 @@ onUnmounted(() => {
                     </button>
                   </div>
                   <p class="text-xl font-mono font-bold text-indigo-900 break-all">
-                    {{ groupData ? groupData.group_code : snapshot?.payment_code }}
+                    {{ paymentInfo }}
                   </p>
                   <p class="text-sm text-indigo-700 mt-2 italic">
                     <template v-if="props.groupData">
@@ -299,23 +301,26 @@ onUnmounted(() => {
                   </div>
                 </div>
 
-                <div class="text-sm text-gray-500 text-center">
-                  <p>{{ t('payment.autoUpdateNote') }}</p>
+                <div class="text-sm text-gray-500 text-center" aria-live="polite">
+                  <p>{{ t('payment.qrStatusNote') }}</p>
                 </div>
               </div>
             </template>
           </div>
         </div>
-        <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+
+        <div
+          class="sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:flex sm:flex-row-reverse"
+        >
           <button
             type="button"
-            class="inline-flex justify-center w-full px-6 py-2 text-base font-bold text-white rounded-md shadow-sm transition sm:ml-3 sm:w-auto sm:text-sm"
+            class="inline-flex min-h-11 justify-center w-full px-6 py-2 text-base font-bold text-white rounded-md shadow-sm transition sm:ml-3 sm:w-auto sm:text-sm"
             :class="
               isPaid || isPaymentComplete
                 ? 'bg-green-600 hover:bg-green-700 font-bold'
                 : 'bg-indigo-600 hover:bg-indigo-700 font-medium'
             "
-            @click="emit('close')"
+            @click="handleClose"
           >
             {{
               isPaid || isPaymentComplete ? t('payment.confirmAndClose') : t('payment.doneButton')
