@@ -115,6 +115,20 @@ const availableMembers = computed(() => {
     .sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
 })
 
+const isSessionEditable = computed(() => authStore.isAdmin && session.value?.status === 'open')
+const isReadOnlyViewer = computed(() => !authStore.isAdmin)
+const isSessionFinalized = computed(
+  () => session.value?.status === 'waiting_for_payment' || session.value?.status === 'done',
+)
+const isSessionCancelled = computed(() => session.value?.status === 'cancelled')
+const attendanceLockMessage = computed(() => {
+  if (isSessionCancelled.value) return t.value('session.cancelledSessionHint')
+  if (isSessionFinalized.value) return t.value('session.lockedSessionHint')
+  if (!authStore.isAuthenticated) return t.value('session.readOnlyHint')
+  if (isReadOnlyViewer.value) return t.value('session.adminOnlyHint')
+  return ''
+})
+
 const handleClickOutside = (event: MouseEvent) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     showMemberDropdown.value = false
@@ -695,12 +709,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-3 mb-2">
               <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
               <button
-                v-if="
-                  authStore.isAdmin &&
-                  session.status !== 'done' &&
-                  session.status !== 'cancelled' &&
-                  session.status !== 'waiting_for_payment'
-                "
+                v-if="isSessionEditable"
                 @click="isEditingSession = true"
                 class="p-1 text-gray-400 hover:text-indigo-600 transition"
                 :title="t('session.editSession')"
@@ -756,10 +765,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div
-            v-if="authStore.isAdmin && session.status === 'open'"
-            class="flex items-center gap-2"
-          >
+          <div v-if="isSessionEditable" class="flex items-center gap-2">
             <button
               @click="cancelSession"
               class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition shadow-sm font-medium"
@@ -780,7 +786,7 @@ onUnmounted(() => {
       </div>
       <!-- Cancelled Banner -->
       <div
-        v-if="session.status === 'cancelled'"
+        v-if="isSessionCancelled"
         class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-8"
       >
         <div class="flex">
@@ -797,7 +803,7 @@ onUnmounted(() => {
 
       <!-- Snapshot View (Waiting/Done mode) -->
       <div
-        v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
+        v-if="isSessionFinalized"
         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 mb-8"
       >
         <div
@@ -966,17 +972,13 @@ onUnmounted(() => {
         >
           <div class="flex items-center gap-2">
             <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendanceMatrix') }}</h2>
-            <span v-if="!authStore.isAdmin" class="text-xs text-gray-500 italic">{{
-              t('session.readOnly')
+            <span v-if="attendanceLockMessage" class="text-xs text-gray-500 italic">{{
+              attendanceLockMessage
             }}</span>
           </div>
           <!-- Add Members to Session -->
           <div
-            v-if="
-              authStore.isAdmin &&
-              session.status !== 'waiting_for_payment' &&
-              session.status !== 'done'
-            "
+            v-if="isSessionEditable"
             class="flex items-center gap-2 w-full sm:w-auto relative"
             ref="dropdownRef"
           >
@@ -1044,22 +1046,14 @@ onUnmounted(() => {
                   {{ t('common.member') }}
                 </th>
                 <th
-                  v-if="
-                    authStore.isAdmin &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
+                  v-if="isSessionEditable"
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
                 >
                   <span class="sr-only">{{ t('common.actions') }}</span>
                 </th>
                 <th
-                  v-if="
-                    authStore.isAdmin &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
+                  v-if="isSessionEditable"
                   scope="col"
                   class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
                 >
@@ -1094,11 +1088,7 @@ onUnmounted(() => {
                   </div>
                 </td>
                 <td
-                  v-if="
-                    authStore.isAdmin &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
+                  v-if="isSessionEditable"
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -1110,11 +1100,7 @@ onUnmounted(() => {
                   </button>
                 </td>
                 <td
-                  v-if="
-                    authStore.isAdmin &&
-                    session.status !== 'waiting_for_payment' &&
-                    session.status !== 'done'
-                  "
+                  v-if="isSessionEditable"
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
@@ -1137,10 +1123,9 @@ onUnmounted(() => {
                       :checked="presence[reg.member_id]?.[interval.id] || false"
                       @change="togglePresence(reg.member_id, interval.id)"
                       :disabled="
-                        !authStore.isAdmin ||
+                        !isSessionEditable ||
                         reg.is_registered_not_attended ||
-                        session.status === 'waiting_for_payment' ||
-                        session.status === 'done'
+                        isSessionFinalized
                       "
                       class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     />
