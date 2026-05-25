@@ -13,6 +13,8 @@ const toast = useToast()
 
 const members = ref<MemberDebtSummary[]>([])
 const loading = ref(true)
+const errorMessage = ref('')
+const searchQuery = ref('')
 const showPaymentModal = ref(false)
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
 
@@ -25,11 +27,19 @@ const hasMore = computed(() => currentPage.value * pageSize < totalCount.value)
 async function fetchDebts() {
   try {
     loading.value = true
+    errorMessage.value = ''
+    const searchTerm = searchQuery.value.trim()
 
-    // First get count
-    const { count, error: countError } = await supabase
+    // First get count while preserving the same member-name filter as the page query.
+    let countQuery = supabase
       .from('view_member_debt_summary')
       .select('*', { count: 'exact', head: true })
+
+    if (searchTerm) {
+      countQuery = countQuery.ilike('display_name', `%${searchTerm}%`)
+    }
+
+    const { count, error: countError } = await countQuery
 
     if (countError) throw countError
     totalCount.value = count || 0
@@ -38,11 +48,16 @@ async function fetchDebts() {
     const from = (currentPage.value - 1) * pageSize
     const to = from + pageSize - 1
 
-    const { data, error } = await supabase
+    let debtQuery = supabase
       .from('view_member_debt_summary')
       .select('*')
       .order('total_debt', { ascending: false })
-      .range(from, to)
+
+    if (searchTerm) {
+      debtQuery = debtQuery.ilike('display_name', `%${searchTerm}%`)
+    }
+
+    const { data, error } = await debtQuery.range(from, to)
 
     if (error) throw error
 
@@ -53,9 +68,17 @@ async function fetchDebts() {
     }
   } catch (error) {
     console.error('Error fetching debts:', error)
+    errorMessage.value = t.value('debt.errorState')
+    toast.error(t.value('debt.errorState'))
   } finally {
     loading.value = false
   }
+}
+
+async function handleSearchChange(value: string) {
+  searchQuery.value = value
+  currentPage.value = 1
+  await fetchDebts()
 }
 
 async function loadMore() {
@@ -138,15 +161,15 @@ async function createPaymentForMembers(memberIds: string[]) {
     showPaymentModal.value = true
   } catch (error: any) {
     console.error('Error creating payment:', error)
-    toast.error(error.message || 'Failed to create payment')
+    toast.error(error.message || t.value('debt.errorState'))
   }
 }
 
 function handlePaymentComplete() {
-  // Refresh debt data after payment completes
+  // Refresh debt data after payment completes, but keep the sheet open so the
+  // success state remains visible until the user explicitly closes it.
   currentPage.value = 1
   fetchDebts()
-  showPaymentModal.value = false
 }
 
 onMounted(fetchDebts)
@@ -162,6 +185,9 @@ onMounted(fetchDebts)
       :members="members"
       :loading="loading"
       :has-more="hasMore"
+      :search="searchQuery"
+      :error-message="errorMessage"
+      @update:search="handleSearchChange"
       @pay-single="handleSinglePay"
       @pay-group="handleGroupPay"
       @load-more="loadMore"
