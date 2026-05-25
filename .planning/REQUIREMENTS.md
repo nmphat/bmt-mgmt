@@ -22,7 +22,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 - [x] **DEBT-03**: Guest can open a member debt detail page from debt/home/member list and see debt history from `view_member_session_details`.
 - [x] **DEBT-04**: Guest can create a QR payment for one member or one unpaid session without frontend recalculating debt amounts.
 - [x] **DEBT-05**: Guest can select multiple debt members and create a group QR payment through the existing `create_group_payment` flow.
-- [ ] **DEBT-06**: User can see QR payment amount, transfer content, copied code, member breakdown, and payment completion state consistently across home and member-detail entry points.
+- [x] **DEBT-06**: User can see QR payment amount, transfer content, copied code, member breakdown, and payment completion state consistently across home and member-detail entry points.
 
 ### Session Detail Cockpit
 
@@ -98,7 +98,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEBT-03 | Phase 1 | Complete |
 | DEBT-04 | Phase 1 | Complete |
 | DEBT-05 | Phase 1 | Complete |
-| DEBT-06 | Phase 1 | Pending |
+| DEBT-06 | Phase 1 | Complete |
 | SESS-01 | Phase 2 | Pending |
 | SESS-02 | Phase 2 | Pending |
 | SESS-03 | Phase 2 | Pending |
