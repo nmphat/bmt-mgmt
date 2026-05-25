@@ -1463,7 +1463,7 @@ onUnmounted(() => {
                   {{ t('payment.qrPay') }}
                 </button>
                 <button
-                  v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                  v-if="authStore.isAdmin"
                   type="button"
                   @click="openCashPayment(snapshot, snapshot.display_name)"
                   class="inline-flex min-h-11 items-center justify-center rounded-xl border border-green-600 px-4 py-2 text-sm font-bold text-green-600 transition hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
@@ -1650,7 +1650,7 @@ onUnmounted(() => {
     >
       <div
         v-if="selectedSnapshotIds.length > 0"
-        class="fixed bottom-[calc(92px+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 md:bottom-6"
+        class="fixed bottom-[calc(92px+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 md:bottom-8"
       >
         <div
           class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between border border-indigo-500/50 backdrop-blur-md"
@@ -1666,7 +1666,7 @@ onUnmounted(() => {
           <button
             @click="handleCreateGroupPayment"
             :disabled="isCreatingGroupPayment"
-            class="flex items-center px-6 py-2.5 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition active:scale-95 disabled:opacity-50 shadow-sm"
+            class="flex min-h-11 items-center rounded-xl bg-white px-6 py-2.5 font-bold text-indigo-600 shadow-sm transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95 disabled:opacity-50"
           >
             <Loader2 v-if="isCreatingGroupPayment" class="w-5 h-5 mr-2 animate-spin" />
             <QrCode v-else class="w-5 h-5 mr-2" />
