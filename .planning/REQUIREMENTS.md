@@ -9,11 +9,11 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 ### Foundation and Shell
 
-- [ ] **SHELL-01**: User can navigate the app on mobile with a bottom navigation shell that exposes only role-appropriate destinations and preserves current route access behavior.
-- [ ] **SHELL-02**: User can use shared mobile-first UI primitives for cards, status chips, buttons, tabs, bottom sheets, floating action bars, loading states, empty states, and error states consistently across changed screens.
+- [x] **SHELL-01**: User can navigate the app on mobile with a bottom navigation shell that exposes only role-appropriate destinations and preserves current route access behavior.
+- [x] **SHELL-02**: User can use shared mobile-first UI primitives for cards, status chips, buttons, tabs, bottom sheets, floating action bars, loading states, empty states, and error states consistently across changed screens.
 - [ ] **SHELL-03**: User can interact with changed mobile screens at 360-430px without bottom navs, floating CTAs, toasts, or sheets covering primary content or actions.
-- [ ] **SHELL-04**: User can switch Vietnamese/English language and see all new UI labels translated in both locales.
-- [ ] **SHELL-05**: Developer can verify route/access behavior, feature inventory, and no-regression checklists before shipping each refactor phase.
+- [x] **SHELL-04**: User can switch Vietnamese/English language and see all new UI labels translated in both locales.
+- [x] **SHELL-05**: Developer can verify route/access behavior, feature inventory, and no-regression checklists before shipping each refactor phase.
 
 ### Guest Debt and Payment
 
@@ -44,7 +44,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 - [ ] **ADMIN-01**: User can view the sessions list read-only, see session cards with status/date/interval/registration counts, and navigate to session detail while create/mutation actions remain admin-only.
 - [ ] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_intervals`, with end-time validation and loading/error/success feedback preserved.
 - [ ] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active, permanent, and create-another behavior preserved.
-- [ ] **ADMIN-04**: User can log in, see login errors, log out, access profile/member link, see authenticated debt badge, and use header actions after the shell refactor.
+- [x] **ADMIN-04**: User can log in, see login errors, log out, access profile/member link, see authenticated debt badge, and use header actions after the shell refactor.
 - [ ] **ADMIN-05**: User can use QR and manual payment modals as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, or payment polling/refresh behavior.
 - [ ] **ADMIN-06**: User can view table-to-card mobile layouts without losing financial fields, status fields, or actions that existed in desktop tables.
 
@@ -88,11 +88,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SHELL-01 | Phase 1 | Pending |
-| SHELL-02 | Phase 1 | Pending |
+| SHELL-01 | Phase 1 | Complete |
+| SHELL-02 | Phase 1 | Complete |
 | SHELL-03 | Phase 1 | Pending |
-| SHELL-04 | Phase 1 | Pending |
-| SHELL-05 | Phase 1 | Pending |
+| SHELL-04 | Phase 1 | Complete |
+| SHELL-05 | Phase 1 | Complete |
 | DEBT-01 | Phase 1 | Pending |
 | DEBT-02 | Phase 1 | Pending |
 | DEBT-03 | Phase 1 | Pending |
@@ -114,7 +114,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADMIN-01 | Phase 3 | Pending |
 | ADMIN-02 | Phase 3 | Pending |
 | ADMIN-03 | Phase 3 | Pending |
-| ADMIN-04 | Phase 1 | Pending |
+| ADMIN-04 | Phase 1 | Complete |
 | ADMIN-05 | Phase 3 | Pending |
 | ADMIN-06 | Phase 3 | Pending |
 
