@@ -113,6 +113,8 @@ All new labels must be added to both `vi` and `en` in `src/locales/messages.ts`.
 | Present intervals | Ca có mặt | Present intervals |
 | Payment snapshots empty | Chưa có công nợ đã chốt cho buổi này. | No finalized payment snapshots for this session yet. |
 | Live costs empty | Chưa có chi phí để hiển thị. | No costs to display yet. |
+| Session loading | Đang tải chi tiết buổi... | Loading session details... |
+| Session load error | Không tải được buổi. Hãy làm mới hoặc báo quản trị viên nếu lỗi tiếp tục. | Could not load this session. Refresh or contact an admin if it continues. |
 | Group payment bar | Thanh toán {count} người | Pay {count} members |
 
 No guest-facing login copy appears in the session detail cockpit.
@@ -280,4 +282,3 @@ Phase 2 is not complete unless source/build verification confirms:
 - New labels exist in both Vietnamese and English.
 - Type-check and build pass.
 - Human visual UAT remains documented as user-skipped/deferred unless the user later requests it.
-
