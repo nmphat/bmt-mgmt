@@ -84,6 +84,7 @@ const selectedSnapshotIds = ref<string[]>([])
 const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
 const isFetching = ref(false)
+const pendingRefresh = ref<null | 'full' | 'costs'>(null)
 const activeSection = ref('overview-section')
 const lastStatusForActiveSection = ref<string | null>(null)
 
@@ -158,7 +159,14 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 async function fetchData(refreshCostsOnly = false) {
-  if (isFetching.value) return
+  if (isFetching.value) {
+    if (!refreshCostsOnly) {
+      pendingRefresh.value = 'full'
+    } else if (!pendingRefresh.value) {
+      pendingRefresh.value = 'costs'
+    }
+    return
+  }
   try {
     isFetching.value = true
     if (!refreshCostsOnly) loading.value = true
@@ -255,6 +263,11 @@ async function fetchData(refreshCostsOnly = false) {
   } finally {
     isFetching.value = false
     loading.value = false
+    const queuedRefresh = pendingRefresh.value
+    pendingRefresh.value = null
+    if (queuedRefresh) {
+      await fetchData(queuedRefresh === 'costs')
+    }
   }
 }
 
