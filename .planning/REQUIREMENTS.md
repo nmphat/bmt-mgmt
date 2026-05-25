@@ -11,7 +11,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 - [x] **SHELL-01**: User can navigate the app on mobile with a bottom navigation shell that exposes only role-appropriate destinations and preserves current route access behavior.
 - [x] **SHELL-02**: User can use shared mobile-first UI primitives for cards, status chips, buttons, tabs, bottom sheets, floating action bars, loading states, empty states, and error states consistently across changed screens.
-- [ ] **SHELL-03**: User can interact with changed mobile screens at 360-430px without bottom navs, floating CTAs, toasts, or sheets covering primary content or actions.
+- [x] **SHELL-03**: User can interact with changed mobile screens at 360-430px without bottom navs, floating CTAs, toasts, or sheets covering primary content or actions.
 - [x] **SHELL-04**: User can switch Vietnamese/English language and see all new UI labels translated in both locales.
 - [x] **SHELL-05**: Developer can verify route/access behavior, feature inventory, and no-regression checklists before shipping each refactor phase.
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | SHELL-01 | Phase 1 | Complete |
 | SHELL-02 | Phase 1 | Complete |
-| SHELL-03 | Phase 1 | Pending |
+| SHELL-03 | Phase 1 | Complete |
 | SHELL-04 | Phase 1 | Complete |
 | SHELL-05 | Phase 1 | Complete |
 | DEBT-01 | Phase 1 | Pending |

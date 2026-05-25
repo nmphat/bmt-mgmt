@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-mobile-shell-debt-payment-foundation-01-PLAN.md
-last_updated: "2026-05-25T10:33:16.233Z"
+stopped_at: Completed 01-mobile-shell-debt-payment-foundation-02-PLAN.md
+last_updated: "2026-05-25T10:36:52.795Z"
 last_activity: 2026-05-25
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-20)
 ## Current Position
 
 Phase: 01 (mobile-shell-debt-payment-foundation) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-05-25
 
@@ -55,6 +55,7 @@ Progress: ░░░░░░░░░░ 0%
 
 *Updated after each plan completion*
 | Phase 01-mobile-shell-debt-payment-foundation P01 | 104s | 3 tasks | 3 files |
+| Phase 01-mobile-shell-debt-payment-foundation P02 | 87s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - [Phase 01-mobile-shell-debt-payment-foundation]: Preserve public read-only access for debt, members, member detail, sessions, and session detail routes.
 - [Phase 01-mobile-shell-debt-payment-foundation]: Keep member/session mutations admin-only through component gates and existing backend authority.
 - [Phase 01-mobile-shell-debt-payment-foundation]: Add locale keys without adding guest-facing login copy to the public shell.
+- [Phase 01-mobile-shell-debt-payment-foundation]: Plan 02 keeps mobile bottom navigation public and limited to exactly Home/Debt, Members, and Sessions.
+- [Phase 01-mobile-shell-debt-payment-foundation]: Plan 02 preserves hidden /login behavior by removing guest header login affordances while keeping authenticated header actions.
+- [Phase 01-mobile-shell-debt-payment-foundation]: Plan 02 redirects logout to / and token-guards authenticated debt badge fetches to avoid stale sign-out updates.
 
 ### Pending Todos
 
@@ -96,7 +100,7 @@ Known high-risk areas to watch during planning:
 
 ## Session Continuity
 
-Last session: 2026-05-25T10:33:16.230Z
-Stopped at: Completed 01-mobile-shell-debt-payment-foundation-01-PLAN.md
+Last session: 2026-05-25T10:36:52.792Z
+Stopped at: Completed 01-mobile-shell-debt-payment-foundation-02-PLAN.md
 Resume file: None
 Next command: `/gsd-plan-phase 1`
