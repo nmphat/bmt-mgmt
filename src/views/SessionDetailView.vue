@@ -1351,8 +1351,138 @@ onUnmounted(() => {
         >
           <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
         </div>
-        <div v-if="isSessionFinalized" class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+        <div v-if="isSessionFinalized">
+          <div
+            v-if="snapshots.length === 0"
+            class="p-6 text-sm text-gray-500 md:hidden"
+          >
+            {{ t('session.paymentSnapshotsEmpty') }}
+          </div>
+          <div v-else class="space-y-4 p-4 md:hidden">
+            <div class="rounded-2xl border border-green-100 bg-green-50 p-4">
+              <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
+              <p class="mt-1 text-2xl font-bold text-green-700 tabular-nums">
+                {{ formatCurrency(surplus) }}
+              </p>
+            </div>
+
+            <article
+              v-for="snapshot in snapshots"
+              :key="snapshot.id"
+              class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-start gap-3">
+                    <label
+                      v-if="snapshot.status !== 'paid' && authStore.isAuthenticated"
+                      class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50"
+                    >
+                      <input
+                        type="checkbox"
+                        :value="snapshot.id"
+                        v-model="selectedSnapshotIds"
+                        class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        :aria-label="`${t('session.groupPaymentBar', { count: 1 })}: ${snapshot.display_name}`"
+                      />
+                    </label>
+                    <div class="min-w-0">
+                      <h3 class="truncate text-base font-bold uppercase text-gray-900">
+                        {{ snapshot.display_name }}
+                      </h3>
+                      <span
+                        class="mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+                        :class="{
+                          'bg-green-100 text-green-800': snapshot.status === 'paid',
+                          'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
+                          'bg-gray-100 text-gray-800': snapshot.status === 'pending',
+                        }"
+                      >
+                        {{
+                          snapshot.status === 'paid'
+                            ? t('payment.paid')
+                            : snapshot.status === 'partial'
+                              ? t('payment.partial')
+                              : t('payment.pending')
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="text-sm font-bold text-gray-500">{{ t('session.mustPay') }}</p>
+                  <p class="text-2xl font-bold text-indigo-700 tabular-nums">
+                    {{ formatCurrency(snapshot.final_amount) }}
+                  </p>
+                </div>
+              </div>
+
+              <dl class="mt-4 grid grid-cols-1 gap-3 text-sm">
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('payment.paid') }}</dt>
+                  <dd class="font-bold text-green-600 tabular-nums">
+                    {{ formatCurrency(snapshot.paid_amount) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.intervalsAbbr') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">
+                    {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.courtFee') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                  <dt class="font-bold text-gray-500">{{ t('session.shuttleFee') }}</dt>
+                  <dd class="font-semibold text-gray-900 tabular-nums">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-3 rounded-xl bg-green-50 px-3 py-2">
+                  <dt class="font-bold text-green-800">{{ t('session.surplusFund') }}</dt>
+                  <dd class="font-bold text-green-700 tabular-nums">
+                    {{ formatCurrency(surplus) }}
+                  </dd>
+                </div>
+              </dl>
+
+              <div
+                v-if="snapshot.status !== 'paid'"
+                class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2"
+              >
+                <button
+                  type="button"
+                  @click="openPaymentQR(snapshot, snapshot.display_name)"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-indigo-600 px-4 py-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  <QrCode class="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  {{ t('payment.qrPay') }}
+                </button>
+                <button
+                  v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                  type="button"
+                  @click="openCashPayment(snapshot, snapshot.display_name)"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-green-600 px-4 py-2 text-sm font-bold text-green-600 transition hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                >
+                  {{ t('payment.cashPay') }}
+                </button>
+              </div>
+              <div
+                v-else
+                class="mt-4 flex min-h-11 items-center justify-center rounded-xl bg-green-50 text-sm font-bold text-green-600"
+              >
+                <Check class="mr-1.5 h-5 w-5" aria-hidden="true" />
+                {{ t('payment.done') }}
+              </div>
+            </article>
+          </div>
+
+          <div class="hidden overflow-x-auto md:block">
+            <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
                 <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
@@ -1501,7 +1631,8 @@ onUnmounted(() => {
                 <td colspan="2"></td>
               </tr>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
         <div v-else class="p-6 text-sm text-gray-500">{{ t('session.paymentSnapshotsEmpty') }}</div>
       </section>
