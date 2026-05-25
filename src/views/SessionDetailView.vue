@@ -1084,7 +1084,7 @@ onUnmounted(() => {
             </div>
           </article>
         </div>
-        <div class="overflow-x-auto">
+        <div class="hidden md:block overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -1141,11 +1141,12 @@ onUnmounted(() => {
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
+                    type="button"
                     @click="removeRegistration(reg.id, reg.member?.display_name || '')"
-                    class="text-gray-300 hover:text-red-500 transition focus:outline-none"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-300 transition hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     :title="t('session.removeRegistrationTooltip')"
                   >
-                    <Trash2 class="w-4 h-4 mx-auto" />
+                    <Trash2 class="w-4 h-4" />
                   </button>
                 </td>
                 <td
@@ -1153,12 +1154,13 @@ onUnmounted(() => {
                   class="px-2 py-4 whitespace-nowrap text-center"
                 >
                   <button
+                    type="button"
                     @click="toggleAbsent(reg)"
-                    class="text-gray-400 hover:text-red-600 transition focus:outline-none"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     :class="{ 'text-red-600': reg.is_registered_not_attended }"
                     :title="t('session.markAbsentTooltip')"
                   >
-                    <UserX class="w-5 h-5 mx-auto" />
+                    <UserX class="w-5 h-5" />
                   </button>
                 </td>
                 <td
@@ -1176,7 +1178,7 @@ onUnmounted(() => {
                         reg.is_registered_not_attended ||
                         isSessionFinalized
                       "
-                      class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="h-6 w-6 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </td>
