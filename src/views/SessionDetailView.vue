@@ -252,7 +252,8 @@ async function fetchSnapshotData() {
 }
 
 async function finalizeSession() {
-  if (!authStore.isAdmin || !session.value) return
+  if (!isSessionEditable.value) return
+  if (!session.value) return
   if (!confirm(t.value('session.finalizeConfirm'))) return
 
   try {
@@ -272,7 +273,8 @@ async function finalizeSession() {
 }
 
 async function cancelSession() {
-  if (!authStore.isAdmin || !session.value) return
+  if (!isSessionEditable.value) return
+  if (!session.value) return
   if (!confirm(t.value('session.cancelConfirm'))) return
 
   try {
@@ -297,13 +299,14 @@ function openPaymentQR(snapshot: CostSnapshot, name: string) {
 }
 
 function openCashPayment(snapshot: CostSnapshot, name: string) {
+  if (!authStore.isAdmin) return
   selectedMemberId.value = snapshot.member_id
   selectedSnapshotMemberName.value = name
   showCashModal.value = true
 }
 
 async function saveSession() {
-  if (!authStore.isAdmin) return
+  if (!isSessionEditable.value) return
 
   try {
     isSavingSession.value = true
@@ -332,7 +335,7 @@ async function saveSession() {
 }
 
 async function registerMembers() {
-  if (!authStore.isAdmin) return
+  if (!isSessionEditable.value) return
   if (selectedMemberIds.value.length === 0) return
 
   try {
@@ -369,7 +372,7 @@ async function registerMembers() {
 }
 
 async function removeRegistration(regId: string, name: string) {
-  if (!authStore.isAdmin) return
+  if (!isSessionEditable.value) return
   if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
@@ -394,7 +397,10 @@ async function fetchCosts() {
 }
 
 async function togglePresence(memberId: string, intervalId: string) {
-  if (!authStore.isAdmin) return
+  if (!isSessionEditable.value) return
+
+  const registration = registrations.value.find((r) => r.member_id === memberId)
+  if (registration?.is_registered_not_attended === true) return
 
   const currentMemberPresence = presence.value[memberId]
   if (!currentMemberPresence) return
@@ -431,7 +437,7 @@ async function togglePresence(memberId: string, intervalId: string) {
 }
 
 async function toggleAbsent(reg: SessionRegistration) {
-  if (!authStore.isAdmin) return
+  if (!isSessionEditable.value) return
 
   const newValue = !reg.is_registered_not_attended
 
