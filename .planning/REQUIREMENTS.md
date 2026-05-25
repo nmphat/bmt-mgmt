@@ -27,7 +27,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 ### Session Detail Cockpit
 
 - [x] **SESS-01**: Guest can open session detail in read-only mode while authenticated/admin users retain existing mutation controls according to current auth and session status gates.
-- [ ] **SESS-02**: User can view session overview details including title, date/time, court fee, shuttle fee, status, total collected when relevant, and cancelled/read-only messaging.
+- [x] **SESS-02**: User can view session overview details including title, date/time, court fee, shuttle fee, status, total collected when relevant, and cancelled/read-only messaging.
 - [x] **SESS-03**: Admin can edit allowed session fields, cancel an open session, and finalize an open session using the existing Supabase contracts and status locks.
 - [x] **SESS-04**: Admin can add active members to a session and remove registered members without changing `add_member_to_session_full_presence` or `session_registrations` behavior.
 - [x] **SESS-05**: Admin can toggle interval-level attendance for every registered member and interval, with guest/read-only/done/waiting/absent disabled states preserved.
@@ -37,7 +37,7 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 - [ ] **SESS-09**: User can create single QR payments and authenticated/admin group QR payments from session snapshots using existing snapshot and `create_group_payment` behavior.
 - [ ] **SESS-10**: Admin can record manual cash payment from session snapshots using the existing `add_manual_payment` flow, with non-admin access prevented.
 - [ ] **SESS-11**: User can rely on realtime updates, polling/manual refresh fallback, and payment completion refresh without duplicate timers or stale visible state after navigation.
-- [ ] **SESS-12**: User can use the session detail screen as task-focused mobile sections for overview, attendance, costs, and payments while preserving all current session operations.
+- [x] **SESS-12**: User can use the session detail screen as task-focused mobile sections for overview, attendance, costs, and payments while preserving all current session operations.
 
 ### Admin and Supporting Screens
 
@@ -100,7 +100,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEBT-05 | Phase 1 | Complete |
 | DEBT-06 | Phase 1 | Complete |
 | SESS-01 | Phase 2 | Complete |
-| SESS-02 | Phase 2 | Pending |
+| SESS-02 | Phase 2 | Complete |
 | SESS-03 | Phase 2 | Complete |
 | SESS-04 | Phase 2 | Complete |
 | SESS-05 | Phase 2 | Complete |
@@ -110,7 +110,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-09 | Phase 2 | Pending |
 | SESS-10 | Phase 2 | Pending |
 | SESS-11 | Phase 2 | Pending |
-| SESS-12 | Phase 2 | Pending |
+| SESS-12 | Phase 2 | Complete |
 | ADMIN-01 | Phase 3 | Pending |
 | ADMIN-02 | Phase 3 | Pending |
 | ADMIN-03 | Phase 3 | Pending |
