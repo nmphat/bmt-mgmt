@@ -299,6 +299,7 @@ async function finalizeSession() {
   }
 }
 
+// Preserve existing sessions.update mutations for edit/cancel flows.
 async function cancelSession() {
   if (!isSessionEditable.value) return
   if (!session.value) return
@@ -526,6 +527,16 @@ const overviewMessage = computed(() => {
   return ''
 })
 
+const sessionTimeRange = computed(() => {
+  if (intervals.value.length === 0) return ''
+
+  const firstInterval = intervals.value[0]
+  const lastInterval = intervals.value[intervals.value.length - 1]
+  if (!firstInterval || !lastInterval) return ''
+
+  return `${formatTime(firstInterval.start_time)} - ${formatTime(lastInterval.end_time)}`
+})
+
 const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
 
@@ -666,27 +677,38 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="mb-6 flex items-center justify-between">
-      <router-link
-        to="/"
-        class="flex items-center text-indigo-600 hover:text-indigo-800 transition"
-      >
-        <ChevronLeft class="w-5 h-5 mr-1" />
-        {{ t('common.backToHome') }}
-      </router-link>
-      <button @click="() => fetchData()" class="p-2 text-gray-500 hover:text-indigo-600 transition">
-        <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': loading }" />
-      </button>
-    </div>
+  <div class="mx-auto max-w-full px-4 py-4 pb-[calc(148px+env(safe-area-inset-bottom))] sm:px-6 md:py-6 md:pb-8 lg:px-8">
 
     <div v-if="loading && !session" class="flex justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
     </div>
 
-    <div v-else-if="session">
-      <div class="bg-white rounded-lg shadow-sm p-6 mb-8 border border-gray-100">
-        <!-- Edit Mode -->
+    <div v-else-if="session" class="space-y-4">
+      <section
+          id="overview-section"
+          class="scroll-mt-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 md:scroll-mt-24"
+        >
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <router-link
+              to="/"
+              class="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              <ChevronLeft class="h-5 w-5" aria-hidden="true" />
+              {{ t('common.backToHome') }}
+            </router-link>
+            <button
+              type="button"
+              @click="() => fetchData()"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              :aria-label="t('session.refreshSession')"
+              :title="t('session.refreshSession')"
+            >
+              <RefreshCcw class="h-5 w-5" :class="{ 'animate-spin': loading }" aria-hidden="true" />
+              <span class="sr-only">{{ t('session.refreshSession') }}</span>
+            </button>
+          </div>
+
+          <!-- Edit Mode -->
         <div v-if="isEditingSession && authStore.isAdmin" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
@@ -762,86 +784,106 @@ onUnmounted(() => {
         </div>
 
         <!-- View Mode -->
-        <div v-else class="flex justify-between items-start">
-          <div>
-            <div class="flex items-center gap-3 mb-2">
-              <h1 class="text-3xl font-bold text-gray-900">{{ session.title }}</h1>
-              <button
-                v-if="isSessionEditable"
-                @click="isEditingSession = true"
-                class="p-1 text-gray-400 hover:text-indigo-600 transition"
-                :title="t('session.editSession')"
+          <div v-else class="space-y-5">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div class="min-w-0">
+                <div class="mb-2 flex items-start gap-3">
+                  <h1 class="text-2xl font-bold leading-tight text-gray-900 md:text-3xl">{{ session.title }}</h1>
+                  <button
+                    v-if="isSessionEditable"
+                    type="button"
+                    @click="isEditingSession = true"
+                    class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    :title="t('session.editSession')"
+                    :aria-label="t('session.editSession')"
+                  >
+                    <Edit class="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </div>
+                <p class="text-sm font-medium capitalize text-gray-600 md:text-base">
+                  {{ formatSessionDate(session.session_date) }}
+                  <span v-if="sessionTimeRange"> · {{ sessionTimeRange }}</span>
+                </p>
+              </div>
+
+              <span
+                class="inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-bold capitalize"
+                :class="getStatusChipClass(session.status)"
               >
-                <Edit class="w-5 h-5" />
+                {{ getStatusLabel(session.status) }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 text-base sm:grid-cols-2 lg:grid-cols-4">
+              <div class="rounded-xl bg-gray-50 p-3">
+                <span class="mb-1 block text-sm font-bold text-gray-500">{{ t('session.courtFee') }}</span>
+                <span class="font-semibold text-gray-900">{{ formatCurrency(session.court_fee_total) }}</span>
+              </div>
+              <div class="rounded-xl bg-gray-50 p-3">
+                <span class="mb-1 block text-sm font-bold text-gray-500">{{ t('session.shuttleFee') }}</span>
+                <span class="font-semibold text-gray-900">{{ formatCurrency(session.shuttle_fee_total) }}</span>
+              </div>
+              <div
+                v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
+                class="rounded-xl bg-indigo-50 p-3"
+              >
+                <span class="mb-1 block text-sm font-bold text-indigo-700">{{ t('session.totalCollected') }}</span>
+                <span class="font-bold text-indigo-700">{{ formatCurrency(totalCollected) }}</span>
+              </div>
+            </div>
+
+            <div
+              v-if="overviewMessage"
+              class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700"
+            >
+              {{ overviewMessage }}
+            </div>
+
+            <div v-if="isSessionEditable" class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                @click="cancelSession"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gray-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+              >
+                🚫 {{ t('session.cancelSession') }}
+              </button>
+              <button
+                type="button"
+                @click="finalizeSession"
+                :disabled="finalizeLoading"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <Lock v-if="!finalizeLoading" class="mr-2 h-4 w-4" aria-hidden="true" />
+                <Loader2 v-else class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                {{ t('session.finalize') }}
               </button>
             </div>
-            <p class="text-gray-600 mb-4 capitalize">
-              {{ formatSessionDate(session.session_date) }}
-            </p>
-            <div class="flex flex-wrap gap-6 text-base">
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.courtFee') }}</span>
-                <span class="font-semibold text-gray-900">{{
-                  formatCurrency(session.court_fee_total)
-                }}</span>
-              </div>
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('session.shuttleFee') }}</span>
-                <span class="font-semibold text-gray-900">{{
-                  formatCurrency(session.shuttle_fee_total)
-                }}</span>
-              </div>
-              <div v-if="session.status === 'waiting_for_payment' || session.status === 'done'">
-                <span class="text-gray-500 block mb-1 font-bold text-indigo-600">{{
-                  t('session.totalCollected')
-                }}</span>
-                <span class="font-bold text-indigo-700">{{
-                  formatCurrency(
-                    costs.length > 0
-                      ? costs.reduce((sum, c) => sum + c.final_total, 0)
-                      : snapshots.reduce((sum, s) => sum + s.final_amount, 0),
-                  )
-                }}</span>
-              </div>
-              <div>
-                <span class="text-gray-500 block mb-1">{{ t('common.status') }}</span>
-                <span
-                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
-                  :class="
-                    session.status === 'done'
-                      ? 'bg-green-100 text-green-800'
-                      : session.status === 'waiting_for_payment'
-                        ? 'bg-orange-100 text-orange-800'
-                        : session.status === 'cancelled'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-blue-100 text-blue-800'
-                  "
-                >
-                  {{ getStatusLabel(session.status) }}
-                </span>
-              </div>
-            </div>
           </div>
+        </section>
 
-          <div v-if="isSessionEditable" class="flex items-center gap-2">
-            <button
-              @click="cancelSession"
-              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition shadow-sm font-medium"
-            >
-              🚫 {{ t('session.cancelSession') }}
-            </button>
-            <button
-              @click="finalizeSession"
-              :disabled="finalizeLoading"
-              class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm font-medium"
-            >
-              <Lock v-if="!finalizeLoading" class="w-4 h-4 mr-2" />
-              <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
-              {{ t('session.finalize') }}
-            </button>
-          </div>
+      <nav
+        class="sticky top-16 z-30 -mx-4 my-4 overflow-x-auto border-y border-gray-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur md:hidden"
+        :aria-label="t('session.cockpitNavLabel')"
+      >
+        <div class="flex min-w-max gap-2">
+          <button
+            v-for="tab in sectionTabs"
+            :key="tab.id"
+            type="button"
+            class="min-h-11 rounded-full px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            :class="
+              activeSection === tab.id
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
+            "
+            :aria-label="tab.ariaLabel"
+            :aria-current="activeSection === tab.id ? 'true' : undefined"
+            @click="scrollToSection(tab.id)"
+          >
+            {{ tab.label }}
+          </button>
         </div>
-      </div>
+      </nav>
       <!-- Cancelled Banner -->
       <div
         v-if="isSessionCancelled"
@@ -859,172 +901,8 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Snapshot View (Waiting/Done mode) -->
-      <div
-        v-if="isSessionFinalized"
-        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100 mb-8"
-      >
-        <div
-          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
-        >
-          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('common.member') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
-                >
-                  {{ t('session.mustPay') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.intervalsAbbr') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.courtFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.shuttleFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('payment.paid') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('common.status') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {{ t('session.pay') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="snapshot in snapshots" :key="snapshot.id">
-                <td v-if="authStore.isAuthenticated" class="px-3 py-4 text-center">
-                  <input
-                    v-if="snapshot.status !== 'paid'"
-                    type="checkbox"
-                    :value="snapshot.id"
-                    v-model="selectedSnapshotIds"
-                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-                  />
-                  <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
-                >
-                  {{ snapshot.display_name }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-indigo-700"
-                >
-                  {{ formatCurrency(snapshot.final_amount) }}
-                </td>
-                <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-500">
-                  {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
-                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
-                </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
-                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
-                >
-                  {{ formatCurrency(snapshot.paid_amount) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="{
-                      'bg-green-100 text-green-800': snapshot.status === 'paid',
-                      'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
-                      'bg-gray-100 text-gray-800': snapshot.status === 'pending',
-                    }"
-                  >
-                    {{
-                      snapshot.status === 'paid'
-                        ? t('payment.paid')
-                        : snapshot.status === 'partial'
-                          ? t('payment.partial')
-                          : t('payment.pending')
-                    }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <div class="flex flex-col gap-1.5 items-center">
-                    <button
-                      v-if="snapshot.status !== 'paid'"
-                      @click="openPaymentQR(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
-                    >
-                      <QrCode class="w-4 h-4 mr-1.5" />
-                      {{ t('payment.qrPay') }}
-                    </button>
-                    <button
-                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
-                      @click="openCashPayment(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
-                    >
-                      {{ t('payment.cashPay') }}
-                    </button>
-                    <span
-                      v-else-if="snapshot.status === 'paid'"
-                      class="text-green-500 flex items-center justify-center"
-                    >
-                      <Check class="w-5 h-5 mr-1" />
-                      <span class="text-sm font-medium">{{ t('payment.done') }}</span>
-                    </span>
-                  </div>
-                </td>
-              </tr>
-              <!-- Surplus Row -->
-              <tr class="bg-gray-50 border-t-2 border-gray-100">
-                <td
-                  :colspan="authStore.isAuthenticated ? 6 : 5"
-                  class="px-6 py-4 text-right text-sm font-bold text-gray-700"
-                >
-                  {{ t('session.surplusFund') }}
-                </td>
-                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
-                  {{ formatCurrency(surplus) }}
-                </td>
-                <td colspan="2"></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <!-- Attendance Matrix -->
-      <div class="bg-white rounded-lg shadow-sm mb-8 border border-gray-100">
+      <section id="attendance-section" class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24">
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
@@ -1193,12 +1071,12 @@ onUnmounted(() => {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       <!-- Cost Summary (Live mode) -->
-      <div
-        v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'"
-        class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
+      <section
+        id="costs-section"
+        class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="text-xl font-semibold text-gray-900">
@@ -1206,7 +1084,7 @@ onUnmounted(() => {
             <span class="text-xs font-normal text-gray-500">({{ t('session.live') }})</span>
           </h2>
         </div>
-        <div class="overflow-x-auto">
+        <div v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'" class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -1274,7 +1152,179 @@ onUnmounted(() => {
             </tbody>
           </table>
         </div>
-      </div>
+        <div
+          v-else
+          class="p-6 text-sm text-gray-500"
+        >
+          {{ t('session.liveCostsEmpty') }}
+        </div>
+      </section>
+
+      <!-- Snapshot View (Waiting/Done mode) -->
+      <section
+        id="payments-section"
+        class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24"
+      >
+        <div
+          class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
+        >
+          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
+        </div>
+        <div v-if="isSessionFinalized" class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('common.member') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
+                >
+                  {{ t('session.mustPay') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.intervalsAbbr') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.courtFee') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.shuttleFee') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('payment.paid') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('common.status') }}
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.pay') }}
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="snapshot in snapshots" :key="snapshot.id">
+                <td v-if="authStore.isAuthenticated" class="px-3 py-4 text-center">
+                  <input
+                    v-if="snapshot.status !== 'paid'"
+                    type="checkbox"
+                    :value="snapshot.id"
+                    v-model="selectedSnapshotIds"
+                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
+                >
+                  {{ snapshot.display_name }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-indigo-700"
+                >
+                  {{ formatCurrency(snapshot.final_amount) }}
+                </td>
+                <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+                </td>
+                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                  {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
+                >
+                  {{ formatCurrency(snapshot.paid_amount) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    :class="{
+                      'bg-green-100 text-green-800': snapshot.status === 'paid',
+                      'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
+                      'bg-gray-100 text-gray-800': snapshot.status === 'pending',
+                    }"
+                  >
+                    {{
+                      snapshot.status === 'paid'
+                        ? t('payment.paid')
+                        : snapshot.status === 'partial'
+                          ? t('payment.partial')
+                          : t('payment.pending')
+                    }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <div class="flex flex-col gap-1.5 items-center">
+                    <button
+                      v-if="snapshot.status !== 'paid'"
+                      @click="openPaymentQR(snapshot, snapshot.display_name)"
+                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
+                    >
+                      <QrCode class="w-4 h-4 mr-1.5" />
+                      {{ t('payment.qrPay') }}
+                    </button>
+                    <button
+                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                      @click="openCashPayment(snapshot, snapshot.display_name)"
+                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
+                    >
+                      {{ t('payment.cashPay') }}
+                    </button>
+                    <span
+                      v-else-if="snapshot.status === 'paid'"
+                      class="text-green-500 flex items-center justify-center"
+                    >
+                      <Check class="w-5 h-5 mr-1" />
+                      <span class="text-sm font-medium">{{ t('payment.done') }}</span>
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <!-- Surplus Row -->
+              <tr class="bg-gray-50 border-t-2 border-gray-100">
+                <td
+                  :colspan="authStore.isAuthenticated ? 6 : 5"
+                  class="px-6 py-4 text-right text-sm font-bold text-gray-700"
+                >
+                  {{ t('session.surplusFund') }}
+                </td>
+                <td class="px-6 py-4 text-right text-base font-bold text-green-600">
+                  {{ formatCurrency(surplus) }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="p-6 text-sm text-gray-500">{{ t('session.paymentSnapshotsEmpty') }}</div>
+      </section>
+
     </div>
 
     <!-- Floating Action Bar for Group Payment -->
@@ -1288,7 +1338,7 @@ onUnmounted(() => {
     >
       <div
         v-if="selectedSnapshotIds.length > 0"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl"
+        class="fixed bottom-[calc(92px+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 md:bottom-6"
       >
         <div
           class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between border border-indigo-500/50 backdrop-blur-md"
