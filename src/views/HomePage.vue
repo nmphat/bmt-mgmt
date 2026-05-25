@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase'
 import type { MemberDebtSummary, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
@@ -17,6 +17,9 @@ const errorMessage = ref('')
 const searchQuery = ref('')
 const showPaymentModal = ref(false)
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
+const debtTableKey = ref(0)
+const groupPaymentCompleted = ref(false)
+let paymentRefreshPromise: Promise<void> | null = null
 
 // Pagination
 const currentPage = ref(1)
@@ -158,6 +161,7 @@ async function createPaymentForMembers(memberIds: string[]) {
     }
 
     selectedGroupPayment.value = groupData
+    groupPaymentCompleted.value = false
     showPaymentModal.value = true
   } catch (error: any) {
     console.error('Error creating payment:', error)
@@ -169,7 +173,26 @@ function handlePaymentComplete() {
   // Refresh debt data after payment completes, but keep the sheet open so the
   // success state remains visible until the user explicitly closes it.
   currentPage.value = 1
-  fetchDebts()
+  groupPaymentCompleted.value = true
+  paymentRefreshPromise = fetchDebts().finally(() => {
+    paymentRefreshPromise = null
+  })
+}
+
+async function handlePaymentModalClose() {
+  showPaymentModal.value = false
+  await nextTick()
+
+  const shouldClearCompletedSelection = groupPaymentCompleted.value
+  if (paymentRefreshPromise) {
+    await paymentRefreshPromise
+  }
+
+  selectedGroupPayment.value = null
+  if (shouldClearCompletedSelection) {
+    debtTableKey.value += 1
+  }
+  groupPaymentCompleted.value = false
 }
 
 onMounted(fetchDebts)
@@ -182,6 +205,7 @@ onMounted(fetchDebts)
     </div>
 
     <HomeDebtTable
+      :key="debtTableKey"
       :members="members"
       :loading="loading"
       :has-more="hasMore"
@@ -198,7 +222,7 @@ onMounted(fetchDebts)
       :snapshot="null"
       :group-data="selectedGroupPayment"
       member-name=""
-      @close="showPaymentModal = false"
+      @close="handlePaymentModalClose"
       @payment-complete="handlePaymentComplete"
     />
   </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type { MemberSessionDetail, GroupPaymentData } from '@/types'
@@ -188,6 +188,13 @@ function handleSinglePay(session: MemberSessionDetail) {
   }
   selectedGroupPayment.value = null
   showPaymentModal.value = true
+}
+
+async function handlePaymentModalClose() {
+  showPaymentModal.value = false
+  await nextTick()
+  selectedSnapshot.value = null
+  selectedGroupPayment.value = null
 }
 
 const formatCurrency = (value: number) => {
@@ -457,7 +464,7 @@ onMounted(fetchMemberDetails)
       :snapshot="selectedSnapshot"
       :group-data="selectedGroupPayment"
       :member-name="memberName"
-      @close="showPaymentModal = false"
+      @close="handlePaymentModalClose"
       @payment-complete="fetchMemberDetails"
     />
   </div>
