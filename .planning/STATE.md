@@ -88,7 +88,7 @@ Known high-risk areas to watch during planning:
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 260525-m9g | Browser harness smoke test, cert bypass, and mobile/desktop screenshots for `http://localhost:5173/`. | 2026-05-25 | pending | [260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing](./quick/260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing/) |
+| 260525-m9g | Browser harness smoke test, cert bypass, and mobile/desktop screenshots for `http://localhost:5173/`. | 2026-05-25 | dfa6974 | [260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing](./quick/260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing/) |
 
 ## Session Continuity
 
