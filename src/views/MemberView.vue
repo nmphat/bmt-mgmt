@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import type { Member } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
-import { Check, X, Edit, Save, Trash2, UserPlus, Loader2 } from 'lucide-vue-next'
+import { Check, X, Edit, Save, Trash2, UserPlus, Loader2, ChevronRight } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { computed } from 'vue'
 
@@ -49,7 +49,7 @@ async function fetchMembers() {
 }
 
 async function addMember() {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
   if (!newMember.value.display_name.trim()) {
     toast.error(t.value('member.nameRequired'))
     return
@@ -88,7 +88,7 @@ async function addMember() {
 }
 
 async function deleteMember(id: string, name: string) {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
   if (!confirm(t.value('member.deleteConfirm', { name }))) {
     return
   }
@@ -110,7 +110,7 @@ async function deleteMember(id: string, name: string) {
 }
 
 function startEdit(member: Member) {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
   editingMemberId.value = member.id
   editForm.value = { ...member }
 }
@@ -121,7 +121,7 @@ function cancelEdit() {
 }
 
 async function saveEdit(id: string) {
-  if (!authStore.isAuthenticated) return
+  if (!authStore.isAdmin) return
   try {
     const updates = {
       display_name: editForm.value.display_name,
@@ -157,7 +157,7 @@ onMounted(fetchMembers)
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold text-gray-900">{{ t('member.title') }}</h1>
       <button
-        v-if="authStore.isAuthenticated && !showAddForm"
+        v-if="authStore.isAdmin && !showAddForm"
         @click="showAddForm = true"
         class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm"
       >
@@ -168,7 +168,7 @@ onMounted(fetchMembers)
 
     <!-- Add Member Form -->
     <div
-      v-if="showAddForm"
+      v-if="showAddForm && authStore.isAdmin"
       class="bg-white shadow-sm rounded-lg border border-indigo-100 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300"
     >
       <div class="flex justify-between items-center mb-4">
@@ -284,7 +284,6 @@ onMounted(fetchMembers)
                 {{ t('member.permanent') }}
               </th>
               <th
-                v-if="authStore.isAuthenticated"
                 scope="col"
                 class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
               >
@@ -363,10 +362,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Actions -->
-              <td
-                v-if="authStore.isAuthenticated"
-                class="px-6 py-4 whitespace-nowrap text-right text-base font-medium"
-              >
+              <td class="px-6 py-4 whitespace-nowrap text-right text-base font-medium">
                 <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
                   <button
                     @click="saveEdit(member.id)"
@@ -384,7 +380,16 @@ onMounted(fetchMembers)
                   </button>
                 </div>
                 <div v-else class="flex justify-end gap-3">
+                  <router-link
+                    :to="`/member/${member.id}`"
+                    class="inline-flex items-center text-indigo-600 hover:text-indigo-900"
+                    :title="t('debt.details')"
+                  >
+                    {{ t('debt.details') }}
+                    <ChevronRight class="w-4 h-4 ml-1" />
+                  </router-link>
                   <button
+                    v-if="authStore.isAdmin"
                     @click="startEdit(member)"
                     class="text-indigo-600 hover:text-indigo-900"
                     :title="t('common.edit')"
@@ -392,6 +397,7 @@ onMounted(fetchMembers)
                     <Edit class="w-5 h-5" />
                   </button>
                   <button
+                    v-if="authStore.isAdmin"
                     @click="deleteMember(member.id, member.display_name)"
                     class="text-gray-400 hover:text-red-600"
                     :title="t('common.delete')"
