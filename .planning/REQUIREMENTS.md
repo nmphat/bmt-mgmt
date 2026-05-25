@@ -17,11 +17,11 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 ### Guest Debt and Payment
 
-- [ ] **DEBT-01**: Guest can open the home page without login and immediately see debt as the primary content using data from `view_member_debt_summary`.
-- [ ] **DEBT-02**: Guest can view each debtor’s name, total debt, unpaid session count, loading state, empty state, and additional pages via the existing load-more behavior.
-- [ ] **DEBT-03**: Guest can open a member debt detail page from debt/home/member list and see debt history from `view_member_session_details`.
-- [ ] **DEBT-04**: Guest can create a QR payment for one member or one unpaid session without frontend recalculating debt amounts.
-- [ ] **DEBT-05**: Guest can select multiple debt members and create a group QR payment through the existing `create_group_payment` flow.
+- [x] **DEBT-01**: Guest can open the home page without login and immediately see debt as the primary content using data from `view_member_debt_summary`.
+- [x] **DEBT-02**: Guest can view each debtor’s name, total debt, unpaid session count, loading state, empty state, and additional pages via the existing load-more behavior.
+- [x] **DEBT-03**: Guest can open a member debt detail page from debt/home/member list and see debt history from `view_member_session_details`.
+- [x] **DEBT-04**: Guest can create a QR payment for one member or one unpaid session without frontend recalculating debt amounts.
+- [x] **DEBT-05**: Guest can select multiple debt members and create a group QR payment through the existing `create_group_payment` flow.
 - [ ] **DEBT-06**: User can see QR payment amount, transfer content, copied code, member breakdown, and payment completion state consistently across home and member-detail entry points.
 
 ### Session Detail Cockpit
@@ -93,11 +93,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SHELL-03 | Phase 1 | Complete |
 | SHELL-04 | Phase 1 | Complete |
 | SHELL-05 | Phase 1 | Complete |
-| DEBT-01 | Phase 1 | Pending |
-| DEBT-02 | Phase 1 | Pending |
-| DEBT-03 | Phase 1 | Pending |
-| DEBT-04 | Phase 1 | Pending |
-| DEBT-05 | Phase 1 | Pending |
+| DEBT-01 | Phase 1 | Complete |
+| DEBT-02 | Phase 1 | Complete |
+| DEBT-03 | Phase 1 | Complete |
+| DEBT-04 | Phase 1 | Complete |
+| DEBT-05 | Phase 1 | Complete |
 | DEBT-06 | Phase 1 | Pending |
 | SESS-01 | Phase 2 | Pending |
 | SESS-02 | Phase 2 | Pending |
