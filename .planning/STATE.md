@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-mobile-shell-debt-payment-foundation-05-PLAN.md
-last_updated: "2026-05-25T11:17:59.510Z"
-last_activity: 2026-05-25 -- Phase 02 execution started
+stopped_at: Completed 02-session-detail-task-cockpit-01-PLAN.md
+last_updated: "2026-05-25T11:21:54.678Z"
+last_activity: 2026-05-25
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
-  percent: 50
+  completed_plans: 6
+  percent: 60
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-20)
 ## Current Position
 
 Phase: 02 (session-detail-task-cockpit) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 02
-Last activity: 2026-05-25 -- Phase 02 execution started
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-05-25
 
 Progress: ██████████ 100%
 
@@ -60,6 +60,7 @@ Progress: ██████████ 100%
 | Phase 01-mobile-shell-debt-payment-foundation P03 | 186s | 3 tasks | 3 files |
 | Phase 01-mobile-shell-debt-payment-foundation P04 | 158s | 3 tasks | 4 files |
 | Phase 01-mobile-shell-debt-payment-foundation P05 | 166s | 2 tasks | 2 files |
+| Phase 02-session-detail-task-cockpit P01 | 162s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 01-mobile-shell-debt-payment-foundation]: Plan 04 keeps add_manual_payment payload unchanged and requires cash entry plus review confirmation before RPC submission.
 - [Phase 01-mobile-shell-debt-payment-foundation]: Plan 05 skipped/deferred human visual UAT per explicit user instruction and used automated/source/build/access evidence instead.
 - [Phase 01-mobile-shell-debt-payment-foundation]: Session-detail mutation gates must use authStore.isAdmin rather than authenticated state to preserve public read-only access.
+- [Phase 02-session-detail-task-cockpit]: Session detail editability is centralized on authStore.isAdmin plus open status, preserving public read-only /session/:id access.
+- [Phase 02-session-detail-task-cockpit]: Registered-but-absent members are blocked from interval_presence upserts before any Supabase mutation.
+- [Phase 02-session-detail-task-cockpit]: Manual cash modal opening is explicitly admin-only while QR payment entry points remain public for unpaid snapshots.
 
 ### Pending Todos
 
@@ -111,7 +115,7 @@ Known high-risk areas to watch during planning:
 
 ## Session Continuity
 
-Last session: 2026-05-25T10:51:02.325Z
-Stopped at: Completed 01-mobile-shell-debt-payment-foundation-05-PLAN.md
+Last session: 2026-05-25T11:21:54.675Z
+Stopped at: Completed 02-session-detail-task-cockpit-01-PLAN.md
 Resume file: None
 Next command: `/gsd-plan-phase 1`

@@ -26,12 +26,12 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 ### Session Detail Cockpit
 
-- [ ] **SESS-01**: Guest can open session detail in read-only mode while authenticated/admin users retain existing mutation controls according to current auth and session status gates.
+- [x] **SESS-01**: Guest can open session detail in read-only mode while authenticated/admin users retain existing mutation controls according to current auth and session status gates.
 - [ ] **SESS-02**: User can view session overview details including title, date/time, court fee, shuttle fee, status, total collected when relevant, and cancelled/read-only messaging.
-- [ ] **SESS-03**: Admin can edit allowed session fields, cancel an open session, and finalize an open session using the existing Supabase contracts and status locks.
-- [ ] **SESS-04**: Admin can add active members to a session and remove registered members without changing `add_member_to_session_full_presence` or `session_registrations` behavior.
-- [ ] **SESS-05**: Admin can toggle interval-level attendance for every registered member and interval, with guest/read-only/done/waiting/absent disabled states preserved.
-- [ ] **SESS-06**: Admin can mark a registered member as registered-but-absent through `is_registered_not_attended`, and the UI preserves that state separately from member removal.
+- [x] **SESS-03**: Admin can edit allowed session fields, cancel an open session, and finalize an open session using the existing Supabase contracts and status locks.
+- [x] **SESS-04**: Admin can add active members to a session and remove registered members without changing `add_member_to_session_full_presence` or `session_registrations` behavior.
+- [x] **SESS-05**: Admin can toggle interval-level attendance for every registered member and interval, with guest/read-only/done/waiting/absent disabled states preserved.
+- [x] **SESS-06**: Admin can mark a registered member as registered-but-absent through `is_registered_not_attended`, and the UI preserves that state separately from member removal.
 - [ ] **SESS-07**: User can view live cost summary from `calculate_session_costs`, including member total, interval count, court fee, shuttle fee, and surplus fund.
 - [ ] **SESS-08**: User can view finalized payment snapshots for waiting-for-payment and done sessions, including must-pay amount, paid amount, payment status, interval count, court fee, shuttle fee, and surplus.
 - [ ] **SESS-09**: User can create single QR payments and authenticated/admin group QR payments from session snapshots using existing snapshot and `create_group_payment` behavior.
@@ -99,12 +99,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEBT-04 | Phase 1 | Complete |
 | DEBT-05 | Phase 1 | Complete |
 | DEBT-06 | Phase 1 | Complete |
-| SESS-01 | Phase 2 | Pending |
+| SESS-01 | Phase 2 | Complete |
 | SESS-02 | Phase 2 | Pending |
-| SESS-03 | Phase 2 | Pending |
-| SESS-04 | Phase 2 | Pending |
-| SESS-05 | Phase 2 | Pending |
-| SESS-06 | Phase 2 | Pending |
+| SESS-03 | Phase 2 | Complete |
+| SESS-04 | Phase 2 | Complete |
+| SESS-05 | Phase 2 | Complete |
+| SESS-06 | Phase 2 | Complete |
 | SESS-07 | Phase 2 | Pending |
 | SESS-08 | Phase 2 | Pending |
 | SESS-09 | Phase 2 | Pending |
