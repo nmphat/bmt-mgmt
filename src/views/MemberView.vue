@@ -254,8 +254,103 @@ onMounted(fetchMembers)
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
     </div>
 
-    <div v-else class="bg-white shadow-sm rounded-lg border border-gray-100 overflow-hidden">
-      <div class="overflow-x-auto">
+    <div v-else class="space-y-4">
+      <div
+        v-if="members.length === 0"
+        class="rounded-2xl border border-gray-200 bg-white p-6 text-center text-base text-gray-600 shadow-sm"
+      >
+        {{ t('member.emptyState') }}
+      </div>
+
+      <div v-else class="space-y-3 md:hidden">
+        <article
+          v-for="member in members"
+          :key="member.id"
+          class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+        >
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h2 class="text-xl font-bold leading-tight text-gray-900">
+                  {{ member.display_name }}
+                </h2>
+                <p class="mt-1 text-sm font-bold text-gray-500">{{ t('member.role') }}</p>
+              </div>
+              <span
+                :class="[
+                  'rounded-full px-3 py-1 text-sm font-bold',
+                  member.role === 'admin'
+                    ? 'bg-indigo-100 text-indigo-800'
+                    : 'bg-gray-100 text-gray-800',
+                ]"
+              >
+                {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <span
+                :class="[
+                  'rounded-full px-3 py-1 text-sm font-bold',
+                  member.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700',
+                ]"
+              >
+                {{
+                  member.is_active ? t('member.activeStatus') : t('member.inactiveStatus')
+                }}
+              </span>
+              <span
+                :class="[
+                  'rounded-full px-3 py-1 text-sm font-bold',
+                  member.is_permanent
+                    ? 'bg-indigo-100 text-indigo-800'
+                    : 'bg-gray-100 text-gray-700',
+                ]"
+              >
+                {{
+                  member.is_permanent
+                    ? t('member.permanentStatus')
+                    : t('member.temporaryStatus')
+                }}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <router-link
+                :to="`/member/${member.id}`"
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-200 px-4 text-base font-bold text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                :aria-label="t('member.viewDetailsFor', { name: member.display_name })"
+              >
+                {{ t('debt.details') }}
+                <ChevronRight class="ml-1 h-4 w-4" />
+              </router-link>
+              <button
+                v-if="authStore.isAdmin"
+                @click="startEdit(member)"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-4 text-base font-bold text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                :title="t('common.edit')"
+              >
+                <Edit class="mr-2 h-4 w-4" />
+                {{ t('common.edit') }}
+              </button>
+              <button
+                v-if="authStore.isAdmin"
+                @click="deleteMember(member.id, member.display_name)"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 px-4 text-base font-bold text-red-600 transition hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                :title="t('common.delete')"
+              >
+                <Trash2 class="mr-2 h-4 w-4" />
+                {{ t('common.delete') }}
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div
+        v-if="members.length > 0"
+        class="hidden overflow-x-auto md:block rounded-lg border border-gray-100 bg-white shadow-sm"
+      >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
