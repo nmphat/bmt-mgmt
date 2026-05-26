@@ -7,19 +7,23 @@ import { vi, enUS } from 'date-fns/locale'
 import { Plus, ChevronRight } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
+import { useToast } from 'vue-toastification'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
+const toast = useToast()
 
 const t = computed(() => langStore.t)
 const dateLocale = computed(() => (langStore.currentLang === 'vi' ? vi : enUS))
 
 const sessions = ref<SessionSummary[]>([])
 const loading = ref(true)
+const errorMessage = ref('')
 
 async function fetchSessions() {
   try {
     loading.value = true
+    errorMessage.value = ''
     const { data, error } = await supabase
       .from('view_session_summary')
       .select('*')
@@ -29,6 +33,8 @@ async function fetchSessions() {
     sessions.value = data || []
   } catch (error) {
     console.error('Error fetching sessions:', error)
+    errorMessage.value = t.value('dashboard.loadError')
+    toast.error(t.value('dashboard.loadError'))
   } finally {
     loading.value = false
   }
@@ -57,24 +63,31 @@ onMounted(fetchSessions)
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">{{ t('dashboard.title') }}</h1>
+  <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <h1 class="text-[20px] font-bold leading-tight text-gray-900">{{ t('dashboard.title') }}</h1>
       <router-link
         v-if="authStore.isAdmin"
         to="/create-session"
-        class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
-        <Plus class="w-5 h-5 mr-2" />
+        <Plus class="mr-2 h-5 w-5" />
         {{ t('dashboard.newSession') }}
       </router-link>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    <div v-if="errorMessage" class="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+      {{ errorMessage }}
     </div>
 
-    <div v-else-if="sessions.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
+    <div v-if="loading" class="flex justify-center py-12">
+      <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
+    </div>
+
+    <div
+      v-else-if="sessions.length === 0"
+      class="rounded-xl border border-gray-200 bg-white px-4 py-12 text-center shadow-sm"
+    >
       <p class="text-gray-500">{{ t('dashboard.noSessions') }}</p>
     </div>
 
@@ -83,26 +96,31 @@ onMounted(fetchSessions)
         v-for="session in sessions"
         :key="session.id"
         :to="`/session/${session.id}`"
-        class="block bg-white rounded-lg shadow hover:shadow-md transition p-4 border border-gray-100"
+        :aria-label="t('dashboard.sessionCardAria', { title: session.title })"
+        class="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
-        <div class="flex justify-between items-start mb-2">
-          <h2 class="text-lg font-semibold text-gray-900">{{ session.title }}</h2>
+        <div class="mb-3 flex items-start justify-between gap-3">
+          <h2 class="text-[20px] font-bold leading-tight text-gray-900">{{ session.title }}</h2>
           <span
-            :class="['px-2 py-1 text-xs font-medium rounded-full', getStatusColor(session.status)]"
+            :class="['shrink-0 rounded-full px-2 py-1 text-sm font-bold leading-tight', getStatusColor(session.status)]"
           >
             {{ getStatusLabel(session.status) }}
           </span>
         </div>
-        <p class="text-sm text-gray-600 mb-4 capitalize">
+        <p class="mb-4 text-sm font-bold capitalize text-gray-600">
           {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy', { locale: dateLocale }) }}
         </p>
-        <div class="flex justify-between text-xs text-gray-500">
-          <span>{{ session.total_intervals }} {{ t('dashboard.intervals') }}</span>
-          <span>{{ session.total_registrations }} {{ t('dashboard.registrations') }}</span>
+        <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+          <span class="rounded-xl bg-gray-50 px-3 py-2 font-bold tabular-nums">
+            {{ session.total_intervals }} {{ t('dashboard.intervals') }}
+          </span>
+          <span class="rounded-xl bg-gray-50 px-3 py-2 text-right font-bold tabular-nums">
+            {{ session.total_registrations }} {{ t('dashboard.registrations') }}
+          </span>
         </div>
-        <div class="mt-4 flex items-center text-indigo-600 text-sm font-medium">
+        <div class="mt-4 flex min-h-11 items-center justify-between rounded-xl text-sm font-bold text-indigo-600">
           {{ t('dashboard.viewDetails') }}
-          <ChevronRight class="w-4 h-4 ml-1" />
+          <ChevronRight class="h-4 w-4" />
         </div>
       </router-link>
     </div>
