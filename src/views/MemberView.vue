@@ -159,7 +159,7 @@ onMounted(fetchMembers)
       <button
         v-if="authStore.isAdmin && !showAddForm"
         @click="showAddForm = true"
-        class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition shadow-sm"
+        class="flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-base font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
         <UserPlus class="w-5 h-5 mr-2" />
         {{ t('member.newName') }}
@@ -169,15 +169,19 @@ onMounted(fetchMembers)
     <!-- Add Member Form -->
     <div
       v-if="showAddForm && authStore.isAdmin"
-      class="bg-white shadow-sm rounded-lg border border-indigo-100 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300"
+      class="mb-8 rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300"
     >
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold text-gray-900">{{ t('member.addTitle') }}</h2>
-        <button @click="showAddForm = false" class="text-gray-400 hover:text-gray-600">
+        <button
+          @click="showAddForm = false"
+          class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          :aria-label="t('common.cancel')"
+        >
           <X class="w-5 h-5" />
         </button>
       </div>
-      <form @submit.prevent="addMember" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <form @submit.prevent="addMember" class="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
         <div>
           <label class="block text-base font-medium text-gray-700 mb-1">{{
             t('member.displayName')
@@ -186,7 +190,7 @@ onMounted(fetchMembers)
             v-model="newMember.display_name"
             type="text"
             required
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
+            class="block min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             :placeholder="t('member.namePlaceholder')"
           />
         </div>
@@ -196,14 +200,14 @@ onMounted(fetchMembers)
           }}</label>
           <select
             v-model="newMember.role"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-3 py-2"
+            class="block min-h-11 w-full rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           >
             <option value="member">{{ t('member.memberRole') }}</option>
             <option value="admin">{{ t('member.adminRole') }}</option>
           </select>
         </div>
         <div class="flex flex-wrap gap-4 mb-2 md:mb-0">
-          <label class="flex items-center text-base text-gray-700 cursor-pointer">
+          <label class="flex min-h-11 items-center text-base text-gray-700 cursor-pointer">
             <input
               v-model="newMember.is_active"
               type="checkbox"
@@ -211,7 +215,7 @@ onMounted(fetchMembers)
             />
             {{ t('member.active') }}
           </label>
-          <label class="flex items-center text-base text-gray-700 cursor-pointer">
+          <label class="flex min-h-11 items-center text-base text-gray-700 cursor-pointer">
             <input
               v-model="newMember.is_permanent"
               type="checkbox"
@@ -220,7 +224,7 @@ onMounted(fetchMembers)
             {{ t('member.permanent') }}
           </label>
           <label
-            class="flex items-center text-base text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
+            class="flex min-h-11 items-center text-base text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
           >
             <input
               v-model="createAnother"
@@ -234,7 +238,7 @@ onMounted(fetchMembers)
           <button
             type="submit"
             :disabled="actionLoading"
-            class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-50 flex justify-center items-center text-base"
+            class="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-base font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
             <Loader2 v-if="actionLoading" class="w-4 h-4 mr-2 animate-spin" />
             {{ t('member.create') }}
@@ -242,7 +246,7 @@ onMounted(fetchMembers)
           <button
             type="button"
             @click="showAddForm = false"
-            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition text-base"
+            class="min-h-11 rounded-xl border border-gray-300 px-4 text-base font-bold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
           >
             {{ t('common.cancel') }}
           </button>
@@ -268,7 +272,78 @@ onMounted(fetchMembers)
           :key="member.id"
           class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
         >
-          <div class="space-y-3">
+          <form
+            v-if="editingMemberId === member.id"
+            @submit.prevent="saveEdit(member.id)"
+            class="space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3"
+          >
+            <div>
+              <label class="mb-1 block text-sm font-bold text-gray-700">
+                {{ t('member.displayName') }}
+              </label>
+              <input
+                v-model="editForm.display_name"
+                type="text"
+                class="block min-h-11 w-full rounded-xl border border-gray-300 px-3 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-bold text-gray-700">
+                {{ t('member.role') }}
+              </label>
+              <select
+                v-model="editForm.role"
+                class="block min-h-11 w-full rounded-xl border border-gray-300 px-3 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              >
+                <option value="member">{{ t('member.memberRole') }}</option>
+                <option value="admin">{{ t('member.adminRole') }}</option>
+              </select>
+            </div>
+
+            <div class="space-y-2">
+              <label
+                class="flex min-h-11 items-center rounded-xl border border-gray-200 bg-white px-3 text-base text-gray-700"
+              >
+                <input
+                  v-model="editForm.is_active"
+                  type="checkbox"
+                  class="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                {{ t('member.active') }}
+              </label>
+              <label
+                class="flex min-h-11 items-center rounded-xl border border-gray-200 bg-white px-3 text-base text-gray-700"
+              >
+                <input
+                  v-model="editForm.is_permanent"
+                  type="checkbox"
+                  class="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                {{ t('member.permanent') }}
+              </label>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="submit"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-green-600 px-4 text-base font-bold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                <Save class="mr-2 h-4 w-4" />
+                {{ t('common.save') }}
+              </button>
+              <button
+                type="button"
+                @click="cancelEdit"
+                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-base font-bold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                <X class="mr-2 h-4 w-4" />
+                {{ t('common.cancel') }}
+              </button>
+            </div>
+          </form>
+
+          <div v-else class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div>
                 <h2 class="text-xl font-bold leading-tight text-gray-900">
@@ -328,7 +403,7 @@ onMounted(fetchMembers)
                 v-if="authStore.isAdmin"
                 @click="startEdit(member)"
                 class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-4 text-base font-bold text-indigo-700 transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-                :title="t('common.edit')"
+                :aria-label="t('member.editMember', { name: member.display_name })"
               >
                 <Edit class="mr-2 h-4 w-4" />
                 {{ t('common.edit') }}
@@ -337,7 +412,7 @@ onMounted(fetchMembers)
                 v-if="authStore.isAdmin"
                 @click="deleteMember(member.id, member.display_name)"
                 class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 px-4 text-base font-bold text-red-600 transition hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-                :title="t('common.delete')"
+                :aria-label="t('member.deleteMember', { name: member.display_name })"
               >
                 <Trash2 class="mr-2 h-4 w-4" />
                 {{ t('common.delete') }}
@@ -461,15 +536,17 @@ onMounted(fetchMembers)
                 <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
                   <button
                     @click="saveEdit(member.id)"
-                    class="text-green-600 hover:text-green-900"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-green-600 hover:text-green-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                     :title="t('common.save')"
+                    :aria-label="t('common.save')"
                   >
                     <Save class="w-5 h-5" />
                   </button>
                   <button
                     @click="cancelEdit"
-                    class="text-red-600 hover:text-red-900"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-red-600 hover:text-red-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                     :title="t('common.cancel')"
+                    :aria-label="t('common.cancel')"
                   >
                     <X class="w-5 h-5" />
                   </button>
@@ -486,16 +563,18 @@ onMounted(fetchMembers)
                   <button
                     v-if="authStore.isAdmin"
                     @click="startEdit(member)"
-                    class="text-indigo-600 hover:text-indigo-900"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-indigo-600 hover:text-indigo-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                     :title="t('common.edit')"
+                    :aria-label="t('member.editMember', { name: member.display_name })"
                   >
                     <Edit class="w-5 h-5" />
                   </button>
                   <button
                     v-if="authStore.isAdmin"
                     @click="deleteMember(member.id, member.display_name)"
-                    class="text-gray-400 hover:text-red-600"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                     :title="t('common.delete')"
+                    :aria-label="t('member.deleteMember', { name: member.display_name })"
                   >
                     <Trash2 class="w-5 h-5" />
                   </button>
