@@ -8,7 +8,7 @@ Badminton Session Manager is a mobile-friendly Vue/Supabase web app for managing
 
 Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
 
-## Current Milestone: v1.0 UI refactor from Open Design
+## Current Milestone: v1.0 UI refactor from Open Design — complete
 
 **Goal:** Refactor the app UI around the current Open Design mobile prototype without blindly copying it, while preserving every existing feature and Supabase-backed behavior.
 
@@ -18,6 +18,8 @@ Members and guests can understand what they owe and pay it quickly, while admins
 - Session detail experience split into task-focused sections for overview, attendance, costs, and payments without losing attendance matrix, realtime sync, member registration, absent flag, finalize/cancel/edit, QR/cash/group payment, or read-only guest views.
 - Admin and supporting screens polished consistently: session list, create session form, member management, member debt history, login, QR payment modal, and manual payment modal.
 - Feature inventory and regression guardrails so the refactor maps every existing route, component, and API-backed behavior before implementation.
+
+**Completion state:** Phase 1, Phase 2, and Phase 3 are implemented and verified. The UI refactor preserved public read/payment flows, admin-only mutations, Supabase RPC/view contracts, Vietnamese/English locale coverage, and source/build no-regression guardrails.
 
 ## Requirements
 
@@ -31,16 +33,15 @@ Members and guests can understand what they owe and pay it quickly, while admins
 - ✓ Session detail supports interval attendance, adding/removing registered members, registered-but-absent marking, live cost summaries from `calculate_session_costs`, realtime updates, session editing, cancellation, finalization, QR payments, group payments, and manual cash payments.
 - ✓ Admins can add, edit, and delete members, including role, active, and permanent flags.
 - ✓ The app supports Vietnamese and English labels through the language store and `src/locales/messages.ts`.
+- ✓ Phase 1 validated the mobile shell, debt-first homepage/member debt flows, QR payment foundation, auth/header/language preservation, and initial no-regression guardrails.
+- ✓ Phase 2 validated the session detail mobile task cockpit for overview, attendance, costs, and payments while preserving session operations, realtime/polling, snapshots, QR/group/manual payments, and public read-only access.
+- ✓ Phase 3 validated sessions list, guarded create-session, member management cards, QR/manual payment modal polish, i18n parity, route/access preservation, Supabase contract preservation, and final source/build no-regression checks.
 
 ### Active
 
 <!-- Current milestone scope. Detailed REQ-IDs live in REQUIREMENTS.md. -->
 
-- [ ] Refactor visual system and app shell for mobile-first, Vietnamese-friendly, one-handed use.
-- [ ] Make debt discovery and payment the clearest guest path on the home and member-detail flows.
-- [ ] Redesign session detail into a clearer mobile task cockpit without removing any session operations.
-- [ ] Polish admin/supporting screens and payment modals with the same design language.
-- [ ] Add explicit feature preservation checks before and after UI refactor phases.
+- None for v1.0. All active milestone requirements are implemented and verified; remaining workflow work is lifecycle/security review and milestone archive.
 
 ### Out of Scope
 
@@ -76,17 +77,18 @@ Members and guests can understand what they owe and pay it quickly, while admins
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Use Open Design as a reference, not a source of truth | The prototype captures desired mobile direction, but it does not cover every live Vue/Supabase behavior | — Pending |
-| Keep a 3-phase coarse roadmap | User requested coarse mode and exactly 3 phases | — Pending |
-| Refactor UI before changing backend contracts | Current backend already owns business logic; UI risk is losing flows during redesign | — Pending |
-| Prioritize guest debt/payment path | User identified guest no-login debt payment as the most important use case in Open Design instructions | — Pending |
+| Use Open Design as a reference, not a source of truth | The prototype captures desired mobile direction, but it does not cover every live Vue/Supabase behavior | Preserved through v1.0 completion |
+| Keep a 3-phase coarse roadmap | User requested coarse mode and exactly 3 phases | Completed |
+| Refactor UI before changing backend contracts | Current backend already owns business logic; UI risk is losing flows during redesign | Completed without schema/RPC changes |
+| Prioritize guest debt/payment path | User identified guest no-login debt payment as the most important use case in Open Design instructions | Validated in Phase 1 and preserved through Phase 3 |
 | Hide login UI and make `/sessions` public read-only | Only admins need login; current sessions list can behave read-only for guests while admin actions remain protected | Phase 1 decision |
+| Skip human visual UAT for this milestone | User explicitly deferred manual visual/browser UAT; source/build checks substitute for phase verification | Phase 1-3 verification decision |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd-transition`):
+**After each phase transition** (via the internal GSD transition workflow):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -100,4 +102,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-20 after milestone v1.0 start*
+*Last updated: 2026-05-26 after Phase 3 completion*
