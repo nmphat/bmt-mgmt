@@ -25,13 +25,13 @@ This is a preservation-first UI refactor:
 |---|------|------|--------------|-----------------------|
 | 1 | Mobile Shell + Debt/Payment Foundation | Guests and authenticated users can use the refactored mobile shell and debt-first payment flows without losing current route access, language, auth, or Supabase payment behavior. | SHELL-01, SHELL-02, SHELL-03, SHELL-04, SHELL-05, DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, ADMIN-04 | Depends on: Nothing. Status: Complete |
 | 2 | Session Detail Task Cockpit | Guests and admins can use the session detail screen as mobile task-focused sections for overview, attendance, costs, and payments while every current session operation and Supabase contract remains intact. | SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12 | Depends on: Phase 1. Status: Complete |
-| 3 | Admin/Supporting Screens + Payment Polish + Regression Pass | Admin and supporting screens use the same mobile-first design language, payment dialogs behave correctly on mobile/desktop, and final no-regression checks confirm the refactor preserved existing app behavior. | ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-05, ADMIN-06 | Depends on: Phase 2. Status: In Progress |
+| 3 | Admin/Supporting Screens + Payment Polish + Regression Pass | Admin and supporting screens use the same mobile-first design language, payment dialogs behave correctly on mobile/desktop, and final no-regression checks confirm the refactor preserved existing app behavior. | ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-05, ADMIN-06 | Depends on: Phase 2. Status: Complete |
 
 ## Phases
 
 - [x] **Phase 1: Mobile Shell + Debt/Payment Foundation** - Establish the mobile shell, shared UI primitives, debt-first homepage/member debt flows, QR payment foundation, auth/header/language preservation, and phase guardrails.
 - [x] **Phase 2: Session Detail Task Cockpit** - Refactor session detail into task-focused mobile sections while preserving attendance, costs, snapshots, payments, admin actions, readonly gates, realtime, and polling.
-- [ ] **Phase 3: Admin/Supporting Screens + Payment Polish + Regression Pass** - Polish sessions, create session, members, table-to-card layouts, QR/manual payment sheets, and final regression coverage.
+- [x] **Phase 3: Admin/Supporting Screens + Payment Polish + Regression Pass** - Polish sessions, create session, members, table-to-card layouts, QR/manual payment sheets, and final regression coverage.
 
 ## Phase Details
 
@@ -203,7 +203,7 @@ The UI refactor must preserve current Supabase tables, views, RPC names, paramet
 |-------|----------------|--------|-----------|
 | 1. Mobile Shell + Debt/Payment Foundation | 5/5 | Complete | 2026-05-25 |
 | 2. Session Detail Task Cockpit | 5/5 | Complete | 2026-05-25 |
-| 3. Admin/Supporting Screens + Payment Polish + Regression Pass | 4/5 | In Progress | - |
+| 3. Admin/Supporting Screens + Payment Polish + Regression Pass | 5/5 | Complete | 2026-05-26 |
 
 ## Next Step
 
