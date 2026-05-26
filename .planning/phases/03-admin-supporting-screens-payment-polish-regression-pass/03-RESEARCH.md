@@ -429,13 +429,13 @@ Formal Nyquist validation is skipped because `workflow.nyquist_validation` is `f
 | Session-detail table-heavy UI | Task-focused mobile cockpit with additive cards/tabs | Phase 2 | Phase 3 should match this mobile language for supporting/admin screens. |
 | Hidden login omitted from shell | `/login` direct-addressable with no guest-facing login affordance | Phase 1 | Phase 3 must not add public login links. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 3 add a lightweight automated test framework?**  
-   Recommendation: Do not add test framework in Phase 3; use source/build validation unless user explicitly requests tests.
+1. **RESOLVED: Do not add a lightweight automated test framework in Phase 3.**  
+   Rationale: No test infrastructure exists, no user approval was given for new tooling, and the locked autonomous workflow substitutes explicit source/build validation for human UAT.
 
-2. **Should `MemberDetailView.vue` be modified or only validated?**  
-   Recommendation: Treat as validation-only unless final source parity checklist finds a concrete gap.
+2. **RESOLVED: Treat `MemberDetailView.vue` as validation-only unless final source parity finds a concrete gap.**  
+   Rationale: The current source already has additive mobile cards plus desktop table preserving debt summary, session history, financial fields, status fields, and QR actions.
 
 ## Sources
 
@@ -476,4 +476,3 @@ Formal Nyquist validation is skipped because `workflow.nyquist_validation` is `f
 
 **Research date:** 2026-05-26  
 **Valid until:** 2026-06-02 for npm-version currency; project-source findings remain valid until files change.
-
