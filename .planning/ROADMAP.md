@@ -203,7 +203,7 @@ The UI refactor must preserve current Supabase tables, views, RPC names, paramet
 |-------|----------------|--------|-----------|
 | 1. Mobile Shell + Debt/Payment Foundation | 5/5 | Complete | 2026-05-25 |
 | 2. Session Detail Task Cockpit | 5/5 | Complete | 2026-05-25 |
-| 3. Admin/Supporting Screens + Payment Polish + Regression Pass | 3/5 | In Progress | - |
+| 3. Admin/Supporting Screens + Payment Polish + Regression Pass | 4/5 | In Progress | - |
 
 ## Next Step
 
