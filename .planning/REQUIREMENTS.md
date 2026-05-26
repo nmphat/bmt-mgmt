@@ -41,12 +41,12 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 
 ### Admin and Supporting Screens
 
-- [ ] **ADMIN-01**: User can view the sessions list read-only, see session cards with status/date/interval/registration counts, and navigate to session detail while create/mutation actions remain admin-only.
-- [ ] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_intervals`, with end-time validation and loading/error/success feedback preserved.
-- [ ] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active, permanent, and create-another behavior preserved.
+- [x] **ADMIN-01**: User can view the sessions list read-only, see session cards with status/date/interval/registration counts, and navigate to session detail while create/mutation actions remain admin-only.
+- [x] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_intervals`, with end-time validation and loading/error/success feedback preserved.
+- [x] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active, permanent, and create-another behavior preserved.
 - [x] **ADMIN-04**: User can log in, see login errors, log out, access profile/member link, see authenticated debt badge, and use header actions after the shell refactor.
-- [ ] **ADMIN-05**: User can use QR and manual payment modals as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, or payment polling/refresh behavior.
-- [ ] **ADMIN-06**: User can view table-to-card mobile layouts without losing financial fields, status fields, or actions that existed in desktop tables.
+- [x] **ADMIN-05**: User can use QR and manual payment modals as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, or payment polling/refresh behavior.
+- [x] **ADMIN-06**: User can view table-to-card mobile layouts without losing financial fields, status fields, or actions that existed in desktop tables.
 
 ## Future Requirements
 
@@ -111,12 +111,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-10 | Phase 2 | Complete |
 | SESS-11 | Phase 2 | Complete |
 | SESS-12 | Phase 2 | Complete |
-| ADMIN-01 | Phase 3 | Pending |
-| ADMIN-02 | Phase 3 | Pending |
-| ADMIN-03 | Phase 3 | Pending |
+| ADMIN-01 | Phase 3 | Complete |
+| ADMIN-02 | Phase 3 | Complete |
+| ADMIN-03 | Phase 3 | Complete |
 | ADMIN-04 | Phase 1 | Complete |
-| ADMIN-05 | Phase 3 | Pending |
-| ADMIN-06 | Phase 3 | Pending |
+| ADMIN-05 | Phase 3 | Complete |
+| ADMIN-06 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 29 total
