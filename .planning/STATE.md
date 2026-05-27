@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 03 verified and milestone complete
-last_updated: "2026-05-26T04:35:22.651Z"
-last_activity: 2026-05-26 -- Phase 03 verified; milestone complete
+stopped_at: Browser harness smoke test complete
+last_updated: "2026-05-27T04:20:17.592Z"
+last_activity: 2026-05-27 -- Browser harness smoke test passed; awaiting next action
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified
+**Current focus:** Milestone v1.0 complete — UI refactor verified and browser-tested
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete
-Last activity: 2026-05-26 -- Phase 03 verified; milestone complete
+Status: Milestone complete; browser_harness smoke passed
+Last activity: 2026-05-27 -- Browser harness smoke test passed; awaiting next action
 
 Progress: ██████████ 100%
 
@@ -137,6 +137,7 @@ None currently.
 Known follow-up gate:
 
 - Security enforcement is enabled; run `/gsd-secure-phase 03` before milestone archive.
+- Browser harness smoke passed on 2026-05-27 for mobile `/`, `/sessions`, `/members`, `/login`, `/create-session` guard and desktop `/sessions`, `/members`; no visible error text or global overflow was detected.
 
 ### Quick Tasks Completed
 
@@ -146,7 +147,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-05-26T04:35:22.651Z
-Stopped at: Phase 03 verified and milestone complete
-Resume file: None
-Next command: `/gsd-secure-phase 03`
+Last session: 2026-05-27T04:20:17.592Z
+Stopped at: Browser harness smoke test complete
+Resume file: .planning/HANDOFF.json
+Next command: ask user for next action; recommended `/gsd-secure-phase 03`

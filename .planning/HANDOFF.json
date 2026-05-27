@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T04:09:01.578Z",
+  "timestamp": "2026-05-27T04:20:17.592Z",
   "phase": "03",
   "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
   "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
@@ -26,6 +26,12 @@
       "name": "Run Phase 3 UI review",
       "status": "done",
       "commit": "d57ef12"
+    },
+    {
+      "id": 4,
+      "name": "Run browser_harness smoke test and update memory",
+      "status": "done",
+      "evidence": "03-UI-REVIEW.md Browser Harness Follow-up — 2026-05-27"
     }
   ],
   "remaining_tasks": [
@@ -43,8 +49,8 @@
   "blockers": [],
   "human_actions_pending": [
     {
-      "action": "If Harness/Cloak/Open Design MCP browser evidence is required, start the missing daemon/tooling before re-running UI review.",
-      "context": "Open Design MCP was unreachable at http://127.0.0.1:7456 and no Harness/Cloak/Playwright MCP screenshot tools were exposed in this session, so 03-UI-REVIEW.md used source/UI-SPEC/local artifact fallback evidence.",
+      "action": "If Cloak/Open Design MCP-specific evidence is required, start the missing daemon/tooling before re-running UI review.",
+      "context": "browser_harness was available and captured route smoke screenshots. Open Design MCP was unreachable at http://127.0.0.1:7456 and no Cloak/Playwright MCP screenshot tools were exposed in this session.",
       "blocking": false
     }
   ],
@@ -78,6 +84,6 @@
     "mobile-screen-audit-2.html.artifact.json",
     "mpd*.png"
   ],
-  "next_action": "Run /gsd-resume-work, then run /gsd-secure-phase 03 or decide whether to plan fixes for 03-UI-REVIEW.md findings before /gsd-complete-milestone.",
-  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, and marked complete. UI review score is 17/24 with priority findings in typography normalization, safe-area calc syntax, and exact CTA/copy alignment. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
+  "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive, or fix 03-UI-REVIEW.md findings first.",
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, and browser_harness smoke-tested. browser_harness passed for mobile /, /sessions, /members, /login, /create-session guard, and desktop /sessions + /members with no visible errors or global overflow. UI review score remains 17/24 with priority findings in typography normalization, safe-area calc syntax, and exact CTA/copy alignment. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
 }

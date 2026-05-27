@@ -2,7 +2,7 @@
 
 **Audited:** 2026-05-27  
 **Baseline:** Phase 3 UI-SPEC.md  
-**Screenshots:** not captured — Harness/Cloak/Playwright MCP unavailable; local source/Open Design artifacts used as fallback evidence.
+**Screenshots:** `browser_harness` captured mobile smoke screenshots after the initial source audit; Cloak/Playwright/Open Design MCP remained unavailable.
 
 ---
 
@@ -66,7 +66,7 @@
 
 **Issues**
 
-- **Human review required:** No browser screenshot validation was possible for 360/390/430px overlap, sheet reachability, or visual rhythm.
+- **Human review required:** `browser_harness` follow-up covered route smoke, mobile screenshots, and global overflow checks, but detailed 360/390/430px overlap, sheet reachability, and visual rhythm still need human review.
   - needs_human_review: true
 - **Minor — remaining dense legacy areas:** desktop tables are preserved correctly, but several table-era styles remain visually dense and use smaller headers/medium weights.
   - Affected: `SessionDetailView.vue`, `MemberView.vue`
@@ -191,6 +191,31 @@ Registry audit skipped: `components.json` not present; UI-SPEC marks shadcn/thir
 
 ---
 
+## Browser Harness Follow-up — 2026-05-27
+
+`browser_harness` connected to Chrome via CDP at `http://127.0.0.1:9242` and verified the running Vite app at `http://localhost:5173`.
+
+| Viewport | Route | Result | Evidence |
+|----------|-------|--------|----------|
+| 390x844 mobile | `/` | PASS | App rendered debt homepage, no visible error text, no global horizontal overflow, screenshot captured. |
+| 390x844 mobile | `/sessions` | PASS | Public sessions list rendered session cards/counts/details links, no visible error text, no global overflow, screenshot captured. |
+| 390x844 mobile | `/members` | PASS | Public member list rendered mobile cards/status/details links, no visible error text, no global overflow, screenshot captured. |
+| 390x844 mobile | `/login` | PASS | Login form rendered with bottom navigation, no visible error text, no global overflow, screenshot captured. |
+| 390x844 mobile | `/create-session` | PASS | Guard redirected unauthenticated user to `/login`. |
+| 1280x900 desktop | `/sessions` | PASS | Sessions list rendered, no visible error text, no global overflow. |
+| 1280x900 desktop | `/members` | PASS | Desktop member table rendered, no visible error text, no global overflow. |
+
+Captured screenshots are session artifacts only and were not committed:
+
+- `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527/mobile-home.png`
+- `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527/mobile-sessions.png`
+- `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527/mobile-members.png`
+- `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527/mobile-login.png`
+
+No console/runtime error events were surfaced by `drain_events()` during the smoke pass.
+
+---
+
 ## Build / Verification Notes
 
 - `pnpm type-check`: PASS
@@ -199,7 +224,7 @@ Registry audit skipped: `components.json` not present; UI-SPEC marks shadcn/thir
   - `localhost:3000`: 200
   - `localhost:5173`: 200
   - `localhost:8080`: 000
-- Screenshots: not captured due unavailable MCP/browser capture path and no file-output capability in the auditor session.
+- Screenshots: initial auditor could not capture screenshots, but the follow-up `browser_harness` pass captured mobile screenshots listed above.
 - Local Open Design artifacts were treated as directional only:
   - `brand-spec.md`
   - `badminton-mobile-preview.html`
