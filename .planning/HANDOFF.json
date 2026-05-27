@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T04:38:30.462Z",
+  "timestamp": "2026-05-27T04:46:30.403Z",
   "phase": "03",
   "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
   "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
@@ -45,17 +45,19 @@
       "status": "done",
       "commit": "bad7cc0",
       "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/manifest.json"
+    },
+    {
+      "id": 7,
+      "name": "Fix remaining Phase 3 UI review findings",
+      "status": "done",
+      "commit": "38778c0",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-ui-review-fixes"
     }
   ],
   "remaining_tasks": [
     {
       "id": 1,
       "name": "Run Phase 3 security gate because workflow.security_enforcement is enabled",
-      "status": "not_started"
-    },
-    {
-      "id": 2,
-      "name": "Decide whether to fix UI review findings or archive milestone",
       "status": "not_started"
     }
   ],
@@ -97,6 +99,6 @@
     "mobile-screen-audit-2.html.artifact.json",
     "mpd*.png"
   ],
-  "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive, or fix remaining 03-UI-REVIEW.md findings first.",
-  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. UI review score remains 17/24 with remaining priority findings in typography normalization, safe-area calc syntax, and exact CTA/copy alignment. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
+  "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive.",
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Remaining Phase 3 UI review priority findings were fixed in 38778c0: typography normalization, safe-area calc warning removal, exact CTA/copy alignment, and clipboard failure feedback. Retest passed pnpm type-check, pnpm build with no CSS warning, and browser_harness 8/8 affected checks. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
 }

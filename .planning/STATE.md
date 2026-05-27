@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Browser harness NaN finding fixed and retested
-last_updated: "2026-05-27T04:38:30.462Z"
-last_activity: 2026-05-27 -- Session detail NaN finding fixed and retested with browser_harness
+stopped_at: Phase 3 UI review findings fixed and browser-tested
+last_updated: "2026-05-27T04:46:30.403Z"
+last_activity: 2026-05-27 -- Phase 3 UI review findings fixed, clean build, and browser_harness retest passed
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified and browser-tested
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, and UI-review findings fixed
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; browser_harness NaN finding fixed
-Last activity: 2026-05-27 -- Session detail NaN finding fixed and retested with browser_harness
+Status: Milestone complete; browser_harness NaN finding and Phase 3 UI review priority findings fixed
+Last activity: 2026-05-27 -- Phase 3 UI review findings fixed, clean build, and browser_harness retest passed
 
 Progress: ██████████ 100%
 
@@ -139,6 +139,8 @@ Known follow-up gate:
 - Security enforcement is enabled; run `/gsd-secure-phase 03` before milestone archive.
 - Browser harness smoke passed on 2026-05-27 for mobile `/`, `/sessions`, `/members`, `/login`, `/create-session` guard and desktop `/sessions`, `/members`; no visible error text or global overflow was detected.
 - Full browser_harness screenshot sweep captured 14 grouped screenshots; the `03-session-detail-readonly` `Tiền sân NaN ₫` finding is fixed in `bad7cc0` and retested on mobile/desktop.
+- Phase 3 UI review priority findings were fixed in `38778c0`: typography classes normalized in changed Phase 3 surfaces, safe-area `calc()` arbitrary Tailwind classes replaced with CSS helpers plus Tailwind source narrowed to `src`, exact CTA copy aligned, and clipboard failure now surfaces a toast.
+- UI review fix retest passed with `pnpm type-check`, `pnpm build` with no CSS minify warning, and browser_harness 8/8 affected route+viewport checks. Screenshots are under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-ui-review-fixes`.
 
 ### Quick Tasks Completed
 
@@ -148,7 +150,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-05-27T04:38:30.462Z
-Stopped at: Browser harness NaN finding fixed and retested
+Last session: 2026-05-27T04:46:30.403Z
+Stopped at: Phase 3 UI review findings fixed and browser-tested
 Resume file: .planning/HANDOFF.json
 Next command: ask user for next action; recommended `/gsd-secure-phase 03`

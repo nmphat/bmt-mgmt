@@ -10,22 +10,22 @@
 
 | Pillar | Score | Key Finding |
 |--------|-------|-------------|
-| 1. Copywriting | 3/4 | VI/EN parity is strong, but a few labels drift from exact UI-SPEC copy. |
+| 1. Copywriting | 4/4 | VI/EN parity is strong and exact CTA labels are now aligned to UI-SPEC. |
 | 2. Visuals | 3/4 | Mobile cards/sheets largely match the contract; browser-only visual assertions need human review. |
 | 3. Color | 3/4 | Neutral shell + white cards + semantic statuses are present; accent usage is broad but mostly justified. |
-| 4. Typography | 2/4 | Contract allows 4 sizes and weights 400/700, but source uses many sizes and medium/semibold/extrabold. |
-| 5. Spacing | 3/4 | 44px targets and safe-area patterns are present; calc arbitrary classes emit a build warning. |
-| 6. Experience Design | 3/4 | Loading/error/empty/admin/payment states are covered; visual/UAT confirmation remains deferred. |
+| 4. Typography | 4/4 | Changed Phase 3 surfaces are normalized to allowed sizes and weights 400/700. |
+| 5. Spacing | 4/4 | 44px targets and safe-area patterns are present; the arbitrary `calc()` build warning is fixed. |
+| 6. Experience Design | 4/4 | Loading/error/empty/admin/payment states are covered and clipboard failure is surfaced. |
 
-**Overall: 17/24**
+**Overall: 22/24**
 
 ---
 
-## Top 3 Priority Fixes
+## Top 3 Priority Fix Status
 
-1. **Normalize Phase 3 typography to the contract** — current changed screens use `text-xs`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `font-medium`, `font-semibold`, and `font-extrabold` despite the spec allowing Body/Label/Heading/Display and weights 400/700. Convert changed mobile cards/sheets to `text-sm/text-base/text-[20px]/text-[32px]` equivalents and `font-normal/font-bold`.
-2. **Fix arbitrary safe-area `calc()` spacing syntax** — build passes but warns about invalid `calc(...+env(...))`. Change classes like `pb-[calc(96px+env(safe-area-inset-bottom))]` to include spaces or a CSS variable/class with valid syntax.
-3. **Align exact CTA/copy contract labels** — `dashboard.newSession` EN is `New Session` while spec says `Create Session`; entry-state manual cash uses generic `common.confirm` before final `payment.confirmCash`. Update locale strings/usages where exact contract copy is required.
+1. **Resolved in `38778c0` — Normalize Phase 3 typography to the contract.** Changed Phase 3 surfaces now avoid `text-xs`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `font-medium`, `font-semibold`, and `font-extrabold` and use explicit Heading/Display sizes plus `font-normal`/`font-bold`.
+2. **Resolved in `38778c0` — Fix arbitrary safe-area `calc()` spacing syntax.** Warning-producing safe-area arbitrary Tailwind utilities were replaced with CSS helper classes, and Tailwind source scanning is narrowed to `src` so planning Markdown examples do not generate utilities.
+3. **Resolved in `38778c0` — Align exact CTA/copy contract labels.** `dashboard.newSession` EN is now `Create Session`; manual cash entry and review both use `payment.confirmCash`.
 
 ---
 
@@ -47,10 +47,10 @@
 
 **Issues**
 
-- **Minor — exact CTA drift:** UI-SPEC says sessions primary CTA EN should be `Create Session`; actual `dashboard.newSession` is `New Session`.
+- **Resolved — exact CTA drift:** UI-SPEC says sessions primary CTA EN should be `Create Session`; `dashboard.newSession` now matches.
   - Affected: `DashboardView.vue`
   - needs_human_review: false
-- **Minor — manual cash entry CTA:** UI-SPEC specifies `Confirm cash`; entry step uses `common.confirm`, while final review uses `payment.confirmCash`.
+- **Resolved — manual cash entry CTA:** UI-SPEC specifies `Confirm cash`; entry and review steps now use `payment.confirmCash`.
   - needs_human_review: false
 
 ---
@@ -106,28 +106,23 @@
   - Label/Meta 14/700
   - Heading 20/700
   - Display/Financial 32/700
-- Actual source class distribution includes:
-  - `text-sm`
-  - `text-base`
+- Post-remediation source check over changed Phase 3 surfaces found 0 matches for:
   - `text-xs`
+  - `text-lg`
   - `text-xl`
   - `text-2xl`
   - `text-3xl`
-  - `text-[20px]`
-  - `text-[32px]`
-- Actual weight distribution includes:
-  - `font-bold`
   - `font-medium`
   - `font-semibold`
   - `font-extrabold`
-  - `font-normal`
+- Remaining approved weights are `font-normal` and `font-bold`.
 - Global CSS remaps Tailwind sizes upward in `src/assets/main.css`, making class names harder to map directly to the UI-SPEC pixel contract.
 
 **Issues**
 
-- **Major — too many type sizes and weights in changed surfaces:** examples include `MemberView.vue` using `text-3xl`, `PaymentQRModal.vue` and `ManualPaymentModal.vue` using `text-2xl`, and `SessionDetailView.vue` using `text-xl/text-2xl` frequently.
+- **Resolved — too many type sizes and weights in changed surfaces:** `MemberView.vue`, `MemberDetailView.vue`, `PaymentQRModal.vue`, `ManualPaymentModal.vue`, and `SessionDetailView.vue` now use UI-SPEC-compatible Heading/Display/body/label classes.
   - needs_human_review: false
-- **Major — non-approved weights:** `font-medium`, `font-semibold`, and `font-extrabold` appear throughout changed Phase 3 surfaces.
+- **Resolved — non-approved weights:** `font-medium`, `font-semibold`, and `font-extrabold` are absent from changed Phase 3 surfaces.
   - needs_human_review: false
 
 ---
@@ -148,13 +143,13 @@
 
 **Issues**
 
-- **Moderate — invalid calc warning in build:** `pnpm build` passes, but esbuild warns that `+` in arbitrary Tailwind calc classes needs whitespace. Affected examples:
+- **Resolved — invalid calc warning in build:** `pnpm build` now passes without the CSS minify warning. Affected examples were moved to CSS helper classes:
   - `App.vue`
   - `SessionDetailView.vue`
   - `PaymentQRModal.vue`
   - `ManualPaymentModal.vue`
   - needs_human_review: false
-- **Minor — arbitrary spacing allowed but should be centralized:** `pb-[148px]`, `bottom-[calc(...)]`, and shadow arbitrary values are present.
+- **Resolved — arbitrary spacing centralization:** safe-area page padding, sheet footer padding, and the session group-payment bar offset are now centralized in CSS helper classes.
   - needs_human_review: false
 
 ---
@@ -174,13 +169,13 @@
   - polling/cleanup/payment-complete in `PaymentQRModal.vue`
   - explicit close/Done in `PaymentQRModal.vue`
   - two-step manual cash in `ManualPaymentModal.vue`
-- Type-check and production build pass. Build has one non-fatal CSS minify warning.
+- Type-check and production build pass with no CSS minify warning.
 
 **Issues**
 
 - **Moderate — visual UAT deferred:** source evidence is strong, but actual mobile overlap/reachability at 360/390/430px was not browser-verified.
   - needs_human_review: true
-- **Minor — clipboard failure not surfaced:** `PaymentQRModal.vue` assumes `navigator.clipboard.writeText` succeeds. Add a toast/error fallback for denied clipboard permissions.
+- **Resolved — clipboard failure not surfaced:** `PaymentQRModal.vue` now detects unavailable clipboard support, catches denied writes, logs the error, and shows localized toast feedback.
   - needs_human_review: false
 
 ---
@@ -244,12 +239,32 @@ Resolution:
   - `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/03-session-detail-readonly/mobile-390x844.png`
   - `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/03-session-detail-readonly/desktop-1280x900.png`
 
+### UI Review Fix Pass — 2026-05-27
+
+Priority findings were fixed in `38778c0`:
+
+- Typography: normalized changed Phase 3 surfaces in `MemberView.vue`, `MemberDetailView.vue`, `SessionDetailView.vue`, `PaymentQRModal.vue`, and `ManualPaymentModal.vue`.
+- Spacing/build: replaced warning-producing safe-area arbitrary Tailwind `calc()` utilities with CSS helpers and constrained Tailwind source scanning to `src`.
+- Copy: aligned `Create Session` and manual cash confirmation labels.
+- Experience: added localized clipboard failure feedback for QR transfer-content copy.
+
+Verification:
+
+- `pnpm type-check`: PASS
+- `pnpm build`: PASS with no CSS minify warning
+- Source grep: no prohibited typography classes in changed Phase 3 surfaces
+- `browser_harness`: PASS 8/8 affected route+viewport checks for `/sessions`, `/members`, first `/member/:id`, and first `/session/:id` at 390x844 and 1280x900; no global overflow, no `NaN`, no runtime exception text.
+
+Retest screenshots:
+
+- `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-ui-review-fixes`
+
 ---
 
 ## Build / Verification Notes
 
 - `pnpm type-check`: PASS
-- `pnpm build`: PASS with non-fatal CSS minify warning for arbitrary `calc(...+env(...))`
+- `pnpm build`: PASS with no CSS minify warning after `38778c0`
 - Dev server detection:
   - `localhost:3000`: 200
   - `localhost:5173`: 200
