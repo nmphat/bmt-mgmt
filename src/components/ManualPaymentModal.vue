@@ -134,7 +134,7 @@ async function handleConfirm() {
         <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
           <div class="flex items-start justify-between gap-3">
             <h3
-              class="flex items-center gap-2 text-xl font-bold text-gray-900"
+              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-gray-900"
               id="manual-payment-title"
             >
               <DollarSign class="h-6 w-6 text-green-600" />
@@ -179,7 +179,7 @@ async function handleConfirm() {
 
                 <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
                   <p class="text-sm font-bold text-amber-800">{{ t('payment.debtLabel') }}</p>
-                  <p class="mt-1 text-2xl font-bold text-amber-900 tabular-nums">
+                  <p class="mt-1 text-[32px] font-bold leading-[1.05] text-amber-900 tabular-nums">
                     {{ formatCurrency(remainingDebt) }}
                   </p>
                 </div>
@@ -195,7 +195,7 @@ async function handleConfirm() {
                       type="number"
                       step="1000"
                       min="0"
-                      class="block min-h-11 w-full rounded-xl border border-gray-300 py-2 pl-3 pr-12 text-lg font-bold text-indigo-700 focus:border-indigo-500 focus:ring-indigo-500"
+                      class="block min-h-11 w-full rounded-xl border border-gray-300 py-2 pl-3 pr-12 text-[16px] font-bold leading-[1.5] text-indigo-700 focus:border-indigo-500 focus:ring-indigo-500"
                       :placeholder="t('payment.amountToPay') + '...'"
                       @keyup.enter="proceedToReview"
                     />
@@ -254,7 +254,7 @@ async function handleConfirm() {
         </div>
 
         <div
-          class="sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:flex sm:flex-row-reverse"
+          class="manual-payment-footer-safe sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
         >
           <template v-if="currentStep === 'entry'">
             <button
@@ -263,7 +263,7 @@ async function handleConfirm() {
               class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
             >
               <CheckCircle class="mr-2 h-4 w-4" />
-              {{ t('common.confirm') }}
+              {{ t('payment.confirmCash') }}
             </button>
             <button
               @click="handleClose"
@@ -273,6 +273,12 @@ async function handleConfirm() {
               {{ t('common.cancel') }}
             </button>
           </template>
+
+          <style scoped>
+          .manual-payment-footer-safe {
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+          }
+          </style>
 
           <template v-else>
             <button

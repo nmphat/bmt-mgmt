@@ -5,8 +5,10 @@ import { BANK_INFO } from '@/types'
 import type { CostSnapshot, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
 import { supabase } from '@/lib/supabase'
+import { useToast } from 'vue-toastification'
 
 const langStore = useLangStore()
+const toast = useToast()
 const t = computed(() => langStore.t)
 
 const props = defineProps<{
@@ -47,11 +49,21 @@ const qrUrl = computed(() => {
 
 async function copyPaymentCode() {
   if (!paymentInfo.value) return
-  await navigator.clipboard.writeText(paymentInfo.value)
-  copied.value = true
-  setTimeout(() => {
-    copied.value = false
-  }, 2000)
+  if (!navigator.clipboard?.writeText) {
+    toast.error(t.value('payment.copyFailed'))
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(paymentInfo.value)
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('Error copying payment code:', error)
+    toast.error(t.value('payment.copyFailed'))
+  }
 }
 
 const formatCurrency = (value: number) => {
@@ -179,7 +191,7 @@ onUnmounted(() => {
       >
         <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
           <div class="flex items-start justify-between gap-3">
-            <h3 class="text-xl font-bold text-gray-900" id="modal-title">
+            <h3 class="text-[20px] font-bold leading-[1.2] text-gray-900" id="modal-title">
               {{
                 isPaid || isPaymentComplete
                   ? t('payment.paymentSuccess')
@@ -212,7 +224,7 @@ onUnmounted(() => {
               >
                 <Check class="h-12 w-12 text-green-600 stroke-[3px]" />
               </div>
-              <p class="mb-2 text-2xl font-bold text-gray-900">{{ t('payment.thanks') }}</p>
+              <p class="mb-2 text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('payment.thanks') }}</p>
               <p class="max-w-sm text-gray-600">{{ t('payment.qrSuccess') }}</p>
             </div>
 
@@ -222,7 +234,7 @@ onUnmounted(() => {
                 <span class="mb-1 block text-sm font-bold text-indigo-700">{{
                   t('payment.amountToPay')
                 }}</span>
-                <span class="text-3xl font-bold text-indigo-700 tabular-nums">{{
+                <span class="text-[32px] font-bold leading-[1.05] text-indigo-700 tabular-nums">{{
                   formatCurrency(remainingAmount)
                 }}</span>
               </div>
@@ -261,7 +273,7 @@ onUnmounted(() => {
                       </template>
                     </button>
                   </div>
-                  <p class="break-all font-mono text-xl font-bold text-indigo-900">
+                  <p class="break-all font-mono text-[20px] font-bold leading-[1.2] text-indigo-900">
                     {{ paymentInfo }}
                   </p>
                   <p class="mt-2 text-sm italic text-indigo-700">
@@ -297,7 +309,7 @@ onUnmounted(() => {
                       :key="m.name"
                       class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm"
                     >
-                      <span class="min-w-0 font-medium text-gray-600">{{ m.name }}</span>
+                      <span class="min-w-0 font-bold text-gray-600">{{ m.name }}</span>
                       <span class="shrink-0 font-bold text-gray-900 tabular-nums">{{
                         formatCurrency(m.amount)
                       }}</span>
@@ -317,7 +329,7 @@ onUnmounted(() => {
         </div>
 
         <div
-          class="sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:flex sm:flex-row-reverse"
+          class="qr-modal-footer-safe sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
         >
           <button
             type="button"
@@ -325,7 +337,7 @@ onUnmounted(() => {
             :class="
               isPaid || isPaymentComplete
                 ? 'bg-green-600 hover:bg-green-700 font-bold'
-                : 'bg-indigo-600 hover:bg-indigo-700 font-medium'
+                : 'bg-indigo-600 hover:bg-indigo-700 font-bold'
             "
             @click="handleClose"
           >
@@ -338,3 +350,9 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.qr-modal-footer-safe {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+</style>

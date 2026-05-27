@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source('../');
 
 @theme {
   --text-xs: 0.875rem; /* formerly 0.75rem */

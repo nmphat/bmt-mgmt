@@ -155,7 +155,7 @@ onMounted(fetchMembers)
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">{{ t('member.title') }}</h1>
+      <h1 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('member.title') }}</h1>
       <button
         v-if="authStore.isAdmin && !showAddForm"
         @click="showAddForm = true"
@@ -172,7 +172,7 @@ onMounted(fetchMembers)
       class="mb-8 rounded-2xl border border-indigo-100 bg-white p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300"
     >
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-900">{{ t('member.addTitle') }}</h2>
+        <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('member.addTitle') }}</h2>
         <button
           @click="showAddForm = false"
           class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -183,7 +183,7 @@ onMounted(fetchMembers)
       </div>
       <form @submit.prevent="addMember" class="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
         <div>
-          <label class="block text-base font-medium text-gray-700 mb-1">{{
+          <label class="block text-base font-bold text-gray-700 mb-1">{{
             t('member.displayName')
           }}</label>
           <input
@@ -195,7 +195,7 @@ onMounted(fetchMembers)
           />
         </div>
         <div>
-          <label class="block text-base font-medium text-gray-700 mb-1">{{
+          <label class="block text-base font-bold text-gray-700 mb-1">{{
             t('member.role')
           }}</label>
           <select
@@ -224,7 +224,7 @@ onMounted(fetchMembers)
             {{ t('member.permanent') }}
           </label>
           <label
-            class="flex min-h-11 items-center text-base text-indigo-600 font-medium cursor-pointer border-l pl-4 border-gray-200"
+            class="flex min-h-11 items-center text-base text-indigo-600 font-bold cursor-pointer border-l pl-4 border-gray-200"
           >
             <input
               v-model="createAnother"
@@ -346,7 +346,7 @@ onMounted(fetchMembers)
           <div v-else class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h2 class="text-xl font-bold leading-tight text-gray-900">
+                <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">
                   {{ member.display_name }}
                 </h2>
                 <p class="mt-1 text-sm font-bold text-gray-500">{{ t('member.role') }}</p>
@@ -431,31 +431,31 @@ onMounted(fetchMembers)
             <tr>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('member.name') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('member.role') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('member.active') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('member.permanent') }}
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('common.actions') }}
               </th>
@@ -475,7 +475,7 @@ onMounted(fetchMembers)
                   type="text"
                   class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base border px-2 py-1"
                 />
-                <span v-else class="font-medium">{{ member.display_name }}</span>
+                <span v-else class="font-bold">{{ member.display_name }}</span>
               </td>
 
               <!-- Role -->
@@ -491,7 +491,7 @@ onMounted(fetchMembers)
                 <span
                   v-else
                   :class="[
-                    'px-2 py-1 text-sm font-medium rounded-full',
+                    'px-2 py-1 text-sm font-bold rounded-full',
                     member.role === 'admin'
                       ? 'bg-indigo-100 text-indigo-800'
                       : 'bg-gray-100 text-gray-800',
@@ -532,7 +532,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap text-right text-base font-medium">
+              <td class="px-6 py-4 whitespace-nowrap text-right text-base font-bold">
                 <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
                   <button
                     @click="saveEdit(member.id)"

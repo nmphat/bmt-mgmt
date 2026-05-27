@@ -239,7 +239,7 @@ onMounted(fetchMemberDetails)
         <ArrowLeft class="w-6 h-6" />
       </button>
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ memberName }}</h1>
+        <h1 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ memberName }}</h1>
         <p class="text-sm text-gray-500">{{ t('debt.history') }}</p>
       </div>
     </div>
@@ -249,12 +249,12 @@ onMounted(fetchMemberDetails)
       class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex justify-between items-center"
     >
       <div>
-        <span class="text-sm font-medium text-gray-500 uppercase tracking-wider">{{
+        <span class="text-sm font-bold text-gray-500 uppercase tracking-wider">{{
           t('debt.totalDebt')
         }}</span>
         <div class="mt-1 flex items-baseline">
           <span
-            class="text-3xl font-extrabold text-gray-900"
+            class="text-[32px] font-bold leading-[1.05] text-gray-900"
             :class="{ 'text-red-600': totalDebt > 0 }"
           >
             {{ formatCurrency(totalDebt) }}
@@ -264,7 +264,7 @@ onMounted(fetchMemberDetails)
       <button
         v-if="totalDebt > 0"
         @click="handlePayAll"
-        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition flex items-center font-medium"
+        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition flex items-center font-bold"
       >
         <CreditCard class="w-5 h-5 mr-2" />
         {{ t('debt.payAll') }}
@@ -292,7 +292,7 @@ onMounted(fetchMemberDetails)
                 </p>
               </div>
               <span
-                class="inline-flex shrink-0 rounded-full px-2 py-1 text-xs font-semibold"
+                class="inline-flex shrink-0 rounded-full px-2 py-1 text-[14px] font-bold leading-[1.35]"
                 :class="getStatusColor(session.status)"
               >
                 {{ getStatusLabel(session.status) }}
@@ -356,49 +356,49 @@ onMounted(fetchMemberDetails)
               <tr>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('debt.sessionName') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('debt.cost') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.time') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('debt.remaining') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('debt.status') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('debt.action') }}
                 </th>
@@ -407,8 +407,8 @@ onMounted(fetchMemberDetails)
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="session in sessions" :key="session.snapshot_id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900">{{ session.session_title }}</div>
-                  <div class="text-xs text-gray-500">
+                  <div class="text-sm font-bold text-gray-900">{{ session.session_title }}</div>
+                  <div class="text-[14px] leading-[1.35] text-gray-500">
                     {{
                       format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', {
                         locale: dateLocale,
@@ -429,20 +429,20 @@ onMounted(fetchMemberDetails)
                   {{ formatCurrency(session.shuttle_fee_amount) }}
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold"
                   :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                   <span
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                    class="px-2 inline-flex text-[14px] leading-[1.35] font-bold rounded-full"
                     :class="getStatusColor(session.status)"
                   >
                     {{ getStatusLabel(session.status) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold">
                   <button
                     v-if="session.status !== 'paid'"
                     @click="handleSinglePay(session)"

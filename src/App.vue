@@ -22,7 +22,7 @@ onMounted(async () => {
       - Modal/sheet overlays and footers: above fixed bars.
       - Toasts: above non-modal fixed bars, offset on mobile so they do not cover nav/group CTAs.
     -->
-    <main class="pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
+    <main class="app-main-safe">
       <router-view />
     </main>
 
@@ -31,6 +31,16 @@ onMounted(async () => {
 </template>
 
 <style>
+.app-main-safe {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .app-main-safe {
+    padding-bottom: 0;
+  }
+}
+
 @media (max-width: 767px) {
   .Vue-Toastification__container.bottom-left,
   .Vue-Toastification__container.bottom-right,

@@ -719,7 +719,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-full px-4 py-4 pb-[calc(148px+env(safe-area-inset-bottom))] sm:px-6 md:py-6 md:pb-8 lg:px-8">
+  <div class="session-detail-shell mx-auto max-w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8">
 
     <div v-if="loading && !session" class="flex justify-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
@@ -753,14 +753,14 @@ onUnmounted(() => {
           <!-- Edit Mode -->
         <div v-if="isEditingSession && authStore.isAdmin" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xl font-bold text-gray-900">{{ t('session.editSession') }}</h2>
+            <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('session.editSession') }}</h2>
             <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
               <X class="w-5 h-5" />
             </button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{
+              <label class="block text-sm font-bold text-gray-700">{{
                 t('session.title')
               }}</label>
               <input
@@ -770,7 +770,7 @@ onUnmounted(() => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{
+              <label class="block text-sm font-bold text-gray-700">{{
                 t('common.status')
               }}</label>
               <select
@@ -784,7 +784,7 @@ onUnmounted(() => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{
+              <label class="block text-sm font-bold text-gray-700">{{
                 t('session.courtFee')
               }}</label>
               <input
@@ -795,7 +795,7 @@ onUnmounted(() => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700">{{
+              <label class="block text-sm font-bold text-gray-700">{{
                 t('session.shuttleFee')
               }}</label>
               <input
@@ -809,14 +809,14 @@ onUnmounted(() => {
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
             <button
               @click="isEditingSession = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+              class="px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
             >
               {{ t('common.cancel') }}
             </button>
             <button
               @click="saveSession"
               :disabled="isSavingSession"
-              class="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
+              class="flex items-center px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
@@ -830,7 +830,7 @@ onUnmounted(() => {
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div class="min-w-0">
                 <div class="mb-2 flex items-start gap-3">
-                  <h1 class="text-2xl font-bold leading-tight text-gray-900 md:text-3xl">{{ session.title }}</h1>
+                  <h1 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ session.title }}</h1>
                   <button
                     v-if="isSessionEditable"
                     type="button"
@@ -842,7 +842,7 @@ onUnmounted(() => {
                     <Edit class="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
-                <p class="text-sm font-medium capitalize text-gray-600 md:text-base">
+                <p class="text-sm font-normal capitalize text-gray-600">
                   {{ formatSessionDate(session.session_date) }}
                   <span v-if="sessionTimeRange"> · {{ sessionTimeRange }}</span>
                 </p>
@@ -859,11 +859,11 @@ onUnmounted(() => {
             <div class="grid grid-cols-1 gap-3 text-base sm:grid-cols-2 lg:grid-cols-4">
               <div class="rounded-xl bg-gray-50 p-3">
                 <span class="mb-1 block text-sm font-bold text-gray-500">{{ t('session.courtFee') }}</span>
-                <span class="font-semibold text-gray-900">{{ formatCurrency(session.court_fee_total) }}</span>
+                <span class="font-bold text-gray-900">{{ formatCurrency(session.court_fee_total) }}</span>
               </div>
               <div class="rounded-xl bg-gray-50 p-3">
                 <span class="mb-1 block text-sm font-bold text-gray-500">{{ t('session.shuttleFee') }}</span>
-                <span class="font-semibold text-gray-900">{{ formatCurrency(session.shuttle_fee_total) }}</span>
+                <span class="font-bold text-gray-900">{{ formatCurrency(session.shuttle_fee_total) }}</span>
               </div>
               <div
                 v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
@@ -876,7 +876,7 @@ onUnmounted(() => {
 
             <div
               v-if="overviewMessage"
-              class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700"
+              class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-normal text-gray-700"
             >
               {{ overviewMessage }}
             </div>
@@ -949,7 +949,7 @@ onUnmounted(() => {
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50"
         >
-          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.attendance') }}</h2>
+          <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('session.attendance') }}</h2>
           <p v-if="attendanceLockMessage" class="mt-1 text-sm text-gray-600">
             <Lock class="inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
             {{
@@ -967,7 +967,7 @@ onUnmounted(() => {
           >
             <div class="mb-3 flex items-center gap-2">
               <UserPlus class="h-5 w-5 text-indigo-600" aria-hidden="true" />
-              <h3 class="text-base font-semibold text-gray-900">{{ t('session.addMembersTitle') }}</h3>
+              <h3 class="text-base font-bold text-gray-900">{{ t('session.addMembersTitle') }}</h3>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
               <div class="relative w-full sm:w-80">
@@ -979,7 +979,7 @@ onUnmounted(() => {
                   <span v-if="selectedMemberIds.length === 0" class="text-gray-500">{{
                     t('session.selectMembers')
                   }}</span>
-                  <span v-else class="font-medium text-gray-900">{{
+                  <span v-else class="font-bold text-gray-900">{{
                     t('session.selectedCount', { count: selectedMemberIds.length })
                   }}</span>
                   <ChevronLeft
@@ -1017,7 +1017,7 @@ onUnmounted(() => {
                 type="button"
                 @click="registerMembers"
                 :disabled="selectedMemberIds.length === 0 || isRegistering"
-                class="flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+                class="flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-base font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
               >
                 <UserPlus v-if="!isRegistering" class="mr-1.5 h-4 w-4" />
                 <Loader2 v-else class="mr-1.5 h-4 w-4 animate-spin" />
@@ -1045,10 +1045,10 @@ onUnmounted(() => {
           >
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h3 class="text-base font-semibold text-gray-900">
+                <h3 class="text-base font-bold text-gray-900">
                   {{ reg.member?.display_name }}
                 </h3>
-                <p class="mt-1 text-sm font-medium text-gray-600">
+                <p class="mt-1 text-sm font-normal text-gray-600">
                   {{ t('session.presentIntervals') }}:
                   <span class="tabular-nums text-gray-900">
                     {{ presentIntervalCount(reg.member_id) }}/{{ intervals.length }}
@@ -1057,7 +1057,7 @@ onUnmounted(() => {
               </div>
               <span
                 v-if="reg.is_registered_not_attended"
-                class="rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-600"
+                class="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-600"
               >
                 {{ t('session.absent') }}
               </span>
@@ -1079,7 +1079,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 @click="toggleAbsent(reg)"
-                class="flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                class="flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 :class="
                   reg.is_registered_not_attended
                     ? 'border-red-200 bg-red-50 text-red-700'
@@ -1093,7 +1093,7 @@ onUnmounted(() => {
               <button
                 type="button"
                 @click="removeRegistration(reg.id, reg.member?.display_name || '')"
-                class="flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                class="flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 <Trash2 class="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {{ t('common.remove') }}
@@ -1107,7 +1107,7 @@ onUnmounted(() => {
                 class="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
                 :class="{ 'opacity-70': !isSessionEditable || reg.is_registered_not_attended }"
               >
-                <span class="text-sm font-medium text-gray-700">
+                <span class="text-sm font-normal text-gray-700">
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
                 </span>
                 <input
@@ -1128,21 +1128,21 @@ onUnmounted(() => {
               <tr>
                 <th
                   scope="col"
-                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
+                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
                 >
                   {{ t('common.member') }}
                 </th>
                 <th
                   v-if="isSessionEditable"
                   scope="col"
-                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-12"
+                  class="px-2 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider w-12"
                 >
                   <span class="sr-only">{{ t('common.actions') }}</span>
                 </th>
                 <th
                   v-if="isSessionEditable"
                   scope="col"
-                  class="px-2 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider w-16"
+                  class="px-2 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider w-16"
                 >
                   {{ t('session.absent') }}
                 </th>
@@ -1150,7 +1150,7 @@ onUnmounted(() => {
                   v-for="interval in intervals"
                   :key="interval.id"
                   scope="col"
-                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider min-w-[100px]"
+                  class="px-3 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider min-w-[100px]"
                 >
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
                 </th>
@@ -1163,7 +1163,7 @@ onUnmounted(() => {
                 :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
               >
                 <td
-                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
+                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
                 >
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}
@@ -1232,9 +1232,9 @@ onUnmounted(() => {
         class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 class="text-xl font-semibold text-gray-900">
+          <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">
             {{ t('session.costSummary') }}
-            <span class="text-xs font-normal text-gray-500">({{ t('session.live') }})</span>
+            <span class="text-[14px] font-normal leading-[1.35] text-gray-500">({{ t('session.live') }})</span>
           </h2>
         </div>
         <div v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'">
@@ -1247,7 +1247,7 @@ onUnmounted(() => {
           <div v-else class="space-y-4 p-4 md:hidden">
             <div class="rounded-2xl border border-green-100 bg-green-50 p-4">
               <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
-              <p class="mt-1 text-2xl font-bold text-green-700 tabular-nums">
+              <p class="mt-1 text-[32px] font-bold leading-[1.05] text-green-700 tabular-nums">
                 {{ formatCurrency(surplus) }}
               </p>
               <p class="mt-1 text-sm text-green-700">{{ t('session.live') }}</p>
@@ -1263,13 +1263,13 @@ onUnmounted(() => {
                   <h3 class="text-base font-bold text-gray-900">
                     {{ cost.display_name }}
                   </h3>
-                  <p class="mt-1 text-sm font-semibold text-gray-500">
+                  <p class="mt-1 text-sm font-bold text-gray-500">
                     {{ t('session.live') }}
                   </p>
                 </div>
                 <div class="text-right">
                   <p class="text-sm font-bold text-gray-500">{{ t('session.total') }}</p>
-                  <p class="text-2xl font-bold text-indigo-700 tabular-nums">
+                  <p class="text-[32px] font-bold leading-[1.05] text-indigo-700 tabular-nums">
                     {{ formatCurrency(cost.final_total) }}
                   </p>
                 </div>
@@ -1278,17 +1278,17 @@ onUnmounted(() => {
               <dl class="mt-4 grid grid-cols-1 gap-3 text-sm">
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.numIntervals') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">{{ cost.intervals_count }}</dd>
+                  <dd class="font-bold text-gray-900 tabular-nums">{{ cost.intervals_count }}</dd>
                 </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.courtFee') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">
+                  <dd class="font-bold text-gray-900 tabular-nums">
                     {{ formatCurrency(cost.total_court_fee) }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.shuttleFee') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">
+                  <dd class="font-bold text-gray-900 tabular-nums">
                     {{ formatCurrency(cost.total_shuttle_fee) }}
                   </dd>
                 </div>
@@ -1308,31 +1308,31 @@ onUnmounted(() => {
               <tr>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('common.member') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.total') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.numIntervals') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
@@ -1340,7 +1340,7 @@ onUnmounted(() => {
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="cost in costs" :key="cost.member_id">
-                <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900">
+                <td class="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900">
                   {{ cost.display_name }}
                 </td>
                 <td
@@ -1387,7 +1387,7 @@ onUnmounted(() => {
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
         >
-          <h2 class="text-xl font-semibold text-gray-900">{{ t('session.paymentTable') }}</h2>
+          <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('session.paymentTable') }}</h2>
         </div>
         <div v-if="isSessionFinalized">
           <div
@@ -1399,7 +1399,7 @@ onUnmounted(() => {
           <div v-else class="space-y-4 p-4 md:hidden">
             <div class="rounded-2xl border border-green-100 bg-green-50 p-4">
               <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
-              <p class="mt-1 text-2xl font-bold text-green-700 tabular-nums">
+              <p class="mt-1 text-[32px] font-bold leading-[1.05] text-green-700 tabular-nums">
                 {{ formatCurrency(surplus) }}
               </p>
             </div>
@@ -1429,7 +1429,7 @@ onUnmounted(() => {
                         {{ snapshot.display_name }}
                       </h3>
                       <span
-                        class="mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+                        class="mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-[14px] font-bold leading-[1.35]"
                         :class="{
                           'bg-green-100 text-green-800': snapshot.status === 'paid',
                           'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
@@ -1449,7 +1449,7 @@ onUnmounted(() => {
                 </div>
                 <div class="text-right">
                   <p class="text-sm font-bold text-gray-500">{{ t('session.mustPay') }}</p>
-                  <p class="text-2xl font-bold text-indigo-700 tabular-nums">
+                  <p class="text-[32px] font-bold leading-[1.05] text-indigo-700 tabular-nums">
                     {{ formatCurrency(snapshot.final_amount) }}
                   </p>
                 </div>
@@ -1464,19 +1464,19 @@ onUnmounted(() => {
                 </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.intervalsAbbr') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">
+                  <dd class="font-bold text-gray-900 tabular-nums">
                     {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.courtFee') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">
+                  <dd class="font-bold text-gray-900 tabular-nums">
                     {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
                   <dt class="font-bold text-gray-500">{{ t('session.shuttleFee') }}</dt>
-                  <dd class="font-semibold text-gray-900 tabular-nums">
+                  <dd class="font-bold text-gray-900 tabular-nums">
                     {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
                   </dd>
                 </div>
@@ -1526,49 +1526,49 @@ onUnmounted(() => {
                 <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('common.member') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider font-bold"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.mustPay') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-3 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-3 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.intervalsAbbr') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('payment.paid') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('common.status') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-sm font-medium text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
                 >
                   {{ t('session.pay') }}
                 </th>
@@ -1587,7 +1587,7 @@ onUnmounted(() => {
                   <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-base font-medium text-gray-900 uppercase"
+                  class="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900 uppercase"
                 >
                   {{ snapshot.display_name }}
                 </td>
@@ -1599,10 +1599,10 @@ onUnmounted(() => {
                 <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                   {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                <td class="px-4 py-4 whitespace-nowrap text-[14px] text-right leading-[1.35] text-gray-500">
                   {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
                 </td>
-                <td class="px-4 py-4 whitespace-nowrap text-xs text-right text-gray-500">
+                <td class="px-4 py-4 whitespace-nowrap text-[14px] text-right leading-[1.35] text-gray-500">
                   {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
                 </td>
                 <td
@@ -1612,7 +1612,7 @@ onUnmounted(() => {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                   <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[14px] font-bold leading-[1.35]"
                     :class="{
                       'bg-green-100 text-green-800': snapshot.status === 'paid',
                       'bg-yellow-100 text-yellow-800': snapshot.status === 'partial',
@@ -1633,7 +1633,7 @@ onUnmounted(() => {
                     <button
                       v-if="snapshot.status !== 'paid'"
                       @click="openPaymentQR(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-medium w-full justify-center"
+                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-bold w-full justify-center"
                     >
                       <QrCode class="w-4 h-4 mr-1.5" />
                       {{ t('payment.qrPay') }}
@@ -1641,7 +1641,7 @@ onUnmounted(() => {
                     <button
                       v-if="snapshot.status !== 'paid' && authStore.isAdmin"
                       @click="openCashPayment(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-medium w-full justify-center"
+                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-bold w-full justify-center"
                     >
                       {{ t('payment.cashPay') }}
                     </button>
@@ -1650,7 +1650,7 @@ onUnmounted(() => {
                       class="text-green-500 flex items-center justify-center"
                     >
                       <Check class="w-5 h-5 mr-1" />
-                      <span class="text-sm font-medium">{{ t('payment.done') }}</span>
+                      <span class="text-sm font-bold">{{ t('payment.done') }}</span>
                     </span>
                   </div>
                 </td>
@@ -1688,16 +1688,16 @@ onUnmounted(() => {
     >
       <div
         v-if="selectedSnapshotIds.length > 0"
-        class="fixed bottom-[calc(92px+env(safe-area-inset-bottom))] left-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 md:bottom-8"
+        class="session-group-payment-bar fixed left-1/2 z-50 max-w-2xl -translate-x-1/2"
       >
         <div
           class="bg-indigo-600 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between border border-indigo-500/50 backdrop-blur-md"
         >
           <div class="flex flex-col">
-            <span class="text-sm font-medium opacity-90">{{
+            <span class="text-sm font-bold opacity-90">{{
               t('session.groupPaymentBar', { count: selectedSnapshotIds.length })
             }}</span>
-            <span class="text-xl font-extrabold">{{
+            <span class="text-[20px] font-bold leading-[1.2]">{{
               t('session.totalSelected', { amount: formatCurrency(totalSelectedAmount) })
             }}</span>
           </div>
@@ -1733,3 +1733,24 @@ onUnmounted(() => {
     @success="fetchSnapshotData"
   />
 </template>
+
+<style scoped>
+.session-detail-shell {
+  padding-bottom: calc(148px + env(safe-area-inset-bottom));
+}
+
+.session-group-payment-bar {
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  width: calc(100% - 2rem);
+}
+
+@media (min-width: 768px) {
+  .session-detail-shell {
+    padding-bottom: 2rem;
+  }
+
+  .session-group-payment-bar {
+    bottom: 2rem;
+  }
+}
+</style>
