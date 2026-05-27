@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
-import { LogOut, Menu, User, Wallet } from 'lucide-vue-next'
+import { LogOut, Menu, Settings, User, Wallet } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 const authStore = useAuthStore()
@@ -216,11 +216,12 @@ watch(
 
               <router-link
                 v-if="authStore.isAdmin"
-                to="/sessions"
-                class="block min-h-11 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                to="/settings"
+                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 role="menuitem"
                 @click="userMenuOpen = false"
               >
+                <Settings class="h-4 w-4" aria-hidden="true" />
                 {{ t('auth.admin_settings') }}
               </router-link>
 

@@ -105,7 +105,8 @@ export interface GroupPaymentData {
 
 // Bank Config (Hardcode for now or fetch from DB)
 export const BANK_INFO = {
-  BANK_ID: 'MB', // Example: MB, VCB, ACB
+  BANK_ID: 'TPB',
+  BANK_NAME: 'TPBank',
   ACCOUNT_NO: '3030191957777',
   TEMPLATE: 'compact2',
 }

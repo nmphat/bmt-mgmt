@@ -48,6 +48,15 @@ export const messages = {
       profile: 'Hồ sơ',
       admin_settings: 'Cấu hình Admin',
     },
+    settings: {
+      title: 'Cấu hình Admin',
+      subtitle: 'Kiểm tra cấu hình thanh toán đang dùng cho mã QR.',
+      paymentTitle: 'Cấu hình thanh toán',
+      bank: 'Ngân hàng',
+      accountNumber: 'Số tài khoản',
+      qrTemplate: 'Mẫu QR',
+      qrNote: 'Các mã QR thanh toán hiện dùng cấu hình ngân hàng này.',
+    },
     dashboard: {
       title: 'Danh sách Buổi tập',
       newSession: 'Tạo Buổi tập',
@@ -304,6 +313,15 @@ export const messages = {
       signInButton: 'Sign in',
       profile: 'My Profile',
       admin_settings: 'Admin Settings',
+    },
+    settings: {
+      title: 'Admin Settings',
+      subtitle: 'Review the payment configuration used for QR codes.',
+      paymentTitle: 'Payment settings',
+      bank: 'Bank',
+      accountNumber: 'Account number',
+      qrTemplate: 'QR template',
+      qrNote: 'Payment QR codes currently use this bank configuration.',
     },
     dashboard: {
       title: 'Badminton Sessions',
