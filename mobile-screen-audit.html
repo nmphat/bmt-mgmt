@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile screen audit · Badminton Mgmt</title>
+  <style>
+    :root {
+      --bg:      oklch(98.5% 0.002 247);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(21% 0.034 264);
+      --muted:   oklch(44.6% 0.03 257);
+      --border:  oklch(92.8% 0.006 264);
+      --accent:  oklch(51.1% 0.262 276);
+
+      --accent-soft: color-mix(in oklch, var(--accent) 10%, transparent);
+      --fg-soft: color-mix(in oklch, var(--fg) 5%, transparent);
+      --danger-soft: color-mix(in oklch, oklch(58% 0.20 28) 12%, transparent);
+      --success-soft: color-mix(in oklch, oklch(58% 0.16 145) 12%, transparent);
+      --warn-soft: color-mix(in oklch, oklch(70% 0.16 75) 16%, transparent);
+
+      --font-display: 'Iowan Old Style', 'Charter', Georgia, serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+
+      --fs-h1: clamp(40px, 6vw, 72px);
+      --fs-h2: clamp(28px, 4vw, 44px);
+      --fs-h3: clamp(20px, 2vw, 24px);
+      --fs-lead: 18px;
+      --fs-body: 16px;
+      --fs-meta: 12px;
+
+      --gap-xs: 8px;
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --gap-2xl: 88px;
+      --container: 1180px;
+      --gutter: clamp(18px, 4vw, 32px);
+      --radius: 12px;
+      --radius-lg: 18px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 { text-wrap: balance; }
+    .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+    .section { padding-block: clamp(48px, 8vw, var(--gap-2xl)); }
+    .section + .section { border-top: 1px solid var(--border); }
+    .stack { display: flex; flex-direction: column; gap: var(--gap-md); }
+    .row { display: flex; align-items: center; gap: var(--gap-md); }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-lg); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-lg); }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap-md); }
+    .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gap-xl); align-items: start; }
+    .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gap-xl); align-items: start; }
+    @media (max-width: 920px) {
+      .grid-2, .grid-3, .grid-4, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+      .row-between { align-items: flex-start; flex-direction: column; }
+    }
+    .h1, h1 { font-family: var(--font-display); font-size: var(--fs-h1); line-height: 1.04; letter-spacing: -0.02em; margin: 0; }
+    .h2, h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.1; letter-spacing: -0.015em; margin: 0; }
+    .h3, h3 { font-family: var(--font-display); font-size: var(--fs-h3); font-weight: 600; line-height: 1.25; margin: 0; }
+    .lead { font-size: var(--fs-lead); line-height: 1.55; color: var(--muted); max-width: 60ch; margin: 0; }
+    .eyebrow { font-family: var(--font-mono); font-size: var(--fs-meta); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 0 0 var(--gap-md); }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .topnav { position: sticky; top: 0; z-index: 10; background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; }
+    .logo { font-family: var(--font-display); font-weight: 600; font-size: 20px; }
+    .topnav nav { display: flex; gap: var(--gap-lg); }
+    .topnav nav a { font-size: 14px; color: var(--muted); }
+    .topnav nav a:hover { color: var(--fg); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: var(--radius); border: 1px solid transparent; font-size: 15px; font-weight: 600; transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover, .btn-secondary[aria-pressed="true"] { border-color: var(--fg); background: var(--fg-soft); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .btn-arrow::after { content: '→'; transition: transform 0.15s ease; }
+    .btn-arrow:hover::after { transform: translateX(2px); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px; }
+    .card-tight { padding: 18px; }
+    .card-rule { background: transparent; border: 0; border-top: 1px solid var(--fg); padding: 22px 0 0; border-radius: 0; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--accent-soft); color: var(--fg); border-radius: 999px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .tag { display: inline-flex; align-items: center; padding: 4px 10px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; font-size: 12px; }
+    .screen-card { display: grid; grid-template-columns: 120px 1fr auto; gap: var(--gap-md); align-items: start; }
+    .route { font-family: var(--font-mono); color: var(--muted); font-size: 13px; }
+    .priority { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 999px; padding: 4px 9px; white-space: nowrap; }
+    .p0 { background: var(--danger-soft); color: oklch(42% 0.18 28); }
+    .p1 { background: var(--warn-soft); color: oklch(43% 0.12 75); }
+    .p2 { background: var(--success-soft); color: oklch(38% 0.13 145); }
+    .phone { width: min(100%, 360px); border: 1px solid var(--fg); border-radius: 34px; padding: 12px; background: var(--surface); box-shadow: 0 20px 50px color-mix(in oklch, var(--fg) 10%, transparent); }
+    .phone-screen { min-height: 620px; border: 1px solid var(--border); border-radius: 26px; overflow: hidden; background: var(--bg); }
+    .phone-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding-inline: 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .mobile-card { margin: 12px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+    .mobile-row { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+    .tab-panel[hidden], .filtered-out { display: none; }
+    .control-strip { display: flex; gap: 10px; flex-wrap: wrap; }
+    .checklist { display: grid; gap: 12px; }
+    .check-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .check-item input { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; }
+    .code { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; background: color-mix(in oklch, var(--fg) 4%, var(--surface)); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; overflow-x: auto; }
+    .copy-ok { color: var(--accent); font-family: var(--font-mono); font-size: 12px; min-height: 18px; }
+    .pagefoot { padding-block: var(--gap-xl); color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    @media (max-width: 720px) {
+      .topnav nav { display: none; }
+      .screen-card { grid-template-columns: 1fr; }
+      .priority { width: fit-content; }
+      .card { padding: 20px; }
+      .btn { width: 100%; min-height: 44px; }
+      .control-strip .btn { width: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="logo" href="#top">Badminton Mgmt audit</a>
+      <nav aria-label="Audit sections">
+        <a href="#screens">Screens</a>
+        <a href="#prototype">Mobile model</a>
+        <a href="#fixes">Fix pack</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="section" data-od-id="hero">
+      <div class="container grid-2-1">
+        <div>
+          <p class="eyebrow">SCAN · /home/phatngo/badminton-mgmt</p>
+          <h1>Mobile audit for all Badminton Mgmt screens.</h1>
+          <p class="lead" style="margin-top: 20px;">Prototype này gom các route hiện có, chỉ ra vấn đề mobile chính, và đề xuất hướng tối ưu để app quản lý nợ, buổi chơi, thành viên chạy tốt ở 360–430px.</p>
+          <div class="row" style="margin-top: 28px; flex-wrap: wrap;">
+            <a class="btn btn-primary" href="#screens">Xem screen audit</a>
+            <a class="btn btn-secondary btn-arrow" href="#fixes">Copy fix pack</a>
+          </div>
+        </div>
+        <div class="card stack">
+          <span class="pill">Observed app</span>
+          <h3>7 routes + 2 modal flows</h3>
+          <p class="lead" style="font-size: 16px;">Routes: `/`, `/sessions`, `/session/:id`, `/create-session`, `/members`, `/member/:id`, `/login`. Modal flows: QR payment, manual payment.</p>
+          <div class="grid-2" style="gap: 12px;">
+            <span class="tag">Vue</span><span class="tag">Tailwind</span><span class="tag">Supabase</span><span class="tag">i18n VI/EN</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" data-od-id="findings">
+      <div class="container stack" style="gap: 40px;">
+        <div style="max-width: 44ch;">
+          <p class="eyebrow">TOP FINDINGS</p>
+          <h2>Điểm nghẽn mobile nằm ở navigation, matrix, form density.</h2>
+        </div>
+        <div class="grid-3">
+          <article class="card-rule">
+            <h3>Header thiếu mobile nav thật</h3>
+            <p style="color: var(--muted);">`AppHeader.vue` ẩn nav bằng `hidden md:flex`; mobile chỉ còn logo, language, debt, user. Người dùng khó đi nhanh tới Sessions/Members.</p>
+          </article>
+          <article class="card-rule">
+            <h3>Session detail quá nặng cho phone</h3>
+            <p style="color: var(--muted);">`SessionDetailView.vue` có interval presence, add member, costs, snapshots, payment actions. Cần chia thành tabs sticky: Tổng quan, Điểm danh, Chi phí, Thanh toán.</p>
+          </article>
+          <article class="card-rule">
+            <h3>Debt table tốt nhưng còn polish</h3>
+            <p style="color: var(--muted);">`HomeDebtTable.vue` đã có card mobile và bottom bar. Cần sửa animation transform, tap targets, group payment clarity.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="screens" data-od-id="screens">
+      <div class="container stack" style="gap: 32px;">
+        <div class="row-between">
+          <div>
+            <p class="eyebrow">SCREEN MAP</p>
+            <h2>Ưu tiên tối ưu từng screen.</h2>
+          </div>
+          <div class="control-strip" role="group" aria-label="Filter priority">
+            <button class="btn btn-secondary" data-filter="all" aria-pressed="true">All</button>
+            <button class="btn btn-secondary" data-filter="p0">P0</button>
+            <button class="btn btn-secondary" data-filter="p1">P1</button>
+            <button class="btn btn-secondary" data-filter="p2">P2</button>
+          </div>
+        </div>
+
+        <div class="stack" id="screenList">
+          <article class="card screen-card" data-priority="p0">
+            <span class="route">/session/:id</span>
+            <div>
+              <h3>Session detail</h3>
+              <p style="color: var(--muted);">Tách content thành 4 tabs sticky. Trên mobile, presence matrix phải đổi thành member accordion hoặc interval carousel, không để bảng ngang.</p>
+            </div>
+            <span class="priority p0">P0</span>
+          </article>
+          <article class="card screen-card" data-priority="p0">
+            <span class="route">AppHeader</span>
+            <div>
+              <h3>Global navigation</h3>
+              <p style="color: var(--muted);">Thêm bottom tab bar cho Home, Sessions, Members, Profile. Giữ debt badge dạng compact chip hoặc wallet button.</p>
+            </div>
+            <span class="priority p0">P0</span>
+          </article>
+          <article class="card screen-card" data-priority="p1">
+            <span class="route">/create-session</span>
+            <div>
+              <h3>Create session form</h3>
+              <p style="color: var(--muted);">Dùng form wizard 2 bước trên phone: thông tin buổi, phí sân/cầu. Time inputs giữ side-by-side từ 390px, stack ở 360px.</p>
+            </div>
+            <span class="priority p1">P1</span>
+          </article>
+          <article class="card screen-card" data-priority="p1">
+            <span class="route">/</span>
+            <div>
+              <h3>Debt home</h3>
+              <p style="color: var(--muted);">Giữ card layout nhưng thêm search/filter debt state. Bottom group-pay bar cần safe area + transform riêng cho mobile.</p>
+            </div>
+            <span class="priority p1">P1</span>
+          </article>
+          <article class="card screen-card" data-priority="p1">
+            <span class="route">/members</span>
+            <div>
+              <h3>Members list</h3>
+              <p style="color: var(--muted);">Ưu tiên search sticky, debt summary, trạng thái active. Member row cần đủ 44px hit target.</p>
+            </div>
+            <span class="priority p1">P1</span>
+          </article>
+          <article class="card screen-card" data-priority="p2">
+            <span class="route">/login</span>
+            <div>
+              <h3>Login</h3>
+              <p style="color: var(--muted);">Giữ form ngắn, tăng tap target, thêm state lỗi rõ. Không cần layout phức tạp.</p>
+            </div>
+            <span class="priority p2">P2</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="prototype" data-od-id="prototype">
+      <div class="container grid-1-2">
+        <div class="stack">
+          <p class="eyebrow">MOBILE MODEL</p>
+          <h2>Session detail nên thành task cockpit.</h2>
+          <p class="lead">Một screen mobile không nên chứa toàn bộ bảng chi phí, điểm danh, thanh toán cùng lúc. Người quản lý cần “đang làm gì” trước, dữ liệu chi tiết sau.</p>
+          <div class="control-strip" role="tablist" aria-label="Mobile prototype tabs">
+            <button class="btn btn-secondary" role="tab" aria-selected="true" data-tab="overview">Tổng quan</button>
+            <button class="btn btn-secondary" role="tab" aria-selected="false" data-tab="attendance">Điểm danh</button>
+            <button class="btn btn-secondary" role="tab" aria-selected="false" data-tab="payments">Thanh toán</button>
+          </div>
+        </div>
+        <div class="phone" aria-label="Mobile prototype shell">
+          <div class="phone-screen">
+            <div class="phone-bar">
+              <span class="meta">18:42</span>
+              <span class="meta">Badminton Mgmt</span>
+            </div>
+            <div style="padding: 14px;">
+              <div class="mobile-card">
+                <span class="pill">Open session</span>
+                <h3 style="margin-top: 10px;">Tối thứ 5 · Sân 3</h3>
+                <p style="color: var(--muted); margin-bottom: 0;">18:00–20:00 · 12 thành viên · 4 intervals</p>
+              </div>
+              <div class="tab-panel" id="panel-overview">
+                <div class="mobile-card">
+                  <div class="mobile-row" style="border-top: 0; margin-top: 0; padding-top: 0;"><span>Tiền sân</span><strong class="num">450.000đ</strong></div>
+                  <div class="mobile-row"><span>Tiền cầu</span><strong class="num">180.000đ</strong></div>
+                  <div class="mobile-row"><span>Cần thu</span><strong class="num">630.000đ</strong></div>
+                </div>
+                <div class="mobile-card"><button class="btn btn-primary" style="width: 100%;">Chốt buổi và tạo công nợ</button></div>
+              </div>
+              <div class="tab-panel" id="panel-attendance" hidden>
+                <div class="mobile-card">
+                  <div class="row-between"><strong>Minh Anh</strong><span class="tag">4/4</span></div>
+                  <div class="mobile-row"><span>18:00</span><span>Present</span></div>
+                  <div class="mobile-row"><span>18:30</span><span>Present</span></div>
+                  <div class="mobile-row"><span>19:00</span><span>Present</span></div>
+                </div>
+                <div class="mobile-card"><button class="btn btn-secondary" style="width: 100%;">Thêm thành viên</button></div>
+              </div>
+              <div class="tab-panel" id="panel-payments" hidden>
+                <div class="mobile-card">
+                  <div class="row-between"><strong>3 người chưa trả</strong><span class="priority p0">Need action</span></div>
+                  <div class="mobile-row"><span>Nam</span><strong class="num">80.000đ</strong></div>
+                  <div class="mobile-row"><span>Huy</span><strong class="num">70.000đ</strong></div>
+                </div>
+                <div class="mobile-card"><button class="btn btn-primary" style="width: 100%;">Tạo QR nhóm</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="fixes" data-od-id="fixes">
+      <div class="container grid-2">
+        <div class="stack">
+          <p class="eyebrow">FIX PACK</p>
+          <h2>Những thay đổi nên làm trước.</h2>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" /><span><strong>Bottom nav mobile.</strong><br><span style="color: var(--muted);">Thêm nav cố định dưới 768px cho Home/Sessions/Members/Profile.</span></span></label>
+            <label class="check-item"><input type="checkbox" /><span><strong>Session detail tabs.</strong><br><span style="color: var(--muted);">Chia Tổng quan / Điểm danh / Chi phí / Thanh toán, mỗi tab có CTA riêng.</span></span></label>
+            <label class="check-item"><input type="checkbox" /><span><strong>Form density pass.</strong><br><span style="color: var(--muted);">Inputs tối thiểu 44px, label rõ, grid 2 cột chỉ giữ khi đủ 390px.</span></span></label>
+            <label class="check-item"><input type="checkbox" /><span><strong>Payment modal height.</strong><br><span style="color: var(--muted);">Dùng bottom sheet trên mobile, max-height + sticky close/action.</span></span></label>
+          </div>
+        </div>
+        <div class="stack">
+          <h3>Snippet đề xuất cho bottom nav</h3>
+          <pre class="code" id="snippet">&lt;nav class="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 md:hidden"&gt;
+  &lt;div class="grid grid-cols-4 h-16 pb-[env(safe-area-inset-bottom)]"&gt;
+    &lt;router-link to="/" class="tap-tab"&gt;Home&lt;/router-link&gt;
+    &lt;router-link to="/sessions" class="tap-tab"&gt;Sessions&lt;/router-link&gt;
+    &lt;router-link to="/members" class="tap-tab"&gt;Members&lt;/router-link&gt;
+    &lt;router-link :to="profilePath" class="tap-tab"&gt;Profile&lt;/router-link&gt;
+  &lt;/div&gt;
+&lt;/nav&gt;</pre>
+          <button class="btn btn-secondary" id="copyBtn">Copy snippet</button>
+          <div class="copy-ok" id="copyStatus" aria-live="polite"></div>
+          <div class="card card-tight">
+            <span class="pill">Code note</span>
+            <p style="color: var(--muted); margin-bottom: 0;">`HomeDebtTable.vue` animation currently uses `translate(-50%, …)` for both mobile and desktop. Split keyframes by breakpoint because mobile bar is `left:0; width:100%`.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pagefoot">
+    <div class="container row-between">
+      <span>Audit prototype · mobile-first recommendations</span>
+      <span class="meta">Source: src/router/index.ts, AppHeader.vue, HomeDebtTable.vue, SessionDetailView.vue</span>
+    </div>
+  </footer>
+
+  <script>
+    const filterButtons = Array.from(document.querySelectorAll('[data-filter]'));
+    const cards = Array.from(document.querySelectorAll('[data-priority]'));
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const filter = button.dataset.filter;
+        filterButtons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        cards.forEach((card) => {
+          card.classList.toggle('filtered-out', filter !== 'all' && card.dataset.priority !== filter);
+        });
+      });
+    });
+
+    const tabButtons = Array.from(document.querySelectorAll('[data-tab]'));
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.tab;
+        tabButtons.forEach((item) => item.setAttribute('aria-selected', String(item === button)));
+        document.querySelectorAll('.tab-panel').forEach((panel) => {
+          panel.hidden = panel.id !== `panel-${name}`;
+        });
+      });
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('snippet').innerText;
+      await navigator.clipboard.writeText(text);
+      document.getElementById('copyStatus').textContent = 'Copied.';
+      window.setTimeout(() => { document.getElementById('copyStatus').textContent = ''; }, 1800);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trang chủ · Thanh toán nợ</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="proto" data-role="guest" data-tip="Tip: tick checkbox hoặc giữ tên 0.5 giây để chọn thêm bạn bè.">
+  <div class="wrap">
+    <header class="top">
+      <div class="top-row">
+        <div>
+          <div class="muted">Khách không cần đăng nhập</div>
+          <div class="brand">Nợ cần thanh toán</div>
+        </div>
+        <button class="iconbtn" data-toast="Tick checkbox hoặc giữ thẻ 0.5 giây để chọn nhiều người." aria-label="Mẹo chọn">?</button>
+      </div>
+    </header>
+
+    <main class="content stack priority-debt">
+      <section class="card debt-summary" aria-label="Tổng nợ đang hiển thị">
+        <div>
+          <span class="status due">Danh sách nợ</span>
+          <div class="metric">2.450.000đ</div>
+          <p class="lead">Chọn tên của bạn và bạn bè muốn trả hộ.</p>
+        </div>
+        <span class="mono muted">12 người</span>
+      </section>
+
+      <div class="search">
+        <input oninput="filterList('#q','.debt')" id="q" placeholder="Tìm tên của bạn..." autocomplete="off">
+      </div>
+
+      <div class="chips" data-filter-row>
+        <button class="chip active" data-debt-filter="all">Tất cả</button>
+        <button class="chip" data-debt-filter="high">Nợ cao</button>
+        <button class="chip" data-debt-filter="late">Quá hạn</button>
+        <button class="chip" data-debt-filter="partial">Trả một phần</button>
+      </div>
+
+      <div class="list-title">
+        <h2>Người đang nợ</h2>
+        <span class="status paid" id="selectedCount">0 chọn</span>
+      </div>
+      <p class="microtip">Giữ 0.5s trên tên để chọn nhanh; QR chỉ tạo cho người đã chọn.</p>
+
+      <section class="list" aria-label="Danh sách thành viên đang nợ">
+        <article class="item debt selectable" data-name="Anh Minh" data-amount="450000" data-tags="high late" tabindex="0">
+          <label class="selectbox" aria-label="Chọn Anh Minh"><input type="checkbox" data-select-member><span></span></label>
+          <div class="member-main">
+            <div class="row">
+              <a class="row compact" href="member-sessions.html?member=anh-minh"><div class="avatar">A</div><div><b>Anh Minh</b><div class="hint">3 buổi chưa trả · xem chi tiết</div></div></a>
+              <div class="amount">450.000đ</div>
+            </div>
+            <div class="row"><span class="status due">Quá 7 ngày</span><button class="btn secondary" data-pay-one data-sheet="#paySheet">QR</button></div>
+          </div>
+        </article>
+
+        <article class="item debt selectable" data-name="Tuấn Nguyễn" data-amount="310000" data-tags="partial" tabindex="0">
+          <label class="selectbox" aria-label="Chọn Tuấn Nguyễn"><input type="checkbox" data-select-member><span></span></label>
+          <div class="member-main">
+            <div class="row">
+              <a class="row compact" href="member-sessions.html?member=tuan-nguyen"><div class="avatar">T</div><div><b>Tuấn Nguyễn</b><div class="hint">2 buổi · có trả một phần</div></div></a>
+              <div class="amount">310.000đ</div>
+            </div>
+            <div class="row"><span class="status warn">Còn thiếu</span><button class="btn secondary" data-pay-one data-sheet="#paySheet">QR</button></div>
+          </div>
+        </article>
+
+        <article class="item debt selectable" data-name="Hà Linh" data-amount="220000" data-tags="late" tabindex="0">
+          <label class="selectbox" aria-label="Chọn Hà Linh"><input type="checkbox" data-select-member><span></span></label>
+          <div class="member-main">
+            <div class="row">
+              <a class="row compact" href="member-sessions.html?member=ha-linh"><div class="avatar">H</div><div><b>Hà Linh</b><div class="hint">1 buổi + nước</div></div></a>
+              <div class="amount">220.000đ</div>
+            </div>
+            <div class="row"><span class="status due">Quá 3 ngày</span><button class="btn secondary" data-pay-one data-sheet="#paySheet">QR</button></div>
+          </div>
+        </article>
+
+        <article class="item debt selectable" data-name="Quang Huy" data-amount="180000" data-tags="" tabindex="0">
+          <label class="selectbox" aria-label="Chọn Quang Huy"><input type="checkbox" data-select-member><span></span></label>
+          <div class="member-main">
+            <div class="row">
+              <a class="row compact" href="member-sessions.html?member=quang-huy"><div class="avatar">Q</div><div><b>Quang Huy</b><div class="hint">1 buổi chưa trả</div></div></a>
+              <div class="amount">180.000đ</div>
+            </div>
+            <div class="row"><span class="status paid">Mới phát sinh</span><button class="btn secondary" data-pay-one data-sheet="#paySheet">QR</button></div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <div class="bulkbar compact" data-bulk hidden>
+      <div><b>0</b> người · <span data-bulk-total>0đ</span></div>
+      <button class="btn primary" data-sheet="#paySheet" data-pay-current>Tạo QR</button>
+    </div>
+
+    <nav class="bottomnav" aria-label="Điều hướng khách">
+      <a class="active" href="home.html">Nợ</a>
+      <a href="sessions.html">Buổi</a>
+      <a href="members.html">Thành viên</a>
+    </nav>
+  </div>
+
+  <div class="scrim" data-close></div>
+
+  <section class="sheet" id="paySheet" aria-label="Thanh toán">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <div><div class="muted">Thanh toán khách</div><h2 class="h2" data-pay-title>Thanh toán nợ</h2></div>
+      <button class="iconbtn" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="qrbox">QR</div>
+    <div class="pay-summary">
+      <div class="row"><span>Người thanh toán</span><b data-pay-names>Chưa chọn</b></div>
+      <div class="row"><span>Tổng tiền</span><b data-pay-total>0đ</b></div>
+      <div class="row"><span>Nội dung CK</span><b class="mono">BMT-DEBT</b></div>
+    </div>
+    <button class="btn primary full" onclick="copyCode()">Copy nội dung chuyển khoản</button>
+    <button class="btn secondary full" data-toast="Đã lưu yêu cầu xác nhận thủ công">Tôi đã chuyển khoản</button>
+  </section>
+
+  <div class="toast" aria-live="polite"></div>
+  <script src="../app.js"></script>
+</body>
+</html>

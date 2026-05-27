@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Badminton Mgmt · Mobile Preview</title>
+<style>
+:root{--bg:oklch(98.5% 0.002 247);--surface:oklch(100% 0 0);--fg:oklch(21% 0.034 264);--muted:oklch(44.6% 0.03 257);--border:oklch(92.8% 0.006 264);--accent:oklch(51.1% 0.262 276);--ok:oklch(60% 0.15 145);--warn:oklch(72% 0.15 78);--danger:oklch(58% 0.2 28);--shadow:0 20px 60px color-mix(in oklch,var(--fg) 12%,transparent);--font:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;--font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;--mono:ui-monospace,'SF Mono',Menlo,Monaco,Consolas,monospace}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}a{color:inherit;text-decoration:none}p{text-wrap:pretty}h1,h2{text-wrap:balance}.wrap{max-width:1440px;margin:auto;padding:clamp(16px,3vw,28px)}.hero{display:grid;gap:12px;background:linear-gradient(135deg,color-mix(in oklch,var(--accent) 6%,var(--surface)),var(--surface) 58%);border:1px solid color-mix(in oklch,var(--accent) 22%,var(--border));border-radius:24px;padding:24px;box-shadow:0 1px 0 color-mix(in oklch,var(--fg) 4%,transparent)}.pill{width:max-content;border:1px solid color-mix(in oklch,var(--accent) 24%,var(--border));background:color-mix(in oklch,var(--accent) 8%,var(--surface));color:var(--accent);border-radius:999px;padding:6px 10px;font:700 12px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase}h1{font-family:var(--font-display);font-size:clamp(34px,5vw,68px);line-height:1.02;letter-spacing:-.05em;margin:0}h2{font-family:var(--font-display);font-size:20px;margin:0;letter-spacing:-.02em}.lead{max-width:78ch;color:var(--muted);margin:0;font-size:16px;line-height:1.55}.status-row{display:flex;flex-wrap:wrap;gap:8px}.tag{display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;font-weight:750;color:var(--muted);background:var(--surface)}.tag.danger{border-color:color-mix(in oklch,var(--danger) 28%,var(--border));background:color-mix(in oklch,var(--danger) 10%,var(--surface));color:oklch(43% 0.16 28)}.tag.ok{border-color:color-mix(in oklch,var(--ok) 28%,var(--border));background:color-mix(in oklch,var(--ok) 10%,var(--surface));color:oklch(42% 0.13 145)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:22px;margin-top:22px;align-items:start}.screen-card{background:var(--surface);border:1px solid var(--border);border-radius:26px;padding:14px;box-shadow:var(--shadow)}.screen-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:8px 8px 14px}.screen-head p{margin:0 0 5px;color:var(--muted);font:600 12px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.03em}.screen-head a{min-height:40px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:800;background:color-mix(in oklch,var(--accent) 7%,var(--surface));display:inline-flex;align-items:center}iframe{width:390px;height:844px;max-width:100%;display:block;margin:auto;border:1px solid var(--border);border-radius:34px;background:white}.screen-card.priority{border-color:color-mix(in oklch,var(--danger) 24%,var(--border))}@media(max-width:520px){.wrap{padding:16px}.grid{grid-template-columns:1fr}.screen-head{flex-direction:column}.screen-head a{width:max-content}}</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+  <span class="pill">Preview pack · guest-first</span>
+  <h1>Badminton Mgmt mobile screens.</h1>
+  <p class="lead">Bộ preview tập trung vào guest truy cập web và thanh toán nợ. Trang chủ đưa danh sách nợ lên đầu, QR thanh toán luôn gần ngón cái, và điều hướng dưới giữ ba mục chính cho khách: Nợ, Buổi, Thành viên.</p>
+  <div class="status-row">
+    <span class="tag danger">Debt first</span>
+    <span class="tag ok">One-hand mobile</span>
+    <span class="tag">Không đụng Vue</span>
+  </div>
+</section>
+<section class="grid" aria-label="Mobile screens">
+<article class="screen-card priority"><div class="screen-head"><div><p>P0 · debt list first</p><h2>Trang chủ / guest debt</h2></div><a href="mobile-prototypes/screens/home.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/home.html?rev=5" title="Trang chủ"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P1 · member debt history</p><h2>Member session detail flow</h2></div><a href="mobile-prototypes/screens/member-sessions.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/member-sessions.html?rev=5" title="Member sessions"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P1 · guest directory</p><h2>Thành viên</h2></div><a href="mobile-prototypes/screens/members.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/members.html?rev=5" title="Thành viên"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P1 · session list</p><h2>Danh sách buổi</h2></div><a href="mobile-prototypes/screens/sessions.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/sessions.html?rev=5" title="Buổi"></iframe></article>
+<article class="screen-card priority"><div class="screen-head"><div><p>P0 · split detail tabs</p><h2>Chi tiết buổi</h2></div><a href="mobile-prototypes/screens/session-detail.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/session-detail.html?rev=5" title="Chi tiết buổi"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P1 · admin create</p><h2>Tạo buổi</h2></div><a href="mobile-prototypes/screens/create-session.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/create-session.html?rev=5" title="Tạo buổi"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P2 · admin profile</p><h2>Tôi / admin</h2></div><a href="mobile-prototypes/screens/member-detail.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/member-detail.html?rev=5" title="Admin profile"></iframe></article>
+<article class="screen-card"><div class="screen-head"><div><p>P2 · admin auth only</p><h2>Đăng nhập quản trị</h2></div><a href="mobile-prototypes/screens/login.html" target="_blank">Open</a></div><iframe src="mobile-prototypes/screens/login.html?rev=5" title="Login"></iframe></article>
+</section>
+</main>
+</body>
+</html>
