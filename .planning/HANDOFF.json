@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T08:38:04.939Z",
+  "timestamp": "2026-05-27T08:49:43.547Z",
   "phase": "03",
   "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
   "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
@@ -73,6 +73,14 @@
       "status": "done",
       "commit": "5e890b3",
       "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-settings-fix"
+    },
+    {
+      "id": 11,
+      "name": "Move bank config management to Settings with DB-backed QR config",
+      "status": "done",
+      "commit": "841cfac",
+      "migration": "restore_bank_config_settings",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings"
     }
   ],
   "remaining_tasks": [
@@ -126,5 +134,5 @@
     "mpd*.png"
   ],
   "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive, or optionally fix the fresh UI re-audit findings.",
-  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Phase 3 UI review priority findings were fixed in 38778c0 and a direct style regression was fixed in 16608b0. Fresh UI re-audit score is 19/24 with remaining findings: typography token drift, SessionDetailView error feedback, and compact/icon-only accessibility/tap-target gaps. Mobile debt/QR feedback is fixed in 7a1ad79: full member names on mobile debt cards, compact QR labels/layout for iPhone SE, and group QR polling checks snapshot_ids with empty/incomplete results staying pending. Settings/TPBank feedback is fixed in 5e890b3: admin menu opens `/settings`, the route is admin-only, the page displays payment config, and VietQR image URLs use `TPB`/TPBank. Browser_harness evidence is under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-settings-fix. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Phase 3 UI review priority findings were fixed in 38778c0 and a direct style regression was fixed in 16608b0. Fresh UI re-audit score is 19/24 with remaining findings: typography token drift, SessionDetailView error feedback, and compact/icon-only accessibility/tap-target gaps. Mobile debt/QR feedback is fixed in 7a1ad79: full member names on mobile debt cards, compact QR labels/layout for iPhone SE, and group QR polling checks snapshot_ids with empty/incomplete results staying pending. Settings/TPBank feedback is fixed in 5e890b3. DB-backed bank settings are fixed in 841cfac: admin Settings manages `public.bank_config`, QR modal reads the active DB config, fallback/seed uses TPB `10003392871` / `CLB CAU LONG BMT`, and Supabase migration `restore_bank_config_settings` made `bank_config` public-read/admin-write. Browser_harness evidence is under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
 }

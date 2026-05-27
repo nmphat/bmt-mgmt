@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Settings route and TPBank QR config fixed
-last_updated: "2026-05-27T08:38:04.939Z"
-last_activity: 2026-05-27 -- admin settings route restored and QR bank config changed to TPBank
+stopped_at: DB-backed bank settings moved to Settings
+last_updated: "2026-05-27T08:49:43.547Z"
+last_activity: 2026-05-27 -- bank config moved from hardcoded/profile-style setup into admin Settings backed by public.bank_config
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, and settings/TPBank config restored
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, and DB-backed bank settings restored
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; settings/TPBank config fixed
-Last activity: 2026-05-27 -- admin settings route restored and QR bank config changed to TPBank
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed
+Last activity: 2026-05-27 -- bank config moved from hardcoded/profile-style setup into admin Settings backed by public.bank_config
 
 Progress: ██████████ 100%
 
@@ -144,6 +144,7 @@ Known follow-up gate:
 - Fresh Phase 3 UI re-audit score is 19/24 after `16608b0` moved manual payment footer CSS to top-level scoped style. Remaining top fixes: typography token drift, SessionDetailView user-facing error feedback, and compact/icon-only accessibility/tap-target gaps.
 - Mobile debt/QR feedback fixed in `7a1ad79`: debt cards show full member names, QR CTA labels are compact for iPhone SE, and group QR polling checks `snapshot_ids` instead of group codes so empty results stay pending. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-home-feedback-fix`.
 - Settings route fixed in `5e890b3`: admin menu now opens `/settings`, unauthenticated access redirects to `/login`, the settings page displays payment QR config, and VietQR generation uses `TPB`/TPBank. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-settings-fix`.
+- Bank config moved to DB-backed Settings in `841cfac`: `src/stores/bankConfig.ts` reads/writes `public.bank_config`, Settings supports add/set-default/delete, QR modal uses the active DB config, and fallback/seed is TPB `10003392871` / `CLB CAU LONG BMT`. Supabase migration `restore_bank_config_settings` seeded TPB active + MB inactive and changed `bank_config` RLS to public read/admin write. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings`.
 
 ### Quick Tasks Completed
 
@@ -153,7 +154,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-05-27T08:38:04.939Z
-Stopped at: Settings route and TPBank QR config fixed
+Last session: 2026-05-27T08:49:43.547Z
+Stopped at: DB-backed bank settings moved to Settings
 Resume file: .planning/HANDOFF.json
 Next command: ask user for next action; recommended `/gsd-secure-phase 03`
