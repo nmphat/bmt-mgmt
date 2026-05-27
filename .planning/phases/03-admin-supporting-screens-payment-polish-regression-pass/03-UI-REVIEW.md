@@ -234,7 +234,15 @@ The follow-up screenshot sweep captured every current browser-harness test case 
 
 Flagged finding:
 
-- `03-session-detail-readonly` at both mobile and desktop rendered the first public session detail route successfully with no global horizontal overflow, but displayed `Tiền sân NaN ₫`. The text scanner also matched the legitimate readonly message `không thể sửa điểm danh`, so the true actionable issue is the `NaN` court-fee display.
+- `03-session-detail-readonly` at both mobile and desktop rendered the first public session detail route successfully with no global horizontal overflow, but displayed `Tiền sân NaN ₫`. The text scanner also matched the legitimate readonly message `không thể sửa điểm danh`, so the true actionable issue was the `NaN` court-fee display.
+
+Resolution:
+
+- Fixed in `bad7cc0` by normalizing `view_session_summary.total_court_cost` into the existing `court_fee_total` display field and guarding currency formatting against non-finite values.
+- Retested with `browser_harness` at 390x844 and 1280x900; both pass with `Tiền sân 0 ₫`, no `NaN`, and no global overflow.
+- Retest screenshots:
+  - `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/03-session-detail-readonly/mobile-390x844.png`
+  - `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/03-session-detail-readonly/desktop-1280x900.png`
 
 ---
 

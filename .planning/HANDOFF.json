@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-27T04:33:55.078Z",
+  "timestamp": "2026-05-27T04:38:30.462Z",
   "phase": "03",
   "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
   "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
@@ -38,32 +38,28 @@
       "name": "Capture grouped browser_harness screenshots for all smoke test cases",
       "status": "done",
       "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens/manifest.json"
+    },
+    {
+      "id": 6,
+      "name": "Fix and retest session detail `Tiền sân NaN ₫` finding",
+      "status": "done",
+      "commit": "bad7cc0",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/manifest.json"
     }
   ],
   "remaining_tasks": [
     {
       "id": 1,
-      "name": "Investigate/fix session detail readonly screen showing `Tiền sân NaN ₫` in browser_harness screenshot sweep",
-      "status": "not_started"
-    },
-    {
-      "id": 2,
       "name": "Run Phase 3 security gate because workflow.security_enforcement is enabled",
       "status": "not_started"
     },
     {
-      "id": 3,
+      "id": 2,
       "name": "Decide whether to fix UI review findings or archive milestone",
       "status": "not_started"
     }
   ],
-  "blockers": [
-    {
-      "description": "browser_harness full screenshot sweep flagged session detail readonly route displaying `Tiền sân NaN ₫` on both mobile and desktop for /session/02b86cd3-98b3-4e69-aebe-4cf1e42c226a.",
-      "type": "technical",
-      "workaround": "Treat as a UI data-formatting bug to investigate before archive; the route otherwise rendered with no global overflow and no console/runtime errors."
-    }
-  ],
+  "blockers": [],
   "human_actions_pending": [
     {
       "action": "If Cloak/Open Design MCP-specific evidence is required, start the missing daemon/tooling before re-running UI review.",
@@ -101,6 +97,6 @@
     "mobile-screen-audit-2.html.artifact.json",
     "mpd*.png"
   ],
-  "next_action": "Ask the user for the next action; recommended next step is fixing the session-detail `Tiền sân NaN ₫` finding from browser_harness, then /gsd-secure-phase 03 before milestone archive.",
-  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, and browser_harness tested. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. 12/14 passed; 2/14 flagged the same session-detail readonly route because it displayed `Tiền sân NaN ₫` on mobile and desktop. No global overflow or console/runtime events were found. UI review score remains 17/24 with priority findings in typography normalization, safe-area calc syntax, and exact CTA/copy alignment. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
+  "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive, or fix remaining 03-UI-REVIEW.md findings first.",
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. UI review score remains 17/24 with remaining priority findings in typography normalization, safe-area calc syntax, and exact CTA/copy alignment. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
 }

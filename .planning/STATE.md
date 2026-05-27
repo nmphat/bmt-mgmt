@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Browser harness grouped screenshot sweep complete
-last_updated: "2026-05-27T04:33:55.078Z"
-last_activity: 2026-05-27 -- Browser harness screenshot sweep captured 14 screens; session detail NaN finding recorded
+stopped_at: Browser harness NaN finding fixed and retested
+last_updated: "2026-05-27T04:38:30.462Z"
+last_activity: 2026-05-27 -- Session detail NaN finding fixed and retested with browser_harness
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; browser_harness sweep recorded one actionable finding
-Last activity: 2026-05-27 -- Browser harness screenshot sweep captured 14 screens; session detail NaN finding recorded
+Status: Milestone complete; browser_harness NaN finding fixed
+Last activity: 2026-05-27 -- Session detail NaN finding fixed and retested with browser_harness
 
 Progress: ██████████ 100%
 
@@ -129,7 +129,6 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Run the Phase 3 security gate before milestone archive because `workflow.security_enforcement` is enabled and no Phase 3 `SECURITY.md` exists yet.
-- Investigate/fix browser_harness finding: session detail readonly screen displays `Tiền sân NaN ₫`.
 
 ### Blockers/Concerns
 
@@ -139,7 +138,7 @@ Known follow-up gate:
 
 - Security enforcement is enabled; run `/gsd-secure-phase 03` before milestone archive.
 - Browser harness smoke passed on 2026-05-27 for mobile `/`, `/sessions`, `/members`, `/login`, `/create-session` guard and desktop `/sessions`, `/members`; no visible error text or global overflow was detected.
-- Full browser_harness screenshot sweep captured 14 grouped screenshots; 12/14 passed and 2/14 flagged `03-session-detail-readonly` because `Tiền sân NaN ₫` appears on both mobile and desktop.
+- Full browser_harness screenshot sweep captured 14 grouped screenshots; the `03-session-detail-readonly` `Tiền sân NaN ₫` finding is fixed in `bad7cc0` and retested on mobile/desktop.
 
 ### Quick Tasks Completed
 
@@ -149,7 +148,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-05-27T04:33:55.078Z
-Stopped at: Browser harness grouped screenshot sweep complete
+Last session: 2026-05-27T04:38:30.462Z
+Stopped at: Browser harness NaN finding fixed and retested
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended fix session-detail `Tiền sân NaN ₫`
+Next command: ask user for next action; recommended `/gsd-secure-phase 03`
