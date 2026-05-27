@@ -274,12 +274,6 @@ async function handleConfirm() {
             </button>
           </template>
 
-          <style scoped>
-          .manual-payment-footer-safe {
-            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
-          }
-          </style>
-
           <template v-else>
             <button
               @click="handleConfirm"
@@ -306,3 +300,9 @@ async function handleConfirm() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.manual-payment-footer-safe {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+</style>
