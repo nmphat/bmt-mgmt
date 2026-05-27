@@ -168,7 +168,18 @@ async function handlePayAll() {
 
     if (rpcError) throw rpcError
 
-    selectedGroupPayment.value = groupData
+    selectedGroupPayment.value = {
+      group_code: groupData.group_code,
+      total_amount: groupData.total_amount,
+      snapshot_ids: ids,
+      member_count: 1,
+      members: [
+        {
+          name: memberName.value,
+          amount: unpaidSessions.reduce((sum, session) => sum + session.remaining_amount, 0),
+        },
+      ],
+    }
     selectedSnapshot.value = null
     showPaymentModal.value = true
   } catch (error: any) {

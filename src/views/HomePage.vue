@@ -156,6 +156,7 @@ async function createPaymentForMembers(memberIds: string[]) {
     const groupData: GroupPaymentData = {
       group_code: rpcResponse.group_code,
       total_amount: rpcResponse.total_amount,
+      snapshot_ids: snapshotIds,
       member_count: memberMap.size,
       members: Array.from(memberMap.values()),
     }

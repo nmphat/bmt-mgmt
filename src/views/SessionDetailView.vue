@@ -609,6 +609,7 @@ async function handleCreateGroupPayment() {
     groupPaymentData.value = {
       group_code: data.group_code,
       total_amount: data.total_amount,
+      snapshot_ids: [...selectedSnapshotIds.value],
       member_count: selectedSnapshotIds.value.length,
       members: snapshots.value
         .filter((s) => selectedSnapshotIds.value.includes(s.id))

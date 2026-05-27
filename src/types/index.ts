@@ -95,8 +95,9 @@ export interface SessionPayment {
 export interface GroupPaymentData {
   group_code: string
   total_amount: number
-  member_count: number
-  members: {
+  snapshot_ids?: string[]
+  member_count?: number
+  members?: {
     name: string
     amount: number
   }[]

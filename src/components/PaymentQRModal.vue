@@ -80,27 +80,53 @@ const groupMemberCount = computed(() => {
   return props.groupData.member_count ?? props.groupData.members?.length ?? 0
 })
 
+const groupMembers = computed(() => props.groupData?.members ?? [])
+
+const toFiniteNumber = (value: unknown) => {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numberValue) ? numberValue : null
+}
+
+const isSnapshotPaid = (snapshot: {
+  status?: string | null
+  paid_amount?: unknown
+  final_amount?: unknown
+}) => {
+  if (snapshot.status === 'paid') return true
+
+  const paidAmount = toFiniteNumber(snapshot.paid_amount)
+  const finalAmount = toFiniteNumber(snapshot.final_amount)
+
+  return paidAmount !== null && finalAmount !== null && paidAmount >= finalAmount
+}
+
 async function checkPaymentStatus(): Promise<boolean> {
   try {
     if (props.groupData) {
-      // For group payment, check all snapshots with the group_code
-      const { data, error } = await supabase
+      const snapshotIds = Array.from(new Set(props.groupData.snapshot_ids ?? []))
+      const query = supabase
         .from('session_costs_snapshot')
-        .select('paid_amount, final_amount')
-        .eq('payment_code', props.groupData.group_code)
+        .select('id, paid_amount, final_amount, status')
+
+      const { data, error } =
+        snapshotIds.length > 0
+          ? await query.in('id', snapshotIds)
+          : await query.eq('payment_code', props.groupData.group_code)
 
       if (error) {
         console.error('Error checking group payment status:', error)
         return false
       }
 
-      // Check if all snapshots are fully paid
-      return data?.every((snapshot) => snapshot.paid_amount >= snapshot.final_amount) ?? false
+      if (!data || data.length === 0) return false
+      if (snapshotIds.length > 0 && data.length !== snapshotIds.length) return false
+
+      return data.every(isSnapshotPaid)
     } else if (props.snapshot) {
       // For single payment, check the specific snapshot
       const { data, error } = await supabase
         .from('session_costs_snapshot')
-        .select('paid_amount, final_amount')
+        .select('paid_amount, final_amount, status')
         .eq('id', props.snapshot.id)
         .single()
 
@@ -109,7 +135,7 @@ async function checkPaymentStatus(): Promise<boolean> {
         return false
       }
 
-      return data ? data.paid_amount >= data.final_amount : false
+      return data ? isSnapshotPaid(data) : false
     }
     return false
   } catch (error) {
@@ -305,7 +331,7 @@ onUnmounted(() => {
                   </p>
                   <div class="max-h-40 space-y-1 overflow-y-auto">
                     <div
-                      v-for="m in props.groupData.members"
+                      v-for="m in groupMembers"
                       :key="m.name"
                       class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm"
                     >

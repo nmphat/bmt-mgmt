@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import type { MemberDebtSummary } from '@/types'
 import { useLangStore } from '@/stores/lang'
 import { QrCode } from 'lucide-vue-next'
-import { getShortName } from '@/utils/formatters'
 
 const props = defineProps<{
   members: MemberDebtSummary[]
@@ -160,8 +159,11 @@ const handlePayGroup = () => {
               >
                 {{ member.display_name.charAt(0).toUpperCase() }}
               </div>
-              <span class="truncate text-base font-bold text-gray-900" :title="member.display_name">
-                {{ getShortName(member.display_name) }}
+              <span
+                class="min-w-0 flex-1 break-words text-base font-bold leading-snug text-gray-900"
+                :title="member.display_name"
+              >
+                {{ member.display_name }}
               </span>
             </div>
 
@@ -174,16 +176,16 @@ const handlePayGroup = () => {
           </div>
         </div>
 
-        <div class="flex items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+        <div class="grid grid-cols-2 gap-2 border-t border-gray-100 px-4 py-3">
           <router-link
             :to="`/member/${member.member_id}`"
-            class="inline-flex min-h-11 items-center justify-center rounded-lg border border-indigo-100 bg-white px-4 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border border-indigo-100 bg-white px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             {{ t('debt.details') }}
           </router-link>
           <button
             @click="emit('pay-single', member.member_id)"
-            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <QrCode class="h-4 w-4" />
             <span>{{ t('debt.createPaymentQR') }}</span>
@@ -317,7 +319,7 @@ const handlePayGroup = () => {
         </div>
         <button
           @click="handlePayGroup"
-          class="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-md transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          class="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white shadow-md transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:px-4"
         >
           <QrCode class="mr-2 h-4 w-4" />
           {{ t('debt.createGroupQR') }}
