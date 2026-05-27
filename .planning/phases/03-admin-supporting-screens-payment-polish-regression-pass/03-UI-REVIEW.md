@@ -214,6 +214,28 @@ Captured screenshots are session artifacts only and were not committed:
 
 No console/runtime error events were surfaced by `drain_events()` during the smoke pass.
 
+### Full Screen Screenshot Sweep — 2026-05-27
+
+The follow-up screenshot sweep captured every current browser-harness test case in grouped folders:
+
+`/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens`
+
+| Group | Screenshots |
+|-------|-------------|
+| `01-home-debt/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `02-sessions-list/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `03-session-detail-readonly/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `04-members-list/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `05-member-detail/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `06-login/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+| `07-create-session-guard/` | `mobile-390x844.png`, `desktop-1280x900.png` |
+
+**Sweep result:** 12/14 passed, 2/14 flagged, 0 console/runtime error events.
+
+Flagged finding:
+
+- `03-session-detail-readonly` at both mobile and desktop rendered the first public session detail route successfully with no global horizontal overflow, but displayed `Tiền sân NaN ₫`. The text scanner also matched the legitimate readonly message `không thể sửa điểm danh`, so the true actionable issue is the `NaN` court-fee display.
+
 ---
 
 ## Build / Verification Notes
