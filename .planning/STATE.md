@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 3 UI re-audit refreshed
-last_updated: "2026-05-27T06:16:50.344Z"
-last_activity: 2026-05-27 -- Phase 3 UI re-audit refreshed at 19/24 after manual payment footer style cleanup
+stopped_at: Mobile debt QR feedback fixed
+last_updated: "2026-05-27T08:29:37.584Z"
+last_activity: 2026-05-27 -- mobile debt cards now show full names, compact QR CTAs, and group QR polling no longer succeeds on empty snapshot results
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, and UI re-audited
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, and mobile debt/QR feedback fixed
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24
-Last activity: 2026-05-27 -- Phase 3 UI re-audit refreshed at 19/24 after manual payment footer style cleanup
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; mobile debt/QR feedback fixed
+Last activity: 2026-05-27 -- mobile debt cards now show full names, compact QR CTAs, and group QR polling no longer succeeds on empty snapshot results
 
 Progress: ██████████ 100%
 
@@ -142,6 +142,7 @@ Known follow-up gate:
 - Phase 3 UI review priority findings were fixed in `38778c0`: typography classes normalized in changed Phase 3 surfaces, safe-area `calc()` arbitrary Tailwind classes replaced with CSS helpers plus Tailwind source narrowed to `src`, exact CTA copy aligned, and clipboard failure now surfaces a toast.
 - UI review fix retest passed with `pnpm type-check`, `pnpm build` with no CSS minify warning, and browser_harness 8/8 affected route+viewport checks. Screenshots are under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-ui-review-fixes`.
 - Fresh Phase 3 UI re-audit score is 19/24 after `16608b0` moved manual payment footer CSS to top-level scoped style. Remaining top fixes: typography token drift, SessionDetailView user-facing error feedback, and compact/icon-only accessibility/tap-target gaps.
+- Mobile debt/QR feedback fixed in `7a1ad79`: debt cards show full member names, QR CTA labels are compact for iPhone SE, and group QR polling checks `snapshot_ids` instead of group codes so empty results stay pending. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-home-feedback-fix`.
 
 ### Quick Tasks Completed
 
@@ -151,7 +152,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-05-27T06:16:50.344Z
-Stopped at: Phase 3 UI re-audit refreshed
+Last session: 2026-05-27T08:29:37.584Z
+Stopped at: Mobile debt QR feedback fixed
 Resume file: .planning/HANDOFF.json
 Next command: ask user for next action; recommended `/gsd-secure-phase 03`
