@@ -122,6 +122,30 @@ const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
   }),
 }
 
+type SessionSummaryResponse = Omit<
+  SessionSummary,
+  'court_fee_total' | 'shuttle_fee_total' | 'total_intervals' | 'total_registrations'
+> & {
+  court_fee_total?: number | string | null
+  total_court_cost?: number | string | null
+  shuttle_fee_total?: number | string | null
+  total_intervals?: number | string | null
+  total_registrations?: number | string | null
+}
+
+const toNumber = (value: unknown) => {
+  const numericValue = typeof value === 'string' && value.trim() === '' ? NaN : Number(value)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary => ({
+  ...row,
+  court_fee_total: toNumber(row.court_fee_total ?? row.total_court_cost),
+  shuttle_fee_total: toNumber(row.shuttle_fee_total),
+  total_intervals: toNumber(row.total_intervals),
+  total_registrations: toNumber(row.total_registrations),
+})
+
 const sessionForm = ref({
   title: '',
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
@@ -179,19 +203,20 @@ async function fetchData(refreshCostsOnly = false) {
       .single()
 
     if (sessionError) throw sessionError
-    session.value = sessionData
+    const normalizedSession = normalizeSessionSummary(sessionData)
+    session.value = normalizedSession
 
-    if (sessionData && lastStatusForActiveSection.value !== sessionData.status) {
-      activeSection.value = getDefaultActiveSection(sessionData.status)
-      lastStatusForActiveSection.value = sessionData.status
+    if (lastStatusForActiveSection.value !== normalizedSession.status) {
+      activeSection.value = getDefaultActiveSection(normalizedSession.status)
+      lastStatusForActiveSection.value = normalizedSession.status
     }
 
-    if (sessionData) {
+    if (normalizedSession) {
       sessionForm.value = {
-        title: sessionData.title,
-        status: sessionData.status,
-        court_fee_total: sessionData.court_fee_total,
-        shuttle_fee_total: sessionData.shuttle_fee_total,
+        title: normalizedSession.title,
+        status: normalizedSession.status,
+        court_fee_total: normalizedSession.court_fee_total,
+        shuttle_fee_total: normalizedSession.shuttle_fee_total,
       }
     }
 
@@ -498,9 +523,9 @@ async function toggleAbsent(reg: SessionRegistration) {
   }
 }
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: unknown) => {
   const formatter = currencyFormatters[langStore.currentLang] || currencyFormatters.vi
-  return formatter!.format(value)
+  return formatter!.format(toNumber(value))
 }
 
 const formatTime = (isoString: string) => {
@@ -559,7 +584,7 @@ const surplus = computed(() => {
 
   const totalCollected = costs.value.reduce((sum, c) => sum + c.final_total, 0)
   // Note: session.court_fee_total and shuttle_fee_total might be string or number depending on DB driver, usually number in JS client
-  const totalCost = (session.value.court_fee_total || 0) + (session.value.shuttle_fee_total || 0)
+  const totalCost = toNumber(session.value.court_fee_total) + toNumber(session.value.shuttle_fee_total)
 
   return totalCollected - totalCost
 })
