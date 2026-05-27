@@ -103,10 +103,30 @@ export interface GroupPaymentData {
   }[]
 }
 
-// Bank Config (Hardcode for now or fetch from DB)
+export interface BankConfig {
+  id: string
+  bank_id: string
+  account_number: string
+  account_name: string
+  template: string
+  is_active: boolean
+}
+
+export type BankConfigInput = Omit<BankConfig, 'id'>
+
+export const DEFAULT_BANK_CONFIG: BankConfigInput = {
+  bank_id: 'TPB',
+  account_number: '10003392871',
+  account_name: 'CLB CAU LONG BMT',
+  template: 'compact2',
+  is_active: true,
+}
+
+// Fallback for QR rendering before the DB-backed config finishes loading.
 export const BANK_INFO = {
-  BANK_ID: 'TPB',
+  BANK_ID: DEFAULT_BANK_CONFIG.bank_id,
   BANK_NAME: 'TPBank',
-  ACCOUNT_NO: '3030191957777',
-  TEMPLATE: 'compact2',
+  ACCOUNT_NO: DEFAULT_BANK_CONFIG.account_number,
+  ACCOUNT_NAME: DEFAULT_BANK_CONFIG.account_name,
+  TEMPLATE: DEFAULT_BANK_CONFIG.template,
 }

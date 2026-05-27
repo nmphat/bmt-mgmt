@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { X, Copy, Check } from 'lucide-vue-next'
-import { BANK_INFO } from '@/types'
 import type { CostSnapshot, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
+import { useBankConfigStore } from '@/stores/bankConfig'
 import { supabase } from '@/lib/supabase'
 import { useToast } from 'vue-toastification'
 
 const langStore = useLangStore()
+const bankConfigStore = useBankConfigStore()
 const toast = useToast()
 const t = computed(() => langStore.t)
 
@@ -44,7 +45,8 @@ const qrUrl = computed(() => {
   if (!props.snapshot && !props.groupData) return ''
   const amount = remainingAmount.value
   const addInfo = encodeURIComponent(paymentInfo.value)
-  return `https://img.vietqr.io/image/${BANK_INFO.BANK_ID}-${BANK_INFO.ACCOUNT_NO}-${BANK_INFO.TEMPLATE}.png?amount=${amount}&addInfo=${addInfo}`
+  const bankConfig = bankConfigStore.activeBank
+  return `https://img.vietqr.io/image/${bankConfig.bank_id}-${bankConfig.account_number}-${bankConfig.template}.png?amount=${amount}&addInfo=${addInfo}`
 })
 
 async function copyPaymentCode() {
@@ -171,11 +173,21 @@ function handleClose() {
   emit('close')
 }
 
+async function ensureBankConfig() {
+  try {
+    await bankConfigStore.fetchConfigs()
+  } catch (error) {
+    console.error('Error loading bank config:', error)
+    toast.error(t.value('payment.bankConfigLoadError'))
+  }
+}
+
 // Watch for modal show/hide to start/stop polling
 watch(
   () => props.show,
-  (newShow) => {
+  async (newShow) => {
     if (newShow && !props.isPaid) {
+      await ensureBankConfig()
       startPolling()
     } else {
       stopPolling()

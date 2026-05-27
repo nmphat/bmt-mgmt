@@ -34,7 +34,6 @@ import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
 import type { CostSnapshot } from '@/types'
-import { BANK_INFO } from '@/types'
 
 const route = useRoute()
 const authStore = useAuthStore()
