@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Open Design review packet imported and preview-verified
-last_updated: "2026-06-01T14:56:49+07:00"
-last_activity: 2026-06-01 -- verified imported Open Design UI review preview renders the 15/15 gallery
+stopped_at: Open Design UI review completed with fix-before-archive verdict
+last_updated: "2026-06-01T15:10:42+07:00"
+last_activity: 2026-06-01 -- Open Design reviewed imported UI packet and produced 14/24 fix-before-archive findings
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, and Open Design review packet is imported
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, and Open Design review is complete
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review packet imported and preview-verified
-Last activity: 2026-06-01 -- verified imported Open Design UI review preview renders the 15/15 gallery
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review completed with fix-before-archive verdict
+Last activity: 2026-06-01 -- Open Design reviewed imported UI packet and produced 14/24 fix-before-archive findings
 
 Progress: ██████████ 100%
 
@@ -128,7 +128,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- None currently. Phase 3 security enforcement is satisfied by `03-SECURITY.md` with `status: verified` and `threats_open: 0`.
+- Fix Open Design UI review findings before archive if following the latest review gate: consolidate mobile locked-state messaging, verify/repair compact action tap targets/accessibility, add SessionDetailView user-facing error feedback, align typography tokens, and add non-mutating/mocked admin-payment mutation evidence.
 
 ### Blockers/Concerns
 
@@ -152,6 +152,7 @@ Known follow-up notes:
 - Git remote `origin` is now SSH: `git@github.com:nmphat/bmt-mgmt.git`.
 - Open Design daemon is running at `http://127.0.0.1:17456` with web UI `http://127.0.0.1:17573`. The MCP tool wrapper still reports `http://127.0.0.1:7456` unreachable, so import was done through the daemon API at `17456`.
 - Open Design UI review packet was imported into project `bmt-ui-review-20260601-0753` (`badminton-mgmt UI review 2026-06-01`) with 21 files. Web project URL: `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`. Daemon preview URL: `http://127.0.0.1:17456/api/projects/bmt-ui-review-20260601-0753/preview/35c911bd-19f8-421c-95ff-8e94b6a76b6a/index.html`. Direct preview was browser_harness verified and screenshot evidence is `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/verification/open-design-direct-preview-updated.png`. Source packet remains under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601`.
+- Open Design review run: Claude attempt `81012363-c29f-4168-acad-2bdf7ad8e2b4` failed with `AGENT_AUTH_REQUIRED`; Copilot retry `95b5c036-9bdd-46c5-840d-fe614a3d0a17` succeeded. Review outputs were copied to `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW.md` and `review-findings.json`. Verdict: `fix-before-archive`, score 14/24, top findings: repeated mobile locked-state messaging, compact/icon-only tap targets/accessibility, SessionDetailView error feedback, typography token drift, dense mobile card stacks, generic auth guard login copy, and missing non-mutating admin/payment mutation evidence.
 
 ### Quick Tasks Completed
 
@@ -162,7 +163,7 @@ Known follow-up notes:
 
 ## Session Continuity
 
-Last session: 2026-06-01T14:56:49+07:00
-Stopped at: Open Design review packet imported and preview-verified; Git origin uses SSH
+Last session: 2026-06-01T15:10:42+07:00
+Stopped at: Open Design UI review complete; verdict fix-before-archive, score 14/24
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended open/review `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`, configure MCP wrapper to use daemon `17456` if tool-level Open Design access is required, or run `/gsd-complete-milestone`
+Next command: ask user for next action; recommended fix Open Design UI findings before archive, or explicitly proceed to `/gsd-complete-milestone`
