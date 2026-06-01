@@ -140,20 +140,6 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(numericValue) ? numericValue : 0
 }
 
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (error instanceof Error && error.message) return error.message
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof error.message === 'string' &&
-    error.message
-  ) {
-    return error.message
-  }
-  return fallback
-}
-
 const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary => ({
   ...row,
   court_fee_total: toNumber(row.court_fee_total ?? row.total_court_cost),
@@ -310,7 +296,7 @@ async function fetchData(refreshCostsOnly = false) {
     await fetchCosts()
   } catch (error: unknown) {
     console.error('Error fetching session details:', error)
-    const message = getErrorMessage(error, t.value('session.dataLoadError'))
+    const message = t.value('session.dataLoadError')
     pageError.value = message
     if (!refreshCostsOnly) toast.error(message)
   } finally {
@@ -332,7 +318,7 @@ async function fetchSnapshotData() {
 
   if (error) {
     console.error('Error fetching snapshots:', error)
-    paymentDataError.value = getErrorMessage(error, t.value('session.paymentDataLoadError'))
+    paymentDataError.value = t.value('session.paymentDataLoadError')
     return
   }
 
@@ -361,7 +347,7 @@ async function finalizeSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error finalizing session:', error)
-    const message = error.message || t.value('session.finalizeError')
+    const message = t.value('session.finalizeError')
     actionError.value = message
     toast.error(message)
   } finally {
@@ -387,7 +373,7 @@ async function cancelSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error cancelling session:', error)
-    const message = error.message || t.value('session.cancelError')
+    const message = t.value('session.cancelError')
     actionError.value = message
     toast.error(message)
   }
@@ -430,7 +416,7 @@ async function saveSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error updating session:', error)
-    const message = error.message || t.value('session.updateError')
+    const message = t.value('session.updateError')
     actionError.value = message
     toast.error(message)
   } finally {
@@ -469,8 +455,7 @@ async function registerMembers() {
     showMemberDropdown.value = false
     await fetchData(true)
   } catch (error: any) {
-    const message =
-      error.message || t.value('toast.error', { message: t.value('session.registerError') })
+    const message = t.value('session.registerError')
     actionError.value = message
     toast.error(message)
   } finally {
@@ -491,7 +476,7 @@ async function removeRegistration(regId: string, name: string) {
     toast.success(t.value('toast.registrationRemoved'))
     await fetchData(true)
   } catch (error: any) {
-    const message = error.message || t.value('session.removeError')
+    const message = t.value('session.removeError')
     actionError.value = message
     toast.error(message)
   }
@@ -501,7 +486,7 @@ async function fetchCosts() {
   const { data, error } = await supabase.rpc('calculate_session_costs', { p_session_id: sessionId })
   if (error) {
     console.error('Error fetching costs:', error)
-    paymentDataError.value = getErrorMessage(error, t.value('session.paymentDataLoadError'))
+    paymentDataError.value = t.value('session.paymentDataLoadError')
     return
   }
   const sortedCosts = [...(data || [])] as MemberCost[]
@@ -540,7 +525,7 @@ async function togglePresence(memberId: string, intervalId: string) {
       presence.value[memberId][intervalId] = !newValue
     }
     console.error('Error toggling presence:', error)
-    const message = getErrorMessage(error, t.value('session.presenceUpdateError'))
+    const message = t.value('session.presenceUpdateError')
     actionError.value = message
     toast.error(message)
   } else {
@@ -569,7 +554,7 @@ async function toggleAbsent(reg: SessionRegistration) {
   if (error) {
     reg.is_registered_not_attended = !newValue
     console.error('Error updating status:', error)
-    const message = getErrorMessage(error, t.value('session.absentUpdateError'))
+    const message = t.value('session.absentUpdateError')
     actionError.value = message
     toast.error(message)
   } else {
@@ -679,7 +664,7 @@ async function handleCreateGroupPayment() {
     showQRModal.value = true
   } catch (error: any) {
     console.error('Error creating group payment:', error)
-    const message = error.message || t.value('session.finalizeError')
+    const message = t.value('session.groupPaymentError')
     actionError.value = message
     toast.error(message)
   } finally {

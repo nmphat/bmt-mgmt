@@ -153,6 +153,7 @@ export const messages = {
       paymentDataLoadError: 'Không tải được dữ liệu thanh toán. Hãy thử làm mới.',
       presenceUpdateError: 'Không cập nhật được điểm danh.',
       absentUpdateError: 'Không cập nhật được trạng thái vắng.',
+      groupPaymentError: 'Không tạo được QR gộp.',
       groupPaymentBar: 'Thanh toán {count} người',
     },
     toast: {
@@ -448,6 +449,7 @@ export const messages = {
       paymentDataLoadError: 'Could not load payment data. Try refreshing.',
       presenceUpdateError: 'Could not update attendance.',
       absentUpdateError: 'Could not update absent status.',
+      groupPaymentError: 'Could not create the group QR.',
       groupPaymentBar: 'Pay {count} members',
     },
     toast: {
