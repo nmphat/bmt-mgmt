@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-06-01T14:34:00+07:00",
+  "timestamp": "2026-06-01T14:39:26+07:00",
   "phase": "03",
   "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
   "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
@@ -95,14 +95,16 @@
       "status": "done",
       "commit": "1c4f7a4",
       "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601/result.json"
+    },
+    {
+      "id": 14,
+      "name": "Run Phase 3 security gate",
+      "status": "done",
+      "evidence": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass/03-SECURITY.md",
+      "result": "12/12 plan-time threats closed; status verified; threats_open=0"
     }
   ],
   "remaining_tasks": [
-    {
-      "id": 1,
-      "name": "Run Phase 3 security gate because workflow.security_enforcement is enabled",
-      "status": "not_started"
-    },
     {
       "id": 2,
       "name": "Optionally fix fresh UI re-audit findings: typography token drift, session-detail error feedback, compact control accessibility",
@@ -157,6 +159,6 @@
     "mobile-screen-audit-2.html.artifact.json",
     "mpd*.png"
   ],
-  "next_action": "Ask the user for the next action; recommended next step is /gsd-secure-phase 03 before milestone archive, or provide admin credentials/dev branch for full authenticated mutation smoke.",
-  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Phase 3 UI review priority findings were fixed in 38778c0 and a direct style regression was fixed in 16608b0. Fresh UI re-audit score is 19/24 with remaining findings: typography token drift, SessionDetailView error feedback, and compact/icon-only accessibility/tap-target gaps. Mobile debt/QR feedback is fixed in 7a1ad79: full member names on mobile debt cards, compact QR labels/layout for iPhone SE, and group QR polling checks snapshot_ids with empty/incomplete results staying pending. Settings/TPBank feedback is fixed in 5e890b3. DB-backed bank settings are fixed in 841cfac: admin Settings manages `public.bank_config`, QR modal reads the active DB config, fallback/seed uses TPB `10003392871` / `CLB CAU LONG BMT`, and Supabase migration `restore_bank_config_settings` made `bank_config` public-read/admin-write. Browser_harness evidence is under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings. On 2026-06-01, browser_harness MCP connection was checked: doctor initially failed daemon/active connections, browser_harness run succeeded after reload, and final doctor passed daemon + active browser connection. Initial app smoke showed Supabase REST failures from Chrome cert validation (`ERR_CERT_AUTHORITY_INVALID`); enabling CDP `Security.setIgnoreCertificateErrors` fixed requests and the rerun passed 15/15 non-mutating smoke cases. Test cases, manifest, and categorized screenshots are under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke. Quick task 260601-nav completed in commit 1c4f7a4: MemberDetailView mobile cards and desktop rows now navigate to `/session/:session_id`; QR buttons use stopped propagation and still open the QR modal. Browser_harness evidence is under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601. Security gate remains pending before archive because workflow.security_enforcement is true and no 03-SECURITY.md exists."
+  "next_action": "Ask the user for the next action; recommended next step is /gsd-complete-milestone or /gsd-validate-phase 03, or provide admin credentials/dev branch for full authenticated mutation smoke.",
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Phase 3 UI review priority findings were fixed in 38778c0 and a direct style regression was fixed in 16608b0. Fresh UI re-audit score is 19/24 with remaining findings: typography token drift, SessionDetailView error feedback, and compact/icon-only accessibility/tap-target gaps. Mobile debt/QR feedback is fixed in 7a1ad79: full member names on mobile debt cards, compact QR labels/layout for iPhone SE, and group QR polling checks snapshot_ids with empty/incomplete results staying pending. Settings/TPBank feedback is fixed in 5e890b3. DB-backed bank settings are fixed in 841cfac: admin Settings manages `public.bank_config`, QR modal reads the active DB config, fallback/seed uses TPB `10003392871` / `CLB CAU LONG BMT`, and Supabase migration `restore_bank_config_settings` made `bank_config` public-read/admin-write. Browser_harness evidence is under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings. On 2026-06-01, browser_harness MCP connection was checked: doctor initially failed daemon/active connections, browser_harness run succeeded after reload, and final doctor passed daemon + active browser connection. Initial app smoke showed Supabase REST failures from Chrome cert validation (`ERR_CERT_AUTHORITY_INVALID`); enabling CDP `Security.setIgnoreCertificateErrors` fixed requests and the rerun passed 15/15 non-mutating smoke cases. Test cases, manifest, and categorized screenshots are under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke. Quick task 260601-nav completed in commit 1c4f7a4: MemberDetailView mobile cards and desktop rows now navigate to `/session/:session_id`; QR buttons use stopped propagation and still open the QR modal. Browser_harness evidence is under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601. Phase 3 security gate completed on 2026-06-01: 03-SECURITY.md is status verified with threats_open=0 and 12/12 plan-time threats closed using route/admin gate, Supabase contract, member CRUD guard, payment modal, type-check, and build evidence."
 }

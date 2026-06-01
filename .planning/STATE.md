@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Quick task 260601-nav completed: member detail sessions link to session detail
-last_updated: "2026-06-01T14:34:00+07:00"
-last_activity: 2026-06-01 -- completed quick task 260601-nav: member detail session history now navigates to session detail on card/row click
+stopped_at: Phase 3 security gate completed with threats_open=0
+last_updated: "2026-06-01T14:39:26+07:00"
+last_activity: 2026-06-01 -- completed Phase 3 security gate and created 03-SECURITY.md with all plan-time threats closed
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, and member detail session history links restored
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, and Phase 3 security gate passed
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete
-Last activity: 2026-06-01 -- completed quick task 260601-nav: member detail session history now navigates to session detail on card/row click
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0
+Last activity: 2026-06-01 -- completed Phase 3 security gate and created 03-SECURITY.md with all plan-time threats closed
 
 Progress: ██████████ 100%
 
@@ -128,15 +128,14 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Run the Phase 3 security gate before milestone archive because `workflow.security_enforcement` is enabled and no Phase 3 `SECURITY.md` exists yet.
+- None currently. Phase 3 security enforcement is satisfied by `03-SECURITY.md` with `status: verified` and `threats_open: 0`.
 
 ### Blockers/Concerns
 
 None currently.
 
-Known follow-up gate:
+Known follow-up notes:
 
-- Security enforcement is enabled; run `/gsd-secure-phase 03` before milestone archive.
 - Browser harness smoke passed on 2026-05-27 for mobile `/`, `/sessions`, `/members`, `/login`, `/create-session` guard and desktop `/sessions`, `/members`; no visible error text or global overflow was detected.
 - Full browser_harness screenshot sweep captured 14 grouped screenshots; the `03-session-detail-readonly` `Tiền sân NaN ₫` finding is fixed in `bad7cc0` and retested on mobile/desktop.
 - Phase 3 UI review priority findings were fixed in `38778c0`: typography classes normalized in changed Phase 3 surfaces, safe-area `calc()` arbitrary Tailwind classes replaced with CSS helpers plus Tailwind source narrowed to `src`, exact CTA copy aligned, and clipboard failure now surfaces a toast.
@@ -149,6 +148,7 @@ Known follow-up gate:
 - Smoke test cases and categorized screenshots captured on 2026-06-01: 15/15 passed using CDP certificate bypass because initial Supabase REST calls failed with `ERR_CERT_AUTHORITY_INVALID`. Evidence is under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke` with `TEST-CASES.md`, `manifest.json`, and category folders `01-public-debt` through `07-auth-admin-guards`.
 - 2026-06-01 smoke policy: production-data safety preserved by not executing admin mutations, manual payments, session mutations, or group QR creation; admin-only create/settings were covered by guest guards, group payment by selection bar, and single QR by existing member snapshot modal.
 - Quick task `260601-nav` fixed member detail session history navigation in `1c4f7a4`: mobile cards and desktop rows on `/member/:id` now open `/session/:session_id`, while QR buttons stop propagation and still open the payment modal. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601`.
+- Phase 3 security gate completed on 2026-06-01: `03-SECURITY.md` has `status: verified`, `threats_open: 0`, 12/12 plan-time threats closed, and source/type/build evidence for route/admin gates, Supabase RPC contracts, member CRUD guards, and payment modal semantics.
 
 ### Quick Tasks Completed
 
@@ -159,7 +159,7 @@ Known follow-up gate:
 
 ## Session Continuity
 
-Last session: 2026-06-01T14:34:00+07:00
-Stopped at: Quick task 260601-nav complete; member detail session history links to session detail
+Last session: 2026-06-01T14:39:26+07:00
+Stopped at: Phase 3 security gate complete; 03-SECURITY.md verified with threats_open=0
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended `/gsd-secure-phase 03`, or provide admin credentials/dev branch if full authenticated mutation smoke is required
+Next command: ask user for next action; recommended `/gsd-complete-milestone`, `/gsd-validate-phase 03`, or optional authenticated mutation smoke with admin credentials/dev branch
