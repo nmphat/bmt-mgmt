@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 3 security gate completed with threats_open=0
-last_updated: "2026-06-01T14:39:26+07:00"
-last_activity: 2026-06-01 -- completed Phase 3 security gate and created 03-SECURITY.md with all plan-time threats closed
+stopped_at: Open Design review packet prepared; Open Design daemon unavailable
+last_updated: "2026-06-01T14:50:00+07:00"
+last_activity: 2026-06-01 -- set Git origin to SSH and prepared Open Design UI review packet in session artifacts
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, and Phase 3 security gate passed
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, and Open Design review packet is prepared
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0
-Last activity: 2026-06-01 -- completed Phase 3 security gate and created 03-SECURITY.md with all plan-time threats closed
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review packet prepared
+Last activity: 2026-06-01 -- set Git origin to SSH and prepared Open Design UI review packet in session artifacts
 
 Progress: ██████████ 100%
 
@@ -149,6 +149,8 @@ Known follow-up notes:
 - 2026-06-01 smoke policy: production-data safety preserved by not executing admin mutations, manual payments, session mutations, or group QR creation; admin-only create/settings were covered by guest guards, group payment by selection bar, and single QR by existing member snapshot modal.
 - Quick task `260601-nav` fixed member detail session history navigation in `1c4f7a4`: mobile cards and desktop rows on `/member/:id` now open `/session/:session_id`, while QR buttons stop propagation and still open the payment modal. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601`.
 - Phase 3 security gate completed on 2026-06-01: `03-SECURITY.md` has `status: verified`, `threats_open: 0`, 12/12 plan-time threats closed, and source/type/build evidence for route/admin gates, Supabase RPC contracts, member CRUD guards, and payment modal semantics.
+- Git remote `origin` is now SSH: `git@github.com:nmphat/bmt-mgmt.git`.
+- Open Design MCP was unavailable on 2026-06-01 (`http://127.0.0.1:7456` unreachable). UI review packet is prepared under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601` with `index.html`, `OPEN-DESIGN-REVIEW-PACK.md`, `review-manifest.json`, `source-file-map.md`, copied 15 categorized screenshots, and smoke test/manifest copies.
 
 ### Quick Tasks Completed
 
@@ -159,7 +161,7 @@ Known follow-up notes:
 
 ## Session Continuity
 
-Last session: 2026-06-01T14:39:26+07:00
-Stopped at: Phase 3 security gate complete; 03-SECURITY.md verified with threats_open=0
+Last session: 2026-06-01T14:50:00+07:00
+Stopped at: Open Design review packet prepared; Git origin uses SSH; Open Design daemon still needs to be started for MCP import
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended `/gsd-complete-milestone`, `/gsd-validate-phase 03`, or optional authenticated mutation smoke with admin credentials/dev branch
+Next command: ask user for next action; recommended start Open Design daemon and import `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/index.html`, or run `/gsd-complete-milestone`
