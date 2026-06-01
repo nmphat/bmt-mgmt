@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase'
 import type { MemberDebtSummary, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
-import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
-import MemberUnpaidSessionsModal from '@/components/MemberUnpaidSessionsModal.vue'
 import HomeDebtTable from '@/components/HomeDebtTable.vue'
 import { useToast } from 'vue-toastification'
 
@@ -15,13 +13,13 @@ const toast = useToast()
 
 const members = ref<MemberDebtSummary[]>([])
 const loading = ref(true)
+const errorMessage = ref('')
+const searchQuery = ref('')
 const showPaymentModal = ref(false)
-const showCashUnpaidModal = ref(false)
-const showManualModal = ref(false)
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
-const selectedMemberSnapshots = ref<any[]>([])
-const selectedMemberName = ref('')
-const selectedSnapshot = ref<any>(null)
+const debtTableKey = ref(0)
+const groupPaymentCompleted = ref(false)
+let paymentRefreshPromise: Promise<void> | null = null
 
 // Pagination
 const currentPage = ref(1)
@@ -32,11 +30,19 @@ const hasMore = computed(() => currentPage.value * pageSize < totalCount.value)
 async function fetchDebts() {
   try {
     loading.value = true
+    errorMessage.value = ''
+    const searchTerm = searchQuery.value.trim()
 
-    // First get count
-    const { count, error: countError } = await supabase
+    // First get count while preserving the same member-name filter as the page query.
+    let countQuery = supabase
       .from('view_member_debt_summary')
       .select('*', { count: 'exact', head: true })
+
+    if (searchTerm) {
+      countQuery = countQuery.ilike('display_name', `%${searchTerm}%`)
+    }
+
+    const { count, error: countError } = await countQuery
 
     if (countError) throw countError
     totalCount.value = count || 0
@@ -45,11 +51,16 @@ async function fetchDebts() {
     const from = (currentPage.value - 1) * pageSize
     const to = from + pageSize - 1
 
-    const { data, error } = await supabase
+    let debtQuery = supabase
       .from('view_member_debt_summary')
       .select('*')
       .order('total_debt', { ascending: false })
-      .range(from, to)
+
+    if (searchTerm) {
+      debtQuery = debtQuery.ilike('display_name', `%${searchTerm}%`)
+    }
+
+    const { data, error } = await debtQuery.range(from, to)
 
     if (error) throw error
 
@@ -60,9 +71,17 @@ async function fetchDebts() {
     }
   } catch (error) {
     console.error('Error fetching debts:', error)
+    errorMessage.value = t.value('debt.errorState')
+    toast.error(t.value('debt.errorState'))
   } finally {
     loading.value = false
   }
+}
+
+async function handleSearchChange(value: string) {
+  searchQuery.value = value
+  currentPage.value = 1
+  await fetchDebts()
 }
 
 async function loadMore() {
@@ -76,111 +95,6 @@ async function handleSinglePay(memberId: string) {
 
 async function handleGroupPay(memberIds: string[]) {
   await createPaymentForMembers(memberIds)
-}
-
-async function handleCashPay(memberId: string, memberName: string) {
-  try {
-    loading.value = true
-    selectedMemberName.value = memberName
-
-    // Fetch all unpaid snapshots for this member
-    const { data, error } = await supabase
-      .from('session_costs_snapshot')
-      .select('*, sessions(title, start_time)')
-      .eq('member_id', memberId)
-      .neq('status', 'paid')
-      .order('created_at', { ascending: false })
-
-    if (error) throw error
-
-    if (!data || data.length === 0) {
-      toast.info(t.value('debt.noDebt'))
-      return
-    }
-
-    selectedMemberSnapshots.value = data
-
-    if (data.length === 1) {
-      // If only one unpaid session, open ManualPaymentModal directly
-      selectedSnapshot.value = data[0]
-      showManualModal.value = true
-    } else {
-      // If multiple, show the selection modal
-      showCashUnpaidModal.value = true
-    }
-  } catch (error: any) {
-    console.error('Error fetching member snapshots:', error)
-    toast.error(error.message || 'Failed to fetch unpaid sessions')
-  } finally {
-    loading.value = false
-  }
-}
-
-function handleSelectSnapshot(snapshot: any) {
-  selectedSnapshot.value = snapshot
-  showCashUnpaidModal.value = false
-  showManualModal.value = true
-}
-
-async function handleBatchManualPayment(payload: {
-  snapshotIds: string[]
-  amount: number
-  note: string
-}) {
-  if (!payload.snapshotIds.length) return
-  if (payload.amount <= 0) {
-    toast.error(t.value('payment.amountPositiveError'))
-    return
-  }
-
-  try {
-    loading.value = true
-
-    // Keep original list order shown in modal and allocate from top to bottom.
-    const selected = selectedMemberSnapshots.value.filter((s) => payload.snapshotIds.includes(s.id))
-    let remaining = payload.amount
-    let successCount = 0
-
-    for (const snapshot of selected) {
-      if (remaining <= 0) break
-
-      const debt = Math.max(0, (snapshot.final_amount || 0) - (snapshot.paid_amount || 0))
-      if (debt <= 0) continue
-
-      const payAmount = Math.min(debt, remaining)
-
-      const { error } = await supabase.rpc('add_manual_payment', {
-        p_snapshot_id: snapshot.id,
-        p_amount: payAmount,
-        p_note: payload.note,
-      })
-
-      if (error) throw error
-
-      remaining -= payAmount
-      successCount += 1
-    }
-
-    if (successCount === 0) {
-      toast.info(t.value('debt.noDebt'))
-      return
-    }
-
-    if (remaining > 0) {
-      toast.info(
-        t.value('payment.batchUnallocatedAmount', { amount: remaining.toLocaleString('vi-VN') }),
-      )
-    }
-
-    toast.success(t.value('payment.batchManualPaymentSuccess', { count: successCount }))
-    showCashUnpaidModal.value = false
-    await handlePaymentComplete()
-  } catch (error: any) {
-    console.error('Error adding batch manual payment:', error)
-    toast.error(t.value('toast.error', { message: error.message }))
-  } finally {
-    loading.value = false
-  }
 }
 
 async function createPaymentForMembers(memberIds: string[]) {
@@ -242,42 +156,65 @@ async function createPaymentForMembers(memberIds: string[]) {
     const groupData: GroupPaymentData = {
       group_code: rpcResponse.group_code,
       total_amount: rpcResponse.total_amount,
+      snapshot_ids: snapshotIds,
       member_count: memberMap.size,
       members: Array.from(memberMap.values()),
     }
 
     selectedGroupPayment.value = groupData
+    groupPaymentCompleted.value = false
     showPaymentModal.value = true
   } catch (error: any) {
     console.error('Error creating payment:', error)
-    toast.error(error.message || 'Failed to create payment')
+    toast.error(error.message || t.value('debt.errorState'))
   }
 }
 
 function handlePaymentComplete() {
-  // Refresh debt data after payment completes
+  // Refresh debt data after payment completes, but keep the sheet open so the
+  // success state remains visible until the user explicitly closes it.
   currentPage.value = 1
-  fetchDebts()
+  groupPaymentCompleted.value = true
+  paymentRefreshPromise = fetchDebts().finally(() => {
+    paymentRefreshPromise = null
+  })
+}
+
+async function handlePaymentModalClose() {
   showPaymentModal.value = false
-  showManualModal.value = false
+  await nextTick()
+
+  const shouldClearCompletedSelection = groupPaymentCompleted.value
+  if (paymentRefreshPromise) {
+    await paymentRefreshPromise
+  }
+
+  selectedGroupPayment.value = null
+  if (shouldClearCompletedSelection) {
+    debtTableKey.value += 1
+  }
+  groupPaymentCompleted.value = false
 }
 
 onMounted(fetchDebts)
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900">{{ t('debt.title') }}</h1>
     </div>
 
     <HomeDebtTable
+      :key="debtTableKey"
       :members="members"
       :loading="loading"
       :has-more="hasMore"
+      :search="searchQuery"
+      :error-message="errorMessage"
+      @update:search="handleSearchChange"
       @pay-single="handleSinglePay"
       @pay-group="handleGroupPay"
-      @pay-cash="handleCashPay"
       @load-more="loadMore"
     />
 
@@ -286,25 +223,8 @@ onMounted(fetchDebts)
       :snapshot="null"
       :group-data="selectedGroupPayment"
       member-name=""
-      @close="showPaymentModal = false"
+      @close="handlePaymentModalClose"
       @payment-complete="handlePaymentComplete"
-    />
-
-    <MemberUnpaidSessionsModal
-      :show="showCashUnpaidModal"
-      :member-name="selectedMemberName"
-      :snapshots="selectedMemberSnapshots"
-      @close="showCashUnpaidModal = false"
-      @select-snapshot="handleSelectSnapshot"
-      @batch-manual-payment="handleBatchManualPayment"
-    />
-
-    <ManualPaymentModal
-      :show="showManualModal"
-      :snapshot="selectedSnapshot"
-      :member-name="selectedMemberName"
-      @close="showManualModal = false"
-      @success="handlePaymentComplete"
     />
   </div>
 </template>

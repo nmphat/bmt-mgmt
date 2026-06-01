@@ -4,9 +4,10 @@ export interface SessionSummary {
   status: 'open' | 'waiting_for_payment' | 'done' | 'cancelled'
   start_time: string // ISO UTC timestamp
   end_time: string // ISO UTC timestamp
-  session_date: string // date string (UTC date — use start_time for VN date calc)
-  court_fee_addon: number // fixed lump-sum added on top of booking cost
-  total_court_cost: number // computed: booking cost + court_fee_addon
+  session_date: string // ISO string
+  court_fee_total: number
+  court_fee_addon: number
+  total_court_cost: number
   shuttle_fee_total: number
   price_per_hour: number
   default_court_count: number
@@ -61,6 +62,7 @@ export interface Member {
   display_name: string
   role: 'admin' | 'member'
   is_active: boolean
+  is_permanent: boolean
 }
 
 export interface SessionRegistration {
@@ -125,9 +127,38 @@ export interface SessionPayment {
 export interface GroupPaymentData {
   group_code: string
   total_amount: number
-  member_count: number
-  members: {
+  snapshot_ids?: string[]
+  member_count?: number
+  members?: {
     name: string
     amount: number
   }[]
+}
+
+export interface BankConfig {
+  id: string
+  bank_id: string
+  account_number: string
+  account_name: string
+  template: string
+  is_active: boolean
+}
+
+export type BankConfigInput = Omit<BankConfig, 'id'>
+
+export const DEFAULT_BANK_CONFIG: BankConfigInput = {
+  bank_id: 'TPB',
+  account_number: '10003392871',
+  account_name: 'CLB CAU LONG BMT',
+  template: 'compact2',
+  is_active: true,
+}
+
+// Fallback for QR rendering before the DB-backed config finishes loading.
+export const BANK_INFO = {
+  BANK_ID: DEFAULT_BANK_CONFIG.bank_id,
+  BANK_NAME: 'TPBank',
+  ACCOUNT_NO: DEFAULT_BANK_CONFIG.account_number,
+  ACCOUNT_NAME: DEFAULT_BANK_CONFIG.account_name,
+  TEMPLATE: DEFAULT_BANK_CONFIG.template,
 }

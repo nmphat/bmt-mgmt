@@ -1,0 +1,299 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-06-01T17:32:00+07:00",
+  "phase": "03",
+  "phase_name": "admin-supporting-screens-payment-polish-regression-pass",
+  "phase_dir": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass",
+  "plan": 5,
+  "task": 2,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Complete Phase 3 execution plans 03-01 through 03-05",
+      "status": "done",
+      "commit": "d4d7a2e"
+    },
+    {
+      "id": 2,
+      "name": "Verify Phase 3 and mark milestone complete",
+      "status": "done",
+      "commit": "3699bcd"
+    },
+    {
+      "id": 3,
+      "name": "Run Phase 3 UI review",
+      "status": "done",
+      "commit": "d57ef12"
+    },
+    {
+      "id": 4,
+      "name": "Run browser_harness smoke test and update memory",
+      "status": "done",
+      "evidence": "03-UI-REVIEW.md Browser Harness Follow-up — 2026-05-27"
+    },
+    {
+      "id": 5,
+      "name": "Capture grouped browser_harness screenshots for all smoke test cases",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens/manifest.json"
+    },
+    {
+      "id": 6,
+      "name": "Fix and retest session detail `Tiền sân NaN ₫` finding",
+      "status": "done",
+      "commit": "bad7cc0",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-nan-fix/manifest.json"
+    },
+    {
+      "id": 7,
+      "name": "Fix remaining Phase 3 UI review findings",
+      "status": "done",
+      "commit": "38778c0",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-ui-review-fixes"
+    },
+    {
+      "id": 8,
+      "name": "Re-run Phase 3 UI review",
+      "status": "done",
+      "score": "19/24",
+      "evidence": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass/03-UI-REVIEW.md"
+    },
+    {
+      "id": 9,
+      "name": "Fix mobile debt cards and QR polling feedback",
+      "status": "done",
+      "commit": "7a1ad79",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-home-feedback-fix"
+    },
+    {
+      "id": 10,
+      "name": "Restore admin settings route and TPBank QR configuration",
+      "status": "done",
+      "commit": "5e890b3",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-settings-fix"
+    },
+    {
+      "id": 11,
+      "name": "Move bank config management to Settings with DB-backed QR config",
+      "status": "done",
+      "commit": "841cfac",
+      "migration": "restore_bank_config_settings",
+      "evidence": "/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings"
+    },
+    {
+      "id": 12,
+      "name": "Check browser_harness MCP connection, write smoke test cases, and capture categorized screenshots",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke/TEST-CASES.md",
+      "result": "15/15 non-mutating browser_harness smoke cases passed after enabling CDP certificate bypass for Supabase requests"
+    },
+    {
+      "id": 13,
+      "name": "Quick task 260601-nav: link member detail session history to session detail",
+      "status": "done",
+      "commit": "1c4f7a4",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601/result.json"
+    },
+    {
+      "id": 14,
+      "name": "Run Phase 3 security gate",
+      "status": "done",
+      "evidence": ".planning/phases/03-admin-supporting-screens-payment-polish-regression-pass/03-SECURITY.md",
+      "result": "12/12 plan-time threats closed; status verified; threats_open=0"
+    },
+    {
+      "id": 15,
+      "name": "Check Git remote and prepare Open Design UI review packet",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/index.html",
+      "result": "Git origin is SSH git@github.com:nmphat/bmt-mgmt.git; Open Design MCP daemon was unreachable, so a local import-ready review packet was prepared"
+    },
+    {
+      "id": 16,
+      "name": "Import Open Design UI review packet",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/open-design-import-result.json",
+      "project_id": "bmt-ui-review-20260601-0753",
+      "web_project_url": "http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753",
+      "preview_screenshot": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/verification/open-design-direct-preview-updated.png",
+      "result": "Imported 21 packet files into Open Design through daemon API http://127.0.0.1:17456 because the MCP wrapper still targets http://127.0.0.1:7456; direct preview renders the 15/15 gallery"
+    },
+    {
+      "id": 17,
+      "name": "Run Open Design UI review",
+      "status": "done",
+      "failed_run": {
+        "run_id": "81012363-c29f-4168-acad-2bdf7ad8e2b4",
+        "agent": "claude",
+        "error": "AGENT_AUTH_REQUIRED"
+      },
+      "successful_run": {
+        "run_id": "95b5c036-9bdd-46c5-840d-fe614a3d0a17",
+        "agent": "copilot"
+      },
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW.md",
+      "findings_json": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/review-findings.json",
+      "result": "Open Design verdict fix-before-archive, score 14/24; top issues are repeated mobile locked-state messaging, compact/tap-target accessibility, SessionDetailView error feedback, typography token drift, dense mobile card stacks, generic auth guard copy, and missing non-mutating admin/payment mutation evidence"
+    },
+    {
+      "id": 18,
+      "name": "Fix Open Design UI review findings before archive",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/remediation-evidence/browser-remediation-smoke.json",
+      "open_design_project_id": "bmt-ui-review-20260601-0753",
+      "result": "Remediated repeated locked-state copy, compact tap targets/accessibility, SessionDetailView error feedback, typography token drift, dense member-detail mobile history, and route-aware login guard copy; uploaded 5 remediation screenshots plus smoke JSON to Open Design remediation-evidence/; pnpm type-check, pnpm build, and 5/5 targeted browser_harness checks passed."
+    },
+    {
+      "id": 19,
+      "name": "Rerun Open Design review after remediation",
+      "status": "done",
+      "run_id": "95acc6cc-0b43-496d-99df-1859669df6d2",
+      "agent": "copilot",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW-rerun.md",
+      "findings_json": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/review-findings-rerun.json",
+      "result": "Rerun succeeded; verdict needs-more-evidence, score 16/24. Cleared repeated locked-state messaging, reviewed QR tap targets, mobile history density, and route-aware login copy. Remaining archive gates are evidence-only: SessionDetailView fetch/action/payment failure evidence and typography source/computed-style evidence."
+    },
+    {
+      "id": 20,
+      "name": "Add Open Design archive evidence for typography and SessionDetailView failure states",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/archive-evidence/ARCHIVE-EVIDENCE.md",
+      "result": "Uploaded archive-evidence/ to Open Design with computed typography metrics, production-safe mocked failure screenshots, and JSON proving Supabase REST/RPC/update requests were blocked before production writes."
+    },
+    {
+      "id": 21,
+      "name": "Fix safe failure copy and rerun final Open Design review",
+      "status": "done",
+      "run_id": "a97059f8-5e04-4148-9e00-e2bb1ea1e58c",
+      "agent": "copilot",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW-safe-copy.md",
+      "findings_json": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/review-findings-safe-copy.json",
+      "result": "Final Open Design re-review verdict ready-to-archive, score 19/24. All archive gates cleared; only UI-R2 low non-blocking color/accessibility follow-up remains."
+    },
+    {
+      "id": 22,
+      "name": "Correct SessionDetail quick navigation ribbon spacing after approach clarification",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/ribbon-spacing-evidence/session-detail-ribbon-spacing-evidence.json",
+      "screenshot": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/ribbon-spacing-evidence/session-detail-mobile-ribbon-no-gap.png",
+      "result": "User clarified the intended fix was removing the spacing between the app header and quick navigation ribbon, not removing the ribbon. Restored the SessionDetail quick-nav ribbon, changed the sticky offset to align flush with the mobile header, removed the ribbon top margin, and kept the navigation behavior. Browser_harness evidence confirms hasQuickNavRibbon=true and headerToRibbonGapPx=0."
+    },
+    {
+      "id": 23,
+      "name": "Move SessionDetail quick navigation ribbon above mobile app nav",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/bottom-ribbon-evidence/session-detail-bottom-ribbon-evidence.json",
+      "screenshot": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/bottom-ribbon-evidence/session-detail-mobile-bottom-ribbon.png",
+      "result": "Refined the SessionDetail quick-nav ribbon for one-handed mobile use: moved it to a fixed bottom position immediately above the primary app bottom nav, kept it visible at top and scrolled states, and increased session bottom padding/group-payment offset to avoid overlay conflicts. Browser_harness confirms hasQuickNavRibbon=true, ribbonImmediatelyAboveBottomNav=true, and ribbonToBottomNavGapPx=0 at scrollY=0 and scrollY=1100."
+    },
+    {
+      "id": 24,
+      "name": "Tighten SessionDetail quick-nav scroll offset under header",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/bottom-ribbon-scroll-offset-evidence/session-detail-ribbon-scroll-offset-evidence.json",
+      "screenshot": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/bottom-ribbon-scroll-offset-evidence/session-detail-mobile-ribbon-scroll-offset.png",
+      "result": "Reduced mobile section scroll margin so quick-nav clicks place the target section immediately under the sticky app header instead of leaving the old top-ribbon padding. Browser_harness clicked Attendance, Costs, and Payments and measured sectionTopGapPx=0 for all three."
+    },
+    {
+      "id": 25,
+      "name": "Merge origin/master into feat/refactor-ui and retest UI refactor",
+      "status": "done",
+      "evidence": "/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/merge-master-ui-smoke-20260601/manifest.json",
+      "result": "Merged origin/master into the current branch. Conflicts were resolved by preserving the v1.0 UI refactor implementations for conflicted UI files, keeping master additions for docs/routes/new components, and adding union type/i18n keys needed by merged master components. Validation passed: pnpm i18n:audit (MISSING_COUNT=0), pnpm type-check, pnpm build, and 10/10 browser_harness UI smoke cases across mobile home/sessions/members/member detail/session detail bottom ribbon/create-session guard/payment/profile plus desktop sessions/members."
+    },
+    {
+      "id": 26,
+      "name": "Fix SessionDetail mark-absent after origin/master schema change",
+      "status": "done",
+      "commit": "52489d6",
+      "evidence": "pnpm type-check; pnpm build; pnpm i18n:audit; production-safe browser_harness session-detail read-only smoke; user manual mutation test OK",
+      "result": "Replaced the removed session_registrations.is_registered_not_attended dependency with interval_presence as the source of truth. Mark absent now clears all interval presence rows for the registered member, absent display is derived from zero present intervals, and interval checkboxes remain usable to undo by marking attendance again."
+    },
+    {
+      "id": 27,
+      "name": "Push feat/refactor-ui and prepare PR/MR description",
+      "status": "done",
+      "evidence": "origin/feat/refactor-ui pushed to 52489d6; PR description saved under session files/feat-refactor-ui-pr-description.md",
+      "result": "Branch was pushed, but PR/MR creation is blocked in this CLI environment because gh/hub are unavailable, no GitHub token is present, and the exposed GitHub MCP tools are read/list/search only. Use compare URL https://github.com/nmphat/bmt-mgmt/compare/master...feat/refactor-ui?expand=1."
+    },
+    {
+      "id": 28,
+      "name": "Write repository MR summary",
+      "status": "done",
+      "evidence": ".planning/mr-summary",
+      "result": "Created a ready-to-paste MR summary in the repo with base/head, compare URL, key changes, mark-absent behavior, validation, and notes."
+    },
+    {
+      "id": 29,
+      "name": "Confirm GitHub PR exists",
+      "status": "done",
+      "evidence": "https://github.com/nmphat/bmt-mgmt/pull/2",
+      "result": "Open PR #2 exists from feat/refactor-ui into master, with head 639e166 and the MR summary body."
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 3,
+      "name": "Optionally run authenticated admin mutation smoke on a dev branch or with explicit admin credentials",
+      "status": "not_started"
+    },
+    {
+      "id": 6,
+      "name": "Optional low-priority hardening: add non-color cues to dense financial rows/cards",
+      "status": "not_started",
+      "archive_blocking": false
+    }
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {
+      "action": "If Cloak/Open Design MCP-specific evidence is required, start the missing daemon/tooling before re-running UI review.",
+      "context": "browser_harness was available and captured route smoke screenshots. Open Design daemon was running at http://127.0.0.1:17456 and the packet was imported into project bmt-ui-review-20260601-0753. The MCP wrapper exposed in this session still targets http://127.0.0.1:7456, so tool-level MCP access requires reconfiguring that wrapper or running the daemon on 7456.",
+      "blocking": false
+    },
+    {
+      "action": "If full authenticated admin mutation smoke is required, provide admin credentials and preferably a dev/test branch because the 2026-06-01 smoke suite intentionally avoided production writes.",
+      "context": "Covered admin-only create-session/settings via guest guards and covered payment QR without writing group payments. Did not execute member CRUD, session mutation, manual payment, settings mutation, or group QR creation.",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Do not commit .planning/config.json or Open Design artifacts unless explicitly requested.",
+      "rationale": "They were pre-existing/out-of-scope working tree items and were intentionally left uncommitted throughout Phase 3.",
+      "phase": "03"
+    },
+    {
+      "decision": "Treat human visual UAT as skipped/deferred for this milestone.",
+      "rationale": "User explicitly skipped manual visual/browser sweeps; source, type-check, build, and contract evidence substituted for phase verification.",
+      "phase": "03"
+    },
+    {
+      "decision": "Persist UI review despite auditor write restriction.",
+      "rationale": "The gsd-ui-auditor returned complete markdown but could not write files in this runtime, so the orchestrator saved and committed 03-UI-REVIEW.md.",
+      "phase": "03"
+    }
+  ],
+  "uncommitted_files": [
+    ".planning/config.json",
+    ".od-skills/",
+    "badminton-mobile-preview.html",
+    "badminton-mobile-prototypes.html",
+    "badminton-mobile-prototypes.html.artifact.json",
+    "brand-spec.md",
+    "mobile-prototypes/",
+    "mobile-screen-audit.html",
+    "mobile-screen-audit-2.html",
+    "mobile-screen-audit-2.html.artifact.json",
+    "mpd*.png"
+  ],
+  "next_action": "Ask user for the next action after confirming PR #2 exists.",
+  "context_notes": "Phase 3 and the v1.0 UI refactor milestone are implemented, verified, marked complete, UI-reviewed, browser_harness tested, and the `Tiền sân NaN ₫` finding is fixed. Full browser_harness screenshot sweep captured 14 screenshots grouped under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-full-screens. The only actionable sweep finding was session detail `Tiền sân NaN ₫`; fixed in bad7cc0 and retested with browser_harness on mobile/desktop. Phase 3 UI review priority findings were fixed in 38778c0 and a direct style regression was fixed in 16608b0. Fresh UI re-audit score is 19/24 with remaining findings: typography token drift, SessionDetailView error feedback, and compact/icon-only accessibility/tap-target gaps. Mobile debt/QR feedback is fixed in 7a1ad79: full member names on mobile debt cards, compact QR labels/layout for iPhone SE, and group QR polling checks snapshot_ids with empty/incomplete results staying pending. Settings/TPBank feedback is fixed in 5e890b3. DB-backed bank settings are fixed in 841cfac: admin Settings manages `public.bank_config`, QR modal reads the active DB config, fallback/seed uses TPB `10003392871` / `CLB CAU LONG BMT`, and Supabase migration `restore_bank_config_settings` made `bank_config` public-read/admin-write. Browser_harness evidence is under /home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings. On 2026-06-01, browser_harness MCP connection was checked: doctor initially failed daemon/active connections, browser_harness run succeeded after reload, and final doctor passed daemon + active browser connection. Initial app smoke showed Supabase REST failures from Chrome cert validation (`ERR_CERT_AUTHORITY_INVALID`); enabling CDP `Security.setIgnoreCertificateErrors` fixed requests and the rerun passed 15/15 non-mutating smoke cases. Test cases, manifest, and categorized screenshots are under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke. Quick task 260601-nav completed in commit 1c4f7a4: MemberDetailView mobile cards and desktop rows now navigate to `/session/:session_id`; QR buttons use stopped propagation and still open the QR modal. Browser_harness evidence is under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601. Phase 3 security gate completed on 2026-06-01: 03-SECURITY.md is status verified with threats_open=0 and 12/12 plan-time threats closed using route/admin gate, Supabase contract, member CRUD guard, payment modal, type-check, and build evidence. Git remote origin is SSH git@github.com:nmphat/bmt-mgmt.git. Open Design daemon is http://127.0.0.1:17456 and web is http://127.0.0.1:17573. The MCP wrapper in this session still targets http://127.0.0.1:7456, but the import-ready UI review packet was imported directly via daemon API into project bmt-ui-review-20260601-0753 with 21 files. Web URL: http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753. Daemon preview: http://127.0.0.1:17456/api/projects/bmt-ui-review-20260601-0753/preview/35c911bd-19f8-421c-95ff-8e94b6a76b6a/index.html. Direct preview was browser_harness verified: it renders the Badminton Management UI Review Pack and 15/15 gallery; screenshot: /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/verification/open-design-direct-preview-updated.png. Open Design review: Claude run 81012363-c29f-4168-acad-2bdf7ad8e2b4 failed with AGENT_AUTH_REQUIRED, Copilot run 95b5c036-9bdd-46c5-840d-fe614a3d0a17 succeeded. Outputs copied to /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW.md and review-findings.json. Verdict fix-before-archive, score 14/24, top issues: repeated mobile locked-state messaging, compact/tap-target accessibility, SessionDetailView error feedback, typography token drift, dense mobile card stacks, generic auth guard copy, and missing non-mutating admin/payment mutation evidence. Open Design fix-before-archive remediation completed on 2026-06-01: SessionDetailView now has inline retryable error feedback and compact locked chips instead of repeated full lock copy; MemberDetailView has 44px accessible compact actions and collapses mobile history after four sessions; login guard redirects preserve attempted route and show route-specific copy; typography tokens are normalized to 16px base. Verification: pnpm type-check, pnpm build, and targeted browser_harness 5/5 passed. Evidence and screenshots are under /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/remediation-evidence and were uploaded to Open Design project bmt-ui-review-20260601-0753 under remediation-evidence/. Open Design remediation rerun completed on 2026-06-01: Copilot run 95acc6cc-0b43-496d-99df-1859669df6d2 succeeded and produced OPEN-DESIGN-UI-REVIEW-rerun.md plus review-findings-rerun.json. Verdict needs-more-evidence, score 16/24. Cleared: repeated locked-state messaging, reviewed member-detail QR tap targets, mobile member history density, and auth guard route context. Remaining archive gates are evidence-only: source/computed typography metrics proving 16px base and 14/16/20/32px scale, plus production-safe or mocked SessionDetailView fetch/action/payment failure evidence. Open Design final review completed on 2026-06-01: archive-evidence/ cleared typography and production-safe failure-state gates, safe failure-copy remediation replaced raw exception text in SessionDetailView, and Copilot run a97059f8-5e04-4148-9e00-e2bb1ea1e58c returned ready-to-archive with score 19/24. Remaining UI-R2 is low-priority non-blocking color/accessibility hardening for dense financial rows/cards. User visual feedback on 2026-06-01 identified ugly spacing between the SessionDetail mobile header and quick navigation ribbon. Initial removal was the wrong approach; user clarified the desired fix is keeping the ribbon and deleting the spacing. The final change restores the ribbon, aligns it flush below the mobile app header, and removes the ribbon top margin. Verification: pnpm type-check, pnpm build, and browser_harness mobile evidence at /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/ribbon-spacing-evidence/session-detail-ribbon-spacing-evidence.json plus session-detail-mobile-ribbon-no-gap.png confirm hasQuickNavRibbon=true and headerToRibbonGapPx=0. Process note: for subjective UI feedback, ask the user to confirm the intended fix approach before choosing removal/restructure. Follow-up user refinement on 2026-06-01 moved the SessionDetail quick navigation ribbon to a one-handed mobile position: fixed at the bottom directly above the primary app bottom nav and always visible. SessionDetailView now renders the ribbon outside the scrolling shell, uses `.session-section-ribbon` bottom offset aligned to BottomNav height, increases session bottom padding, and lifts the group payment bar above the ribbon. Verification: pnpm type-check, pnpm build, and browser_harness evidence at /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/bottom-ribbon-evidence/session-detail-bottom-ribbon-evidence.json plus session-detail-mobile-bottom-ribbon.png confirm hasQuickNavRibbon=true, ribbonImmediatelyAboveBottomNav=true, and ribbonToBottomNavGapPx=0 at top and scrolled positions. Follow-up scroll-offset refinement on 2026-06-01 replaced the old mobile `scroll-mt-32` offsets with `.session-scroll-target` using 57px mobile scroll margin, because the bottom quick-nav ribbon no longer sits under the header. Browser_harness clicked Điểm danh, Chi phí, and Thanh toán from the bottom ribbon and measured sectionTopGapPx=0 for each target, proving sections land immediately below the sticky app header. Merge origin/master follow-up on 2026-06-01: merged master into feat/refactor-ui and resolved conflicts by preserving current UI refactor surfaces for conflicted Vue files while keeping master-added docs, SQL exports, routes, Payment/Profile views, composables, and package script additions. Added union type fields/interfaces (`CourtBooking`, `ExtraCharge`, extra fee/session timing fields) and missing locale keys required by merged master components. Validation after conflict resolution: pnpm i18n:audit reported MISSING_COUNT=0, pnpm type-check passed, pnpm build passed, and browser_harness UI smoke passed 10/10 with manifest at /home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/merge-master-ui-smoke-20260601/manifest.json.",
+  "latest_update": {
+    "at": "2026-06-01T17:32:00+07:00",
+    "summary": "Confirmed GitHub PR #2 exists from feat/refactor-ui into master and uses the MR summary body.",
+    "evidence": "https://github.com/nmphat/bmt-mgmt/pull/2"
+  }
+}

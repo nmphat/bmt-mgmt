@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "Mobile Screen Audit · Badminton Mgmt",
+  "entry": "mobile-screen-audit-2.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-05-20T04:20:20.677Z",
+  "updatedAt": "2026-05-20T04:20:22.815Z",
+  "metadata": {
+    "identifier": "mobile-screen-audit",
+    "artifactType": "text/html",
+    "inferred": false
+  }
+}

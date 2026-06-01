@@ -1,95 +1,65 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { RouterLink, useRoute } from 'vue-router'
+import { CalendarDays, Home, Users } from 'lucide-vue-next'
 import { useLangStore } from '@/stores/lang'
-import { Home, CalendarDays, Users, User } from 'lucide-vue-next'
 
 const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
 
-interface NavItem {
-  key: string
-  label: () => string
-  icon: unknown
-  to: string
-  exact?: boolean
-}
-
-const navItems = computed<NavItem[]>(() => {
-  const items: NavItem[] = [
-    {
-      key: 'home',
-      label: () => t.value('nav.home'),
-      icon: Home,
-      to: '/',
-      exact: true,
-    },
-  ]
-
-  items.push({
-    key: 'sessions',
-    label: () => t.value('nav.sessions'),
-    icon: CalendarDays,
-    to: '/sessions',
-  })
-
-  items.push({
-    key: 'members',
-    label: () => t.value('nav.members'),
-    icon: Users,
-    to: '/members',
-  })
-
-  if (authStore.isAuthenticated) {
-    items.push({
-      key: 'profile',
-      label: () => t.value('auth.profile'),
-      icon: User,
-      to: '/profile',
-    })
+const isActive = (path: '/' | '/members' | '/sessions') => {
+  if (path === '/') {
+    return route.path === '/'
   }
 
-  return items
-})
+  if (path === '/members') {
+    return route.path === '/members' || route.path.startsWith('/member/')
+  }
 
-function isActive(item: NavItem): boolean {
-  if (item.exact) return route.path === item.to
-  return route.path.startsWith(item.to)
+  return route.path === '/sessions' || route.path.startsWith('/session/')
 }
 </script>
 
 <template>
-  <!-- Mobile Bottom Nav — hidden on md+ -->
   <nav
-    class="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white border-t border-gray-200 safe-area-bottom"
-    style="padding-bottom: env(safe-area-inset-bottom)"
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden"
+    aria-label="Primary mobile navigation"
   >
-    <div class="flex items-stretch justify-around h-16">
-      <router-link
-        v-for="item in navItems"
-        :key="item.key"
-        :to="item.to"
-        class="flex flex-col items-center justify-center flex-1 gap-0.5 transition-colors"
-        :class="
-          isActive(item)
-            ? 'text-indigo-600'
-            : 'text-gray-400 hover:text-gray-600 active:text-indigo-500'
-        "
+    <div class="mx-auto grid max-w-md grid-cols-3 gap-1">
+      <RouterLink
+        to="/"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :class="isActive('/') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+        :aria-current="isActive('/') ? 'page' : undefined"
       >
-        <component :is="item.icon" class="w-5 h-5" />
-        <span class="text-[10px] font-medium leading-tight truncate max-w-[60px] text-center">{{
-          item.label()
-        }}</span>
-        <!-- Active indicator dot -->
-        <span
-          v-if="isActive(item)"
-          class="absolute bottom-1 w-1 h-1 rounded-full bg-indigo-600 opacity-0"
-        />
-      </router-link>
+        <Home class="h-5 w-5" aria-hidden="true" />
+        <span>{{ t('nav.debtHome') }}</span>
+      </RouterLink>
+
+      <RouterLink
+        to="/members"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :class="
+          isActive('/members') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'
+        "
+        :aria-current="isActive('/members') ? 'page' : undefined"
+      >
+        <Users class="h-5 w-5" aria-hidden="true" />
+        <span>{{ t('nav.members') }}</span>
+      </RouterLink>
+
+      <RouterLink
+        to="/sessions"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :class="
+          isActive('/sessions') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'
+        "
+        :aria-current="isActive('/sessions') ? 'page' : undefined"
+      >
+        <CalendarDays class="h-5 w-5" aria-hidden="true" />
+        <span>{{ t('nav.sessions') }}</span>
+      </RouterLink>
     </div>
   </nav>
 </template>

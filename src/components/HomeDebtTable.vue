@@ -2,40 +2,27 @@
 import { ref, computed } from 'vue'
 import type { MemberDebtSummary } from '@/types'
 import { useLangStore } from '@/stores/lang'
-import { QrCode, Banknote, ChevronDown, ChevronUp } from 'lucide-vue-next'
-import { getShortName } from '@/utils/formatters'
-import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { QrCode } from 'lucide-vue-next'
 
 const props = defineProps<{
   members: MemberDebtSummary[]
   loading: boolean
   hasMore: boolean
+  search: string
+  errorMessage?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'pay-single', memberId: string): void
   (e: 'pay-group', memberIds: string[]): void
-  (e: 'pay-cash', memberId: string, memberName: string): void
   (e: 'load-more'): void
+  (e: 'update:search', value: string): void
 }>()
-
-const authStore = useAuthStore()
-const router = useRouter()
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
 
 const selectedMemberIds = ref<string[]>([])
-const expandedRowId = ref<string | null>(null)
-
-const toggleExpand = (memberId: string) => {
-  if (expandedRowId.value === memberId) {
-    expandedRowId.value = null
-  } else {
-    expandedRowId.value = memberId
-  }
-}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat(langStore.currentLang === 'vi' ? 'vi-VN' : 'en-US', {
@@ -54,229 +41,251 @@ const toggleSelection = (memberId: string) => {
 }
 
 const toggleAll = () => {
-  if (selectedMemberIds.value.length === props.members.length) {
-    selectedMemberIds.value = []
+  const visibleMemberIds = props.members.map((m) => m.member_id)
+  const allVisibleSelected =
+    visibleMemberIds.length > 0 &&
+    visibleMemberIds.every((id) => selectedMemberIds.value.includes(id))
+
+  if (allVisibleSelected) {
+    selectedMemberIds.value = selectedMemberIds.value.filter((id) => !visibleMemberIds.includes(id))
   } else {
-    selectedMemberIds.value = props.members.map((m) => m.member_id)
+    selectedMemberIds.value = Array.from(new Set([...selectedMemberIds.value, ...visibleMemberIds]))
   }
 }
 
+const selectedMembers = computed(() =>
+  props.members.filter((m) => selectedMemberIds.value.includes(m.member_id)),
+)
+
 const totalSelectedDebt = computed(() => {
-  return props.members
-    .filter((m) => selectedMemberIds.value.includes(m.member_id))
-    .reduce((sum, m) => sum + m.total_debt, 0)
+  return selectedMembers.value.reduce((sum, m) => sum + m.total_debt, 0)
+})
+
+const allVisibleSelected = computed(() => {
+  return (
+    props.members.length > 0 &&
+    props.members.every((member) => selectedMemberIds.value.includes(member.member_id))
+  )
 })
 
 const handlePayGroup = () => {
-  emit('pay-group', selectedMemberIds.value)
-}
-
-const goToMemberDetail = (memberId: string) => {
-  router.push(`/member/${memberId}`)
+  emit('pay-group', [...selectedMemberIds.value])
 }
 </script>
 
 <template>
-  <div>
+  <div :class="selectedMemberIds.length > 0 ? 'pb-[148px]' : ''">
+    <div class="mb-4">
+      <label for="debt-search" class="sr-only">{{ t('debt.searchPlaceholder') }}</label>
+      <input
+        id="debt-search"
+        type="search"
+        :value="search"
+        :placeholder="t('debt.searchPlaceholder')"
+        class="min-h-12 w-full rounded-xl border border-gray-300 bg-white px-4 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"
+        @input="emit('update:search', ($event.target as HTMLInputElement).value)"
+      />
+    </div>
+
+    <div
+      v-if="errorMessage"
+      class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </div>
+
     <!-- Mobile View (Card Layout) -->
-    <div class="block md:hidden space-y-3 mb-20">
-      <div v-if="loading && members.length === 0" class="text-center py-8">
-        <div class="flex justify-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+    <div class="block md:hidden space-y-3">
+      <template v-if="loading && members.length === 0">
+        <div
+          v-for="index in 3"
+          :key="`debt-skeleton-${index}`"
+          class="animate-pulse rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+        >
+          <div class="flex items-start gap-3">
+            <div class="h-6 w-6 rounded border border-gray-200 bg-gray-100"></div>
+            <div class="flex-1 space-y-3">
+              <div class="h-4 w-1/2 rounded bg-gray-100"></div>
+              <div class="h-8 w-2/3 rounded bg-gray-100"></div>
+              <div class="h-4 w-1/3 rounded bg-gray-100"></div>
+            </div>
+            <div class="h-11 w-20 rounded-lg bg-gray-100"></div>
+          </div>
         </div>
-      </div>
-      <div v-else-if="members.length === 0" class="text-center py-8 text-gray-500">
-        {{ t('debt.noDebt') }}
+      </template>
+
+      <div
+        v-else-if="members.length === 0"
+        class="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-10 text-center"
+      >
+        <h2 class="text-xl font-bold text-green-700">{{ t('debt.emptyHeading') }}</h2>
+        <p class="mt-2 text-base text-gray-600">{{ t('debt.emptyBody') }}</p>
       </div>
 
       <div
         v-for="member in members"
         :key="member.member_id"
-        class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+        class="overflow-hidden rounded-2xl border bg-white shadow-sm transition"
+        :class="
+          selectedMemberIds.includes(member.member_id)
+            ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-600/20'
+            : 'border-gray-200'
+        "
       >
-        <div class="p-3 flex items-center gap-3" @click="toggleExpand(member.member_id)">
-          <!-- Checkbox -->
-          <div class="flex-shrink-0" @click.stop>
+        <div
+          class="flex cursor-pointer items-start gap-3 p-4"
+          role="button"
+          tabindex="0"
+          :aria-pressed="selectedMemberIds.includes(member.member_id)"
+          @click="toggleSelection(member.member_id)"
+          @keydown.enter.prevent="toggleSelection(member.member_id)"
+          @keydown.space.prevent="toggleSelection(member.member_id)"
+        >
+          <div class="flex-shrink-0 pt-1" @click.stop>
             <input
               type="checkbox"
+              :aria-label="t('debt.selectedCount', { count: 1 })"
               :checked="selectedMemberIds.includes(member.member_id)"
               @change="toggleSelection(member.member_id)"
-              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-6 w-6 cursor-pointer"
+              class="h-6 w-6 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
           </div>
 
-          <!-- Name & Debt -->
-          <div class="flex-1 min-w-0">
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
               <div
-                class="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold"
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600"
               >
                 {{ member.display_name.charAt(0).toUpperCase() }}
               </div>
-              <button
-                type="button"
-                @click.stop="goToMemberDetail(member.member_id)"
-                class="font-medium text-gray-900 truncate hover:text-indigo-600 transition text-left"
+              <span
+                class="min-w-0 flex-1 break-words text-base font-bold leading-snug text-gray-900"
+                :title="member.display_name"
               >
-                {{ getShortName(member.display_name) }}
-              </button>
-            </div>
-            <div class="mt-1 flex flex-col sm:block-row items-center gap-2">
-              <span class="text-red-600 font-bold text-sm">
-                {{ formatCurrency(member.total_debt) }}
-              </span>
-              <span class="text-xs text-gray-500 bg-gray-100 px-1.5 rounded">
-                {{ member.unpaid_session_count }} {{ t('dashboard.sessions') }}
+                {{ member.display_name }}
               </span>
             </div>
-          </div>
 
-          <!-- Actions -->
-          <div class="flex items-center gap-2">
-            <button
-              v-if="authStore.isAdmin"
-              @click.stop="emit('pay-cash', member.member_id, member.display_name)"
-              class="flex items-center justify-center p-2 text-green-600 bg-green-50 rounded-md hover:bg-green-100 active:scale-95 transition"
-              :title="t('payment.cashPay')"
-            >
-              <Banknote class="w-5 h-5" />
-            </button>
-            <button
-              @click.stop="emit('pay-single', member.member_id)"
-              class="flex items-center gap-1 px-2 py-1.5 text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 active:scale-95 transition text-sm font-medium whitespace-nowrap"
-            >
-              <QrCode class="w-4 h-4" />
-              <span>{{ t('payment.qrPay') }}</span>
-            </button>
-            <button class="text-gray-400">
-              <ChevronUp v-if="expandedRowId === member.member_id" class="w-5 h-5" />
-              <ChevronDown v-else class="w-5 h-5" />
-            </button>
+            <div class="mt-3 text-[32px] font-bold leading-none text-gray-900 tabular-nums">
+              {{ formatCurrency(member.total_debt) }}
+            </div>
+            <div class="mt-2 text-sm font-bold text-gray-500">
+              {{ t('debt.unpaidSessionCount', { count: member.unpaid_session_count }) }}
+            </div>
           </div>
         </div>
 
-        <!-- Expanded Details -->
-        <div
-          v-if="expandedRowId === member.member_id"
-          class="bg-gray-50 border-t border-gray-100 p-3 text-sm animate-in slide-in-from-top-2 duration-200"
-        >
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            {{ t('debt.unpaidSessions') }}
-          </div>
-          <!-- Placeholder for session details (needs RPC update to support detailed breakdown) -->
-          <div class="text-gray-600 italic text-xs">
-            {{ t('debt.viewDetails') }}
-          </div>
+        <div class="grid grid-cols-2 gap-2 border-t border-gray-100 px-4 py-3">
           <router-link
             :to="`/member/${member.member_id}`"
-            class="mt-2 inline-flex items-center text-xs text-indigo-600 font-medium hover:text-indigo-800"
+            class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border border-indigo-100 bg-white px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {{ t('common.view') }} {{ t('member.title') }} &rarr;
+            {{ t('debt.details') }}
           </router-link>
+          <button
+            @click="emit('pay-single', member.member_id)"
+            class="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <QrCode class="h-4 w-4" />
+            <span>{{ t('debt.createPaymentQR') }}</span>
+          </button>
         </div>
       </div>
     </div>
-    <div class="overflow-x-auto bg-white rounded-lg shadow border border-gray-200 hidden md:block">
+
+    <div class="hidden overflow-x-auto rounded-lg border border-gray-200 bg-white shadow md:block">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left">
               <input
                 type="checkbox"
-                :checked="selectedMemberIds.length === members.length && members.length > 0"
+                :checked="allVisibleSelected"
                 @change="toggleAll"
-                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                class="h-4 w-4 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               {{ t('common.member') }}
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               {{ t('debt.unpaidSessions') }}
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               {{ t('debt.totalDebt') }}
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
             >
               {{ t('debt.action') }}
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-200 bg-white">
           <tr v-if="loading && members.length === 0">
             <td colspan="5" class="px-6 py-12 text-center">
               <div class="flex justify-center">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div class="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600"></div>
               </div>
             </td>
           </tr>
           <tr v-else-if="members.length === 0">
             <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-              {{ t('debt.noDebt') }}
+              <div class="font-bold text-gray-900">{{ t('debt.emptyHeading') }}</div>
+              <div class="mt-1">{{ t('debt.emptyBody') }}</div>
             </td>
           </tr>
           <tr v-for="member in members" :key="member.member_id" class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="whitespace-nowrap px-6 py-4">
               <input
                 type="checkbox"
                 :checked="selectedMemberIds.includes(member.member_id)"
                 @change="toggleSelection(member.member_id)"
-                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                class="h-4 w-4 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <router-link :to="`/member/${member.member_id}`" class="flex items-center group">
+            <td class="whitespace-nowrap px-6 py-4">
+              <router-link :to="`/member/${member.member_id}`" class="group flex items-center">
                 <div
-                  class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3 group-hover:bg-indigo-200 transition"
+                  class="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-600 transition group-hover:bg-indigo-200"
                 >
                   {{ member.display_name.charAt(0).toUpperCase() }}
                 </div>
                 <span
-                  class="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition"
+                  class="text-sm font-medium text-gray-900 transition group-hover:text-indigo-600"
                   >{{ member.display_name }}</span
                 >
               </router-link>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+            <td class="whitespace-nowrap px-6 py-4 text-center text-sm text-gray-500">
               <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800"
               >
                 {{ member.unpaid_session_count }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">
+            <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-red-600">
               {{ formatCurrency(member.total_debt) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-              <div class="flex items-center justify-center gap-2">
-                <button
-                  v-if="authStore.isAdmin"
-                  @click="emit('pay-cash', member.member_id, member.display_name)"
-                  class="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-md hover:bg-green-100 transition inline-flex items-center"
-                >
-                  <Banknote class="w-4 h-4 mr-1" />
-                  {{ t('payment.cashPay') }}
-                </button>
-                <button
-                  @click="emit('pay-single', member.member_id)"
-                  class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md hover:bg-indigo-100 transition inline-flex items-center"
-                >
-                  <QrCode class="w-4 h-4 mr-1" />
-                  {{ t('payment.qrPay') }}
-                </button>
-              </div>
+            <td class="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
+              <button
+                @click="emit('pay-single', member.member_id)"
+                class="inline-flex items-center rounded-md bg-indigo-50 px-3 py-1 text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-900"
+              >
+                <QrCode class="mr-1 h-4 w-4" />
+                {{ t('payment.qrPay') }}
+              </button>
             </td>
           </tr>
         </tbody>
@@ -288,53 +297,46 @@ const goToMemberDetail = (memberId: string) => {
       <button
         @click="emit('load-more')"
         :disabled="loading"
-        class="px-6 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+        class="min-h-11 rounded-md border border-gray-300 bg-white px-6 py-2 text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
       >
-        {{ loading ? t('common.loading') : t('common.view') + ' ' + t('common.more') }}
+        {{ loading ? t('common.loading') : t('debt.loadMore') }}
       </button>
     </div>
 
     <!-- Floating Action Bar -->
     <div
       v-if="selectedMemberIds.length > 0"
-      class="fixed bottom-16 left-0 w-full md:bottom-6 md:left-1/2 md:w-auto md:-translate-x-1/2 md:rounded-full bg-indigo-100 text-indigo-600 px-6 py-4 md:py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-lg flex items-center justify-between md:justify-start gap-4 z-40 animate-fade-in-up safe-area-pb"
+      class="fixed left-4 right-4 z-50 rounded-2xl border border-indigo-100 bg-white px-4 py-3 shadow-[0_12px_36px_rgba(15,23,42,0.2)] md:left-1/2 md:right-auto md:w-auto md:-translate-x-1/2 md:rounded-full"
     >
-      <div class="flex flex-col">
-        <span class="text-xs text-indigo-400 uppercase tracking-wider font-semibold">
-          {{ t('payment.groupPaymentFor', { count: selectedMemberIds.length }) }}
-        </span>
-        <span class="font-bold text-lg text-indigo-900">
-          {{ formatCurrency(totalSelectedDebt) }}
-        </span>
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex flex-col">
+          <span class="text-sm font-bold text-indigo-600">
+            {{ t('debt.selectedCount', { count: selectedMemberIds.length }) }}
+          </span>
+          <span class="text-base font-bold text-gray-900">
+            {{ t('debt.selectedTotal', { amount: formatCurrency(totalSelectedDebt) }) }}
+          </span>
+        </div>
+        <button
+          @click="handlePayGroup"
+          class="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg bg-indigo-600 px-3 text-sm font-bold text-white shadow-md transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:px-4"
+        >
+          <QrCode class="mr-2 h-4 w-4" />
+          {{ t('debt.createGroupQR') }}
+        </button>
       </div>
-      <button
-        @click="handlePayGroup"
-        class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg md:rounded-full font-medium transition shadow-md flex items-center whitespace-nowrap"
-      >
-        <QrCode class="w-4 h-4 mr-2" />
-        {{ t('payment.createGroupQR') }}
-      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 16px);
+.fixed.left-4.right-4 {
+  bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
+@media (min-width: 768px) {
+  .fixed.left-4.right-4 {
+    bottom: 1.5rem;
   }
 }
 </style>
