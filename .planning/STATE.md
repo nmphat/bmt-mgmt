@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: SessionDetail quick-navigation ribbon spacing corrected after user approach clarification
-last_updated: "2026-06-01T16:17:00+07:00"
-last_activity: 2026-06-01 -- SessionDetail mobile quick-navigation ribbon restored and header gap removed
+stopped_at: SessionDetail quick-navigation ribbon moved above mobile bottom nav
+last_updated: "2026-06-01T16:19:41+07:00"
+last_activity: 2026-06-01 -- SessionDetail mobile quick-navigation ribbon fixed above bottom app nav for one-handed use
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, and the SessionDetail mobile quick-navigation ribbon spacing was corrected after user clarification
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, and the SessionDetail mobile quick-navigation ribbon is fixed above the bottom app nav for one-handed use
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; SessionDetail quick-navigation ribbon spacing cleanup complete
-Last activity: 2026-06-01 -- Restored the SessionDetail mobile sticky quick-navigation ribbon and removed only the header-to-ribbon gap after user clarified the desired approach; `pnpm type-check`, `pnpm build`, and browser_harness evidence passed
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; SessionDetail quick-navigation ribbon bottom placement complete
+Last activity: 2026-06-01 -- Moved the SessionDetail mobile quick-navigation ribbon to a fixed position immediately above the bottom app nav; `pnpm type-check`, `pnpm build`, and browser_harness evidence passed
 
 Progress: ██████████ 100%
 
@@ -101,7 +101,7 @@ Recent decisions affecting current work:
 - [Phase 02-session-detail-task-cockpit]: Manual cash modal opening is explicitly admin-only while QR payment entry points remain public for unpaid snapshots.
 - [Phase 02-session-detail-task-cockpit]: Plan 02 keeps cockpit shell implementation in SessionDetailView.vue to minimize contract drift before later section-body conversions.
 - [Phase 02-session-detail-task-cockpit]: Plan 02 uses status-derived default active section with click-driven sticky mini-tabs and no new scroll observer dependency.
-- [Phase 02-session-detail-task-cockpit]: 2026-06-01 user visual feedback clarified the mobile sticky mini-tabs should remain; only the gap between the app header and quick-navigation ribbon should be removed. Subjective UI feedback requires confirming the desired approach before removing/restructuring UI.
+- [Phase 02-session-detail-task-cockpit]: 2026-06-01 user visual feedback clarified the mobile quick-navigation ribbon should remain, be fixed immediately above the bottom app nav, and stay visible for one-handed use. Subjective UI feedback requires confirming the desired approach before removing/restructuring UI.
 - [Phase 02-session-detail-task-cockpit]: Plan 02 preserves existing sessions.update/finalize_session handlers and centralized isSessionEditable gates while moving controls into Overview.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 keeps attendance section work in SessionDetailView.vue to avoid behavior drift in the highest-risk attendance surface.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 adds mobile attendance cards as an additive layout while preserving the desktop interval matrix.

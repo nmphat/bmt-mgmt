@@ -988,30 +988,6 @@ onUnmounted(() => {
           </div>
         </section>
 
-      <nav
-        class="sticky top-[57px] z-30 -mx-4 mb-4 mt-0 overflow-x-auto border-y border-gray-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur md:hidden"
-        :aria-label="t('session.cockpitNavLabel')"
-      >
-        <div class="flex min-w-max gap-2">
-          <button
-            v-for="tab in sectionTabs"
-            :key="tab.id"
-            type="button"
-            class="min-h-11 rounded-full px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            :class="
-              activeSection === tab.id
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
-            "
-            :aria-label="tab.ariaLabel"
-            :aria-controls="tab.id"
-            :aria-current="activeSection === tab.id ? 'true' : undefined"
-            @click="scrollToSection(tab.id)"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-      </nav>
       <!-- Cancelled Banner -->
       <div
         v-if="isSessionCancelled"
@@ -1801,6 +1777,32 @@ onUnmounted(() => {
     </Transition>
   </div>
 
+  <nav
+    v-if="session"
+    class="session-section-ribbon fixed inset-x-0 z-30 overflow-x-auto border-y border-gray-200 bg-white/95 px-4 py-2 shadow-[0_-10px_24px_rgba(15,23,42,0.10)] backdrop-blur md:hidden"
+    :aria-label="t('session.cockpitNavLabel')"
+  >
+    <div class="flex min-w-max gap-2">
+      <button
+        v-for="tab in sectionTabs"
+        :key="tab.id"
+        type="button"
+        class="min-h-11 rounded-full px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :class="
+          activeSection === tab.id
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
+        "
+        :aria-label="tab.ariaLabel"
+        :aria-controls="tab.id"
+        :aria-current="activeSection === tab.id ? 'true' : undefined"
+        @click="scrollToSection(tab.id)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+  </nav>
+
   <PaymentQRModal
     :show="showQRModal"
     :snapshot="selectedSnapshot"
@@ -1822,11 +1824,15 @@ onUnmounted(() => {
 
 <style scoped>
 .session-detail-shell {
-  padding-bottom: calc(148px + env(safe-area-inset-bottom));
+  padding-bottom: calc(220px + env(safe-area-inset-bottom));
+}
+
+.session-section-ribbon {
+  bottom: calc(65px + max(8px, env(safe-area-inset-bottom)));
 }
 
 .session-group-payment-bar {
-  bottom: calc(92px + env(safe-area-inset-bottom));
+  bottom: calc(135px + max(8px, env(safe-area-inset-bottom)));
   width: calc(100% - 2rem);
 }
 
