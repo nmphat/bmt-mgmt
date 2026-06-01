@@ -201,6 +201,10 @@ function handleSinglePay(session: MemberSessionDetail) {
   showPaymentModal.value = true
 }
 
+function openSessionDetail(sessionId: string) {
+  router.push(`/session/${sessionId}`)
+}
+
 async function handlePaymentModalClose() {
   showPaymentModal.value = false
   await nextTick()
@@ -292,10 +296,22 @@ onMounted(fetchMemberDetails)
           <div v-if="sessions.length === 0" class="p-6 text-center text-gray-500">
             {{ t('debt.emptyBody') }}
           </div>
-          <article v-for="session in sessions" :key="session.snapshot_id" class="space-y-4 p-4">
+          <article
+            v-for="session in sessions"
+            :key="session.snapshot_id"
+            class="group cursor-pointer space-y-4 p-4 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-indigo-600"
+            role="link"
+            tabindex="0"
+            :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
+            @click="openSessionDetail(session.session_id)"
+            @keydown.enter.prevent="openSessionDetail(session.session_id)"
+            @keydown.space.prevent="openSessionDetail(session.session_id)"
+          >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h2 class="text-base font-bold text-gray-900">{{ session.session_title }}</h2>
+                <h2 class="text-base font-bold text-gray-900 transition group-hover:text-indigo-600">
+                  {{ session.session_title }}
+                </h2>
                 <p class="mt-1 text-sm text-gray-500">
                   {{
                     format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', { locale: dateLocale })
@@ -351,7 +367,7 @@ onMounted(fetchMemberDetails)
             <div class="flex justify-end">
               <button
                 v-if="session.status !== 'paid'"
-                @click="handleSinglePay(session)"
+                @click.stop="handleSinglePay(session)"
                 class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 :title="t('payment.scanQR')"
               >
@@ -416,9 +432,21 @@ onMounted(fetchMemberDetails)
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="session in sessions" :key="session.snapshot_id" class="hover:bg-gray-50">
+              <tr
+                v-for="session in sessions"
+                :key="session.snapshot_id"
+                class="group cursor-pointer hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-indigo-600"
+                role="link"
+                tabindex="0"
+                :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
+                @click="openSessionDetail(session.session_id)"
+                @keydown.enter.prevent="openSessionDetail(session.session_id)"
+                @keydown.space.prevent="openSessionDetail(session.session_id)"
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-bold text-gray-900">{{ session.session_title }}</div>
+                  <div class="text-sm font-bold text-gray-900 transition group-hover:text-indigo-600">
+                    {{ session.session_title }}
+                  </div>
                   <div class="text-[14px] leading-[1.35] text-gray-500">
                     {{
                       format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', {
@@ -456,7 +484,7 @@ onMounted(fetchMemberDetails)
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold">
                   <button
                     v-if="session.status !== 'paid'"
-                    @click="handleSinglePay(session)"
+                    @click.stop="handleSinglePay(session)"
                     class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-full hover:bg-indigo-100 transition"
                     :title="t('payment.scanQR')"
                   >
