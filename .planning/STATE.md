@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: SessionDetail quick-navigation scroll offset tightened under sticky header
-last_updated: "2026-06-01T16:23:14+07:00"
-last_activity: 2026-06-01 -- SessionDetail bottom quick-nav clicks now land sections immediately under the header
+stopped_at: origin/master merged into UI refactor branch and smoke-tested
+last_updated: "2026-06-01T17:10:34+07:00"
+last_activity: 2026-06-01 -- origin/master merge conflicts resolved and UI refactor smoke passed 10/10
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, and the SessionDetail mobile quick-navigation ribbon is fixed above the bottom app nav with tight section scroll offsets
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, SessionDetail bottom quick-navigation is accepted, and origin/master has been merged and smoke-tested
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; SessionDetail quick-navigation ribbon bottom placement and scroll offset complete
-Last activity: 2026-06-01 -- Tightened mobile quick-nav section scroll offsets so target sections land immediately under the sticky app header; `pnpm type-check`, `pnpm build`, and browser_harness evidence passed
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete
+Last activity: 2026-06-01 -- Merged origin/master into `feat/refactor-ui`, resolved conflicts, added union type/i18n keys for master additions, and passed `pnpm i18n:audit`, `pnpm type-check`, `pnpm build`, and 10/10 browser_harness UI smoke cases
 
 Progress: ██████████ 100%
 

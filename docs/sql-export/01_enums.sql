@@ -1,0 +1,3 @@
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typname='payment_status') THEN CREATE TYPE public.payment_status AS ENUM ('pending', 'partial', 'paid'); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typname='session_status') THEN CREATE TYPE public.session_status AS ENUM ('open', 'waiting_for_payment', 'done', 'cancelled'); END IF; END $$;
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace WHERE n.nspname='public' AND t.typname='user_role') THEN CREATE TYPE public.user_role AS ENUM ('admin', 'member'); END IF; END $$;

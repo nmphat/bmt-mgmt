@@ -70,7 +70,6 @@ This is the main feature. Split into two main sections:
   - **Cells**: Checkboxes indicating presence.
 - **Admin Actions**:
   - **Toggle Presence**: Clicking a cell upserts to `interval_presence`.
-  - **Mark "Registered but Absent"**: A toggle/switch next to Member Name. If ON, disable their row but they still pay court fee (handled by backend).
   - **Bulk Toggle**: Click Member Name to toggle ALL intervals for that user.
 - **Realtime**: Use Supabase Realtime to listen for changes in `interval_presence` to update UI instantly across devices.
 

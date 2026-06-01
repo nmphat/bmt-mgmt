@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "i18n:audit": "node i18n_audit.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.2",
