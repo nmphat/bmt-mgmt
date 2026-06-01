@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: complete-milestone pre-flight waiting on audit decision
-last_updated: "2026-06-01T17:34:27+07:00"
-last_activity: 2026-06-01 -- /gsd-complete-milestone v1.0 pre-flight found no milestone audit file
+stopped_at: v1.0 milestone audit found blockers
+last_updated: "2026-06-01T17:50:58+07:00"
+last_activity: 2026-06-01 -- /gsd-audit-milestone v1.0 created audit report with gaps_found
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated, branch pushed, MR summary saved, and PR #2 open; complete-milestone pre-flight awaiting audit decision
-Last activity: 2026-06-01 -- Started `/gsd-complete-milestone` for v1.0 and found no `.planning/v1.0-MILESTONE-AUDIT.md`; workflow requires deciding whether to run `/gsd-audit-milestone` first, proceed anyway, or cancel closeout
+Status: Milestone implementation complete, but `/gsd-audit-milestone v1.0` found blockers before archive/tag; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated, branch pushed, MR summary saved, and PR #2 open
+Last activity: 2026-06-01 -- Created `.planning/v1.0-MILESTONE-AUDIT.md` with status `gaps_found`: ADMIN-02 create-session RPC mismatch, ADMIN-03 member CRUD `is_permanent` schema mismatch, and SESS-03 session edit `court_fee_total` schema mismatch
 
 Progress: ██████████ 100%
 
