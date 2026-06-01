@@ -1,0 +1,43 @@
+# MR: v1.0 mobile UI refactor and regression hardening
+
+Base: `master`
+Head: `feat/refactor-ui`
+Compare: https://github.com/nmphat/bmt-mgmt/compare/master...feat/refactor-ui?expand=1
+
+## Summary
+
+This MR completes the v1.0 mobile-first UI refactor for the badminton management app while preserving the existing Supabase/Postgres backend contracts and admin/public access model.
+
+## Key changes
+
+- Refactors the main app surfaces into mobile-first layouts: Home/Debt, Sessions, Session Detail, Members, Member Detail, Login, Settings, and payment flows.
+- Keeps business logic backend-owned through existing Supabase tables, views, and RPCs; the frontend continues to display returned costs/snapshots instead of recalculating fees.
+- Adds DB-backed bank configuration in Settings and keeps VietQR/payment QR generation tied to the active Supabase-backed bank config.
+- Restores member-detail session-history navigation while preserving QR button behavior.
+- Finalizes SessionDetail mobile quick navigation above the bottom app nav for one-handed use.
+- Merges latest `master` into `feat/refactor-ui` and resolves conflicts while preserving the UI refactor.
+- Fixes post-merge mark-absent behavior by removing the deleted `session_registrations.is_registered_not_attended` dependency and using `interval_presence` as the source of truth.
+
+## Mark-absent behavior
+
+The merged `master` schema removed `session_registrations.is_registered_not_attended`. This MR updates SessionDetail so:
+
+- Mark absent writes `interval_presence.is_present=false` for every interval of the registered member.
+- Absent UI state is derived from zero present intervals.
+- Checking any interval again is the undo path.
+- No source code references the removed registration column.
+
+## Validation
+
+- `pnpm i18n:audit` — `MISSING_COUNT=0`
+- `pnpm type-check`
+- `pnpm build`
+- Browser harness smoke after master merge: 10/10 UI refactor routes passed
+- Full 2026-06-01 non-mutating smoke suite: 15/15 passed with categorized screenshots
+- Open Design final review: ready-to-archive, score 19/24
+- User manually confirmed the mark-absent fix works
+
+## Notes
+
+- Automated browser smoke intentionally avoided live admin mutations unless explicitly approved.
+- Session artifact PR description copy is also available at `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/feat-refactor-ui-pr-description.md`.

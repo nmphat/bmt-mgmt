@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: branch pushed and PR handoff prepared
-last_updated: "2026-06-01T17:24:00+07:00"
-last_activity: 2026-06-01 -- mark absent fix committed/pushed; PR creation blocked by unavailable gh/token/write API, compare URL prepared
+stopped_at: MR summary saved in planning
+last_updated: "2026-06-01T17:29:00+07:00"
+last_activity: 2026-06-01 -- MR summary written to .planning/mr-summary after branch push
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated and branch pushed
-Last activity: 2026-06-01 -- Fixed SessionDetail mark absent after the merged master schema removed `session_registrations.is_registered_not_attended`; committed `52489d6`, pushed `origin/feat/refactor-ui`, prepared PR description, and confirmed actual PR creation is blocked here because `gh`/`hub` and GitHub token/write API are unavailable
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated, branch pushed, and MR summary saved
+Last activity: 2026-06-01 -- Saved a ready-to-paste MR summary in `.planning/mr-summary` with base/head, compare URL, key changes, mark-absent behavior, validation, and notes
 
 Progress: ██████████ 100%
 
