@@ -86,6 +86,9 @@ const isFetching = ref(false)
 const pendingRefresh = ref<null | 'full' | 'costs'>(null)
 const activeSection = ref('overview-section')
 const lastStatusForActiveSection = ref<string | null>(null)
+const pageError = ref('')
+const paymentDataError = ref('')
+const actionError = ref('')
 
 type SessionSectionId = 'overview-section' | 'attendance-section' | 'costs-section' | 'payments-section'
 
@@ -135,6 +138,20 @@ type SessionSummaryResponse = Omit<
 const toNumber = (value: unknown) => {
   const numericValue = typeof value === 'string' && value.trim() === '' ? NaN : Number(value)
   return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) return error.message
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message
+  ) {
+    return error.message
+  }
+  return fallback
 }
 
 const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary => ({
@@ -192,7 +209,12 @@ async function fetchData(refreshCostsOnly = false) {
   }
   try {
     isFetching.value = true
-    if (!refreshCostsOnly) loading.value = true
+    paymentDataError.value = ''
+    if (!refreshCostsOnly) {
+      loading.value = true
+      pageError.value = ''
+      actionError.value = ''
+    }
 
     // Fetch session summary (Always fetch this now to detect status changes)
     const { data: sessionData, error: sessionError } = await supabase
@@ -221,26 +243,29 @@ async function fetchData(refreshCostsOnly = false) {
 
     if (!refreshCostsOnly) {
       // Fetch intervals
-      const { data: intervalsData } = await supabase
+      const { data: intervalsData, error: intervalsError } = await supabase
         .from('session_intervals')
         .select('*')
         .eq('session_id', sessionId)
         .order('idx', { ascending: true })
+      if (intervalsError) throw intervalsError
       intervals.value = intervalsData || []
 
       // Fetch all members for registration dropdown
-      const { data: membersData } = await supabase
+      const { data: membersData, error: membersError } = await supabase
         .from('members')
         .select('*')
         .order('display_name', { ascending: true })
+      if (membersError) throw membersError
       allMembers.value = membersData || []
     }
 
     // Fetch registrations (with member details)
-    const { data: regsData } = await supabase
+    const { data: regsData, error: regsError } = await supabase
       .from('session_registrations')
       .select('*, member:members(*)')
       .eq('session_id', sessionId)
+    if (regsError) throw regsError
 
     const sortedRegs = (regsData || []) as SessionRegistration[]
     sortedRegs.sort((a, b) =>
@@ -249,13 +274,14 @@ async function fetchData(refreshCostsOnly = false) {
     registrations.value = sortedRegs
 
     // Fetch presence
-    const { data: presenceData } = await supabase
+    const { data: presenceData, error: presenceError } = await supabase
       .from('interval_presence')
       .select('*')
       .in(
         'interval_id',
         intervals.value.map((i) => i.id),
       )
+    if (presenceError) throw presenceError
 
     // Initialize presence matrix
     const matrix: Record<string, Record<string, boolean>> = {}
@@ -282,8 +308,11 @@ async function fetchData(refreshCostsOnly = false) {
     }
     // Always fetch costs for breakdown/reference
     await fetchCosts()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching session details:', error)
+    const message = getErrorMessage(error, t.value('session.dataLoadError'))
+    pageError.value = message
+    if (!refreshCostsOnly) toast.error(message)
   } finally {
     isFetching.value = false
     loading.value = false
@@ -303,6 +332,7 @@ async function fetchSnapshotData() {
 
   if (error) {
     console.error('Error fetching snapshots:', error)
+    paymentDataError.value = getErrorMessage(error, t.value('session.paymentDataLoadError'))
     return
   }
 
@@ -310,8 +340,8 @@ async function fetchSnapshotData() {
     ...s,
     display_name: s.member?.display_name || t.value('common.unknown'), // Need to add 'unknown' to messages.ts
   })) as (CostSnapshot & { display_name: string })[]
-
   sortedSnapshots.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+  snapshots.value = sortedSnapshots
   snapshots.value = sortedSnapshots
 }
 
@@ -322,6 +352,7 @@ async function finalizeSession() {
 
   try {
     finalizeLoading.value = true
+    actionError.value = ''
     const { error } = await supabase.rpc('finalize_session', { p_session_id: sessionId })
 
     if (error) throw error
@@ -330,7 +361,9 @@ async function finalizeSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error finalizing session:', error)
-    toast.error(error.message || t.value('session.finalizeError'))
+    const message = error.message || t.value('session.finalizeError')
+    actionError.value = message
+    toast.error(message)
   } finally {
     finalizeLoading.value = false
   }
@@ -343,6 +376,7 @@ async function cancelSession() {
   if (!confirm(t.value('session.cancelConfirm'))) return
 
   try {
+    actionError.value = ''
     const { error } = await supabase
       .from('sessions')
       .update({ status: 'cancelled' })
@@ -353,7 +387,9 @@ async function cancelSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error cancelling session:', error)
-    toast.error(error.message || t.value('session.cancelError'))
+    const message = error.message || t.value('session.cancelError')
+    actionError.value = message
+    toast.error(message)
   }
 }
 
@@ -375,6 +411,7 @@ async function saveSession() {
 
   try {
     isSavingSession.value = true
+    actionError.value = ''
     const { error } = await supabase
       .from('sessions')
       .update({
@@ -393,7 +430,9 @@ async function saveSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error updating session:', error)
-    toast.error(error.message || t.value('session.updateError'))
+    const message = error.message || t.value('session.updateError')
+    actionError.value = message
+    toast.error(message)
   } finally {
     isSavingSession.value = false
   }
@@ -405,6 +444,7 @@ async function registerMembers() {
 
   try {
     isRegistering.value = true
+    actionError.value = ''
 
     // Call RPC for each selected member
     const promises = selectedMemberIds.value.map((memberId) =>
@@ -419,6 +459,7 @@ async function registerMembers() {
 
     if (errors.length > 0) {
       console.error('Some registrations failed:', errors)
+      actionError.value = t.value('toast.registrationPartialFailure')
       toast.error(t.value('toast.registrationPartialFailure'))
     } else {
       toast.success(t.value('toast.memberRegistered', { count: selectedMemberIds.value.length }))
@@ -428,9 +469,10 @@ async function registerMembers() {
     showMemberDropdown.value = false
     await fetchData(true)
   } catch (error: any) {
-    toast.error(
-      error.message || t.value('toast.error', { message: t.value('session.registerError') }),
-    )
+    const message =
+      error.message || t.value('toast.error', { message: t.value('session.registerError') })
+    actionError.value = message
+    toast.error(message)
   } finally {
     isRegistering.value = false
   }
@@ -441,6 +483,7 @@ async function removeRegistration(regId: string, name: string) {
   if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
+    actionError.value = ''
     const { error } = await supabase.from('session_registrations').delete().eq('id', regId)
 
     if (error) throw error
@@ -448,17 +491,22 @@ async function removeRegistration(regId: string, name: string) {
     toast.success(t.value('toast.registrationRemoved'))
     await fetchData(true)
   } catch (error: any) {
-    toast.error(error.message || t.value('session.removeError'))
+    const message = error.message || t.value('session.removeError')
+    actionError.value = message
+    toast.error(message)
   }
 }
 
 async function fetchCosts() {
   const { data, error } = await supabase.rpc('calculate_session_costs', { p_session_id: sessionId })
-  if (!error && data) {
-    const sortedCosts = [...data] as MemberCost[]
-    sortedCosts.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
-    costs.value = sortedCosts
+  if (error) {
+    console.error('Error fetching costs:', error)
+    paymentDataError.value = getErrorMessage(error, t.value('session.paymentDataLoadError'))
+    return
   }
+  const sortedCosts = [...(data || [])] as MemberCost[]
+  sortedCosts.sort((a, b) => a.display_name.localeCompare(b.display_name, 'vi'))
+  costs.value = sortedCosts
 }
 
 async function togglePresence(memberId: string, intervalId: string) {
@@ -492,7 +540,11 @@ async function togglePresence(memberId: string, intervalId: string) {
       presence.value[memberId][intervalId] = !newValue
     }
     console.error('Error toggling presence:', error)
+    const message = getErrorMessage(error, t.value('session.presenceUpdateError'))
+    actionError.value = message
+    toast.error(message)
   } else {
+    actionError.value = ''
     // Recalculate costs is handled by realtime subscription or manual refresh,
     // but to be snappy we can call it here too.
     // However, let's rely on the method called after fetch or realtime for now to avoid race conditions.
@@ -517,7 +569,11 @@ async function toggleAbsent(reg: SessionRegistration) {
   if (error) {
     reg.is_registered_not_attended = !newValue
     console.error('Error updating status:', error)
+    const message = getErrorMessage(error, t.value('session.absentUpdateError'))
+    actionError.value = message
+    toast.error(message)
   } else {
+    actionError.value = ''
     await fetchCosts()
   }
 }
@@ -599,6 +655,7 @@ async function handleCreateGroupPayment() {
 
   try {
     isCreatingGroupPayment.value = true
+    actionError.value = ''
     const { data, error } = await supabase.rpc('create_group_payment', {
       p_snapshot_ids: selectedSnapshotIds.value,
     })
@@ -622,7 +679,9 @@ async function handleCreateGroupPayment() {
     showQRModal.value = true
   } catch (error: any) {
     console.error('Error creating group payment:', error)
-    toast.error(error.message || t.value('session.finalizeError'))
+    const message = error.message || t.value('session.finalizeError')
+    actionError.value = message
+    toast.error(message)
   } finally {
     isCreatingGroupPayment.value = false
   }
@@ -725,7 +784,41 @@ onUnmounted(() => {
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
     </div>
 
+    <div
+      v-else-if="pageError"
+      class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+      role="alert"
+      aria-live="polite"
+    >
+      <p class="font-bold">{{ pageError }}</p>
+      <button
+        type="button"
+        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+        @click="() => fetchData()"
+      >
+        {{ t('session.refreshSession') }}
+      </button>
+    </div>
+
     <div v-else-if="session" class="space-y-4">
+      <div
+        v-if="pageError || actionError || paymentDataError"
+        class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+        role="alert"
+        aria-live="polite"
+      >
+        <p v-if="pageError" class="font-bold">{{ pageError }}</p>
+        <p v-if="actionError" class="font-bold">{{ actionError }}</p>
+        <p v-if="paymentDataError" class="font-bold">{{ paymentDataError }}</p>
+        <button
+          type="button"
+          class="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 transition hover:bg-red-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+          @click="() => fetchData()"
+        >
+          {{ t('session.refreshSession') }}
+        </button>
+      </div>
+
       <section
           id="overview-section"
           class="scroll-mt-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 md:scroll-mt-24"
@@ -754,8 +847,13 @@ onUnmounted(() => {
         <div v-if="isEditingSession && authStore.isAdmin" class="space-y-4">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('session.editSession') }}</h2>
-            <button @click="isEditingSession = false" class="text-gray-400 hover:text-gray-600">
-              <X class="w-5 h-5" />
+            <button
+              type="button"
+              @click="isEditingSession = false"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              :aria-label="t('common.cancel')"
+            >
+              <X class="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -808,15 +906,17 @@ onUnmounted(() => {
           </div>
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
             <button
+              type="button"
               @click="isEditingSession = false"
-              class="px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+              class="min-h-11 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               {{ t('common.cancel') }}
             </button>
             <button
+              type="button"
               @click="saveSession"
               :disabled="isSavingSession"
-              class="flex items-center px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition disabled:opacity-50"
+              class="flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
@@ -950,12 +1050,13 @@ onUnmounted(() => {
           class="px-6 py-4 border-b border-gray-100 bg-gray-50"
         >
           <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('session.attendance') }}</h2>
-          <p v-if="attendanceLockMessage" class="mt-1 text-sm text-gray-600">
-            <Lock class="inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
-            {{
-              attendanceLockMessage
-            }}
-          </p>
+          <span
+            v-if="attendanceLockMessage"
+            class="mt-2 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-bold text-gray-700"
+          >
+            <Lock class="mr-1.5 h-4 w-4 text-gray-400" aria-hidden="true" />
+            {{ t('session.lockedStatusLabel') }}
+          </span>
         </div>
 
         <!-- Add Members to Session -->
@@ -1025,10 +1126,6 @@ onUnmounted(() => {
               </button>
             </div>
           </div>
-          <div v-else-if="attendanceLockMessage" class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
-            <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
-            {{ attendanceLockMessage }}
-          </div>
         </div>
         <div class="space-y-4 p-4 md:hidden">
           <div
@@ -1071,7 +1168,7 @@ onUnmounted(() => {
               {{
                 reg.is_registered_not_attended
                   ? t('session.absent')
-                  : attendanceLockMessage
+                  : t('session.lockedStatusLabel')
               }}
             </p>
 
@@ -1632,16 +1729,20 @@ onUnmounted(() => {
                   <div class="flex flex-col gap-1.5 items-center">
                     <button
                       v-if="snapshot.status !== 'paid'"
+                      type="button"
                       @click="openPaymentQR(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 transition text-sm font-bold w-full justify-center"
+                      class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-indigo-600 px-3 py-1.5 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      :aria-label="`${t('payment.qrPay')}: ${snapshot.display_name}`"
                     >
-                      <QrCode class="w-4 h-4 mr-1.5" />
+                      <QrCode class="w-4 h-4 mr-1.5" aria-hidden="true" />
                       {{ t('payment.qrPay') }}
                     </button>
                     <button
                       v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                      type="button"
                       @click="openCashPayment(snapshot, snapshot.display_name)"
-                      class="inline-flex items-center px-3 py-1.5 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition text-sm font-bold w-full justify-center"
+                      class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-green-600 px-3 py-1.5 text-sm font-bold text-green-600 transition hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                      :aria-label="`${t('payment.cashPay')}: ${snapshot.display_name}`"
                     >
                       {{ t('payment.cashPay') }}
                     </button>

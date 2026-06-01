@@ -61,7 +61,13 @@ router.beforeEach(async (to, from, next) => {
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin)
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
+    next({
+      name: 'login',
+      query: {
+        redirect: to.fullPath,
+        reason: requiresAdmin ? 'admin' : 'auth',
+      },
+    })
     return
   }
 

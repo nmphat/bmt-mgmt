@@ -27,6 +27,11 @@ const showPaymentModal = ref(false)
 const selectedSnapshot = ref<any>(null) // using any to bypass type mismatch if needed, or cast
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
 const sessionIntervalsMap = ref<Record<string, string>>({}) // snapshot_id -> time string
+const showAllMobileSessions = ref(false)
+const mobileSessionLimit = 4
+const visibleMobileSessions = computed(() =>
+  showAllMobileSessions.value ? sessions.value : sessions.value.slice(0, mobileSessionLimit),
+)
 
 async function fetchMemberDetails() {
   try {
@@ -248,10 +253,12 @@ onMounted(fetchMemberDetails)
     <!-- Header -->
     <div class="flex items-center mb-6">
       <button
+        type="button"
         @click="router.push('/')"
-        class="mr-4 p-2 rounded-full hover:bg-gray-100 transition text-gray-500"
+        class="mr-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :aria-label="t('common.backToHome')"
       >
-        <ArrowLeft class="w-6 h-6" />
+        <ArrowLeft class="w-6 h-6" aria-hidden="true" />
       </button>
       <div>
         <h1 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ memberName }}</h1>
@@ -278,10 +285,12 @@ onMounted(fetchMemberDetails)
       </div>
       <button
         v-if="totalDebt > 0"
+        type="button"
         @click="handlePayAll"
-        class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition flex items-center font-bold"
+        class="flex min-h-11 items-center rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white shadow transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        :aria-label="`${t('debt.payAll')}: ${memberName}`"
       >
-        <CreditCard class="w-5 h-5 mr-2" />
+        <CreditCard class="w-5 h-5 mr-2" aria-hidden="true" />
         {{ t('debt.payAll') }}
       </button>
     </div>
@@ -297,7 +306,7 @@ onMounted(fetchMemberDetails)
             {{ t('debt.emptyBody') }}
           </div>
           <article
-            v-for="session in sessions"
+            v-for="session in visibleMobileSessions"
             :key="session.snapshot_id"
             class="group cursor-pointer space-y-4 p-4 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-indigo-600"
             role="link"
@@ -367,15 +376,30 @@ onMounted(fetchMemberDetails)
             <div class="flex justify-end">
               <button
                 v-if="session.status !== 'paid'"
+                type="button"
                 @click.stop="handleSinglePay(session)"
                 class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 :title="t('payment.scanQR')"
+                :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
               >
-                <QrCode class="w-5 h-5" />
+                <QrCode class="w-5 h-5" aria-hidden="true" />
                 {{ t('debt.createPaymentQR') }}
               </button>
             </div>
           </article>
+          <div v-if="sessions.length > mobileSessionLimit" class="p-4">
+            <button
+              type="button"
+              class="flex min-h-11 w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              @click="showAllMobileSessions = !showAllMobileSessions"
+            >
+              {{
+                showAllMobileSessions
+                  ? t('debt.showFewerSessions')
+                  : t('debt.showMoreSessions', { count: sessions.length - mobileSessionLimit })
+              }}
+            </button>
+          </div>
         </div>
         <div class="hidden overflow-x-auto md:block">
           <table class="min-w-full divide-y divide-gray-200">
@@ -484,11 +508,13 @@ onMounted(fetchMemberDetails)
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold">
                   <button
                     v-if="session.status !== 'paid'"
+                    type="button"
                     @click.stop="handleSinglePay(session)"
-                    class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-full hover:bg-indigo-100 transition"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-indigo-50 p-2 text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     :title="t('payment.scanQR')"
+                    :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
                   >
-                    <QrCode class="w-5 h-5" />
+                    <QrCode class="w-5 h-5" aria-hidden="true" />
                   </button>
                 </td>
               </tr>
