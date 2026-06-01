@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Open Design review packet imported into project bmt-ui-review-20260601-0753
-last_updated: "2026-06-01T14:53:38+07:00"
-last_activity: 2026-06-01 -- imported Open Design UI review packet via daemon API on port 17456
+stopped_at: Open Design review packet imported and preview-verified
+last_updated: "2026-06-01T14:56:49+07:00"
+last_activity: 2026-06-01 -- verified imported Open Design UI review preview renders the 15/15 gallery
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review packet imported
-Last activity: 2026-06-01 -- imported Open Design UI review packet via daemon API on port 17456
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review packet imported and preview-verified
+Last activity: 2026-06-01 -- verified imported Open Design UI review preview renders the 15/15 gallery
 
 Progress: ██████████ 100%
 
@@ -151,7 +151,7 @@ Known follow-up notes:
 - Phase 3 security gate completed on 2026-06-01: `03-SECURITY.md` has `status: verified`, `threats_open: 0`, 12/12 plan-time threats closed, and source/type/build evidence for route/admin gates, Supabase RPC contracts, member CRUD guards, and payment modal semantics.
 - Git remote `origin` is now SSH: `git@github.com:nmphat/bmt-mgmt.git`.
 - Open Design daemon is running at `http://127.0.0.1:17456` with web UI `http://127.0.0.1:17573`. The MCP tool wrapper still reports `http://127.0.0.1:7456` unreachable, so import was done through the daemon API at `17456`.
-- Open Design UI review packet was imported into project `bmt-ui-review-20260601-0753` (`badminton-mgmt UI review 2026-06-01`) with 21 files. Web project URL: `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`. Daemon preview URL: `http://127.0.0.1:17456/api/projects/bmt-ui-review-20260601-0753/preview/35c911bd-19f8-421c-95ff-8e94b6a76b6a/index.html`. Source packet remains under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601`.
+- Open Design UI review packet was imported into project `bmt-ui-review-20260601-0753` (`badminton-mgmt UI review 2026-06-01`) with 21 files. Web project URL: `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`. Daemon preview URL: `http://127.0.0.1:17456/api/projects/bmt-ui-review-20260601-0753/preview/35c911bd-19f8-421c-95ff-8e94b6a76b6a/index.html`. Direct preview was browser_harness verified and screenshot evidence is `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/verification/open-design-direct-preview-updated.png`. Source packet remains under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601`.
 
 ### Quick Tasks Completed
 
@@ -162,7 +162,7 @@ Known follow-up notes:
 
 ## Session Continuity
 
-Last session: 2026-06-01T14:53:38+07:00
-Stopped at: Open Design review packet imported into project bmt-ui-review-20260601-0753; Git origin uses SSH
+Last session: 2026-06-01T14:56:49+07:00
+Stopped at: Open Design review packet imported and preview-verified; Git origin uses SSH
 Resume file: .planning/HANDOFF.json
 Next command: ask user for next action; recommended open/review `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`, configure MCP wrapper to use daemon `17456` if tool-level Open Design access is required, or run `/gsd-complete-milestone`
