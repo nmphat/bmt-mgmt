@@ -497,9 +497,6 @@ async function fetchCosts() {
 async function togglePresence(memberId: string, intervalId: string) {
   if (!isSessionEditable.value) return
 
-  const registration = registrations.value.find((r) => r.member_id === memberId)
-  if (registration?.is_registered_not_attended === true) return
-
   const currentMemberPresence = presence.value[memberId]
   if (!currentMemberPresence) return
 
@@ -541,18 +538,26 @@ async function togglePresence(memberId: string, intervalId: string) {
 async function toggleAbsent(reg: SessionRegistration) {
   if (!isSessionEditable.value) return
 
-  const newValue = !reg.is_registered_not_attended
+  const previousPresence = { ...(presence.value[reg.member_id] ?? {}) }
+  const rows = intervals.value.map((interval) => ({
+    interval_id: interval.id,
+    member_id: reg.member_id,
+    is_present: false,
+  }))
 
-  // Optimistic update
-  reg.is_registered_not_attended = newValue
+  if (presence.value[reg.member_id]) {
+    for (const interval of intervals.value) {
+      presence.value[reg.member_id]![interval.id] = false
+    }
+  }
 
-  const { error } = await supabase
-    .from('session_registrations')
-    .update({ is_registered_not_attended: newValue })
-    .eq('id', reg.id)
+  const { error } =
+    rows.length > 0
+      ? await supabase.from('interval_presence').upsert(rows, { onConflict: 'interval_id, member_id' })
+      : { error: null }
 
   if (error) {
-    reg.is_registered_not_attended = !newValue
+    presence.value[reg.member_id] = previousPresence
     console.error('Error updating status:', error)
     const message = t.value('session.absentUpdateError')
     actionError.value = message
@@ -575,6 +580,9 @@ const formatTime = (isoString: string) => {
 const presentIntervalCount = (memberId: string) => {
   return Object.values(presence.value[memberId] || {}).filter(Boolean).length
 }
+
+const isRegistrationAbsent = (reg: SessionRegistration) =>
+  intervals.value.length > 0 && presentIntervalCount(reg.member_id) === 0
 
 const formatSessionDate = (isoString: string) => {
   return format(new Date(isoString), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
@@ -1099,7 +1107,7 @@ onUnmounted(() => {
             v-for="reg in registrations"
             :key="reg.id"
             class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-            :class="{ 'bg-gray-50 opacity-90': reg.is_registered_not_attended }"
+            :class="{ 'bg-gray-50 opacity-90': isRegistrationAbsent(reg) }"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
@@ -1114,7 +1122,7 @@ onUnmounted(() => {
                 </p>
               </div>
               <span
-                v-if="reg.is_registered_not_attended"
+                v-if="isRegistrationAbsent(reg)"
                 class="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-600"
               >
                 {{ t('session.absent') }}
@@ -1122,12 +1130,12 @@ onUnmounted(() => {
             </div>
 
             <p
-              v-if="reg.is_registered_not_attended || attendanceLockMessage"
+              v-if="isRegistrationAbsent(reg) || attendanceLockMessage"
               class="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
             >
               <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-gray-400" aria-hidden="true" />
               {{
-                reg.is_registered_not_attended
+                isRegistrationAbsent(reg)
                   ? t('session.absent')
                   : t('session.lockedStatusLabel')
               }}
@@ -1139,11 +1147,11 @@ onUnmounted(() => {
                 @click="toggleAbsent(reg)"
                 class="flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 :class="
-                  reg.is_registered_not_attended
+                  isRegistrationAbsent(reg)
                     ? 'border-red-200 bg-red-50 text-red-700'
                     : 'border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:text-red-700'
                 "
-                :aria-pressed="reg.is_registered_not_attended ? 'true' : 'false'"
+                :aria-pressed="isRegistrationAbsent(reg) ? 'true' : 'false'"
               >
                 <UserX class="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {{ t('session.markAbsent') }}
@@ -1163,7 +1171,7 @@ onUnmounted(() => {
                 v-for="interval in intervals"
                 :key="interval.id"
                 class="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
-                :class="{ 'opacity-70': !isSessionEditable || reg.is_registered_not_attended }"
+                :class="{ 'opacity-70': !isSessionEditable }"
               >
                 <span class="text-sm font-normal text-gray-700">
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
@@ -1172,7 +1180,7 @@ onUnmounted(() => {
                   type="checkbox"
                   :checked="presence[reg.member_id]?.[interval.id] || false"
                   @change="togglePresence(reg.member_id, interval.id)"
-                  :disabled="!isSessionEditable || reg.is_registered_not_attended"
+                  :disabled="!isSessionEditable"
                   class="h-6 w-6 rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   :aria-label="`${reg.member?.display_name || t('common.member')} ${formatTime(interval.start_time)} - ${formatTime(interval.end_time)}`"
                 />
@@ -1218,7 +1226,7 @@ onUnmounted(() => {
               <tr
                 v-for="reg in registrations"
                 :key="reg.id"
-                :class="{ 'opacity-60 bg-gray-50': reg.is_registered_not_attended }"
+                :class="{ 'opacity-60 bg-gray-50': isRegistrationAbsent(reg) }"
               >
                 <td
                   class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900 border-r border-gray-200 shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
@@ -1226,7 +1234,7 @@ onUnmounted(() => {
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}
                     <span
-                      v-if="reg.is_registered_not_attended"
+                      v-if="isRegistrationAbsent(reg)"
                       class="ml-2 text-sm text-red-500 font-normal italic"
                       >({{ t('session.absent') }})</span
                     >
@@ -1253,7 +1261,7 @@ onUnmounted(() => {
                     type="button"
                     @click="toggleAbsent(reg)"
                     class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    :class="{ 'text-red-600': reg.is_registered_not_attended }"
+                    :class="{ 'text-red-600': isRegistrationAbsent(reg) }"
                     :title="t('session.markAbsentTooltip')"
                   >
                     <UserX class="w-5 h-5" />
@@ -1271,7 +1279,6 @@ onUnmounted(() => {
                       @change="togglePresence(reg.member_id, interval.id)"
                       :disabled="
                         !isSessionEditable ||
-                        reg.is_registered_not_attended ||
                         isSessionFinalized
                       "
                       class="h-6 w-6 cursor-pointer rounded border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"

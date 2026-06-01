@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: origin/master merged into UI refactor branch and smoke-tested
-last_updated: "2026-06-01T17:10:34+07:00"
-last_activity: 2026-06-01 -- origin/master merge conflicts resolved and UI refactor smoke passed 10/10
+stopped_at: mark-absent fix validated and ready for PR
+last_updated: "2026-06-01T17:19:07+07:00"
+last_activity: 2026-06-01 -- SessionDetail mark absent fixed for interval_presence-only schema and user manual test passed
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, SessionDetail bottom quick-navigation is accepted, and origin/master has been merged and smoke-tested
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, SessionDetail bottom quick-navigation is accepted, origin/master has been merged and smoke-tested, and mark absent now works with the interval_presence-only schema
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete
-Last activity: 2026-06-01 -- Merged origin/master into `feat/refactor-ui`, resolved conflicts, added union type/i18n keys for master additions, and passed `pnpm i18n:audit`, `pnpm type-check`, `pnpm build`, and 10/10 browser_harness UI smoke cases
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated
+Last activity: 2026-06-01 -- Fixed SessionDetail mark absent after the merged master schema removed `session_registrations.is_registered_not_attended`; the UI now clears `interval_presence`, derives absent from zero present intervals, passed type/build/i18n/read-only browser smoke, and the user manually confirmed mutation behavior works
 
 Progress: ██████████ 100%
 
@@ -102,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 02-session-detail-task-cockpit]: Plan 02 keeps cockpit shell implementation in SessionDetailView.vue to minimize contract drift before later section-body conversions.
 - [Phase 02-session-detail-task-cockpit]: Plan 02 uses status-derived default active section with click-driven sticky mini-tabs and no new scroll observer dependency.
 - [Phase 02-session-detail-task-cockpit]: 2026-06-01 user visual feedback clarified the mobile quick-navigation ribbon should remain, be fixed immediately above the bottom app nav, and stay visible for one-handed use. Subjective UI feedback requires confirming the desired approach before removing/restructuring UI.
+- [Phase 02-session-detail-task-cockpit]: 2026-06-01 post-merge schema fix changes mark absent to use `interval_presence` as the only source of truth: clearing all presence rows marks a registered member absent, and checking any interval is the undo path. The removed `session_registrations.is_registered_not_attended` column must not be referenced in source.
 - [Phase 02-session-detail-task-cockpit]: Plan 02 preserves existing sessions.update/finalize_session handlers and centralized isSessionEditable gates while moving controls into Overview.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 keeps attendance section work in SessionDetailView.vue to avoid behavior drift in the highest-risk attendance surface.
 - [Phase 02-session-detail-task-cockpit]: Plan 03 adds mobile attendance cards as an additive layout while preserving the desktop interval matrix.
