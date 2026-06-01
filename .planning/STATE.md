@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Open Design fix-before-archive remediation applied and targeted smoke passed
-last_updated: "2026-06-01T15:25:00+07:00"
-last_activity: 2026-06-01 -- Open Design fix-before-archive findings remediated with browser_harness evidence
+stopped_at: Open Design remediation re-review completed with needs-more-evidence verdict
+last_updated: "2026-06-01T15:45:00+07:00"
+last_activity: 2026-06-01 -- Open Design re-review scored 16/24 and identified two evidence-only archive gates
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is complete, and fix-before-archive UI findings are remediated
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is complete, fix-before-archive UI findings are remediated, and Open Design re-review now only blocks on evidence-only archive gates
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review completed with fix-before-archive verdict; remediation source fixes and targeted browser_harness evidence completed
-Last activity: 2026-06-01 -- Open Design fix-before-archive findings remediated; targeted browser_harness smoke passed 5/5 and evidence was uploaded to Open Design remediation-evidence/
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design review completed, remediation applied, and re-review returned needs-more-evidence at 16/24
+Last activity: 2026-06-01 -- Open Design remediation re-review run `95acc6cc-0b43-496d-99df-1859669df6d2` succeeded; remaining archive gates are typography evidence and SessionDetailView failure-state evidence
 
 Progress: ██████████ 100%
 
@@ -128,7 +128,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Optional: rerun Open Design review to confirm the remediation score before archive.
+- Add typography source/computed-style evidence proving 16px base and 14/16/20/32px scale across reviewed routes.
+- Add production-safe or mocked `SessionDetailView` fetch/action/payment failure evidence showing visible errors and retry/recovery affordances.
 - Optional: full authenticated admin mutation smoke still requires explicit admin credentials and preferably a dev/test branch.
 
 ### Blockers/Concerns
@@ -155,6 +156,7 @@ Known follow-up notes:
 - Open Design UI review packet was imported into project `bmt-ui-review-20260601-0753` (`badminton-mgmt UI review 2026-06-01`) with 21 files. Web project URL: `http://127.0.0.1:17573/projects/bmt-ui-review-20260601-0753`. Daemon preview URL: `http://127.0.0.1:17456/api/projects/bmt-ui-review-20260601-0753/preview/35c911bd-19f8-421c-95ff-8e94b6a76b6a/index.html`. Direct preview was browser_harness verified and screenshot evidence is `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/verification/open-design-direct-preview-updated.png`. Source packet remains under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601`.
 - Open Design review run: Claude attempt `81012363-c29f-4168-acad-2bdf7ad8e2b4` failed with `AGENT_AUTH_REQUIRED`; Copilot retry `95b5c036-9bdd-46c5-840d-fe614a3d0a17` succeeded. Review outputs were copied to `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW.md` and `review-findings.json`. Verdict: `fix-before-archive`, score 14/24, top findings: repeated mobile locked-state messaging, compact/icon-only tap targets/accessibility, SessionDetailView error feedback, typography token drift, dense mobile card stacks, generic auth guard login copy, and missing non-mutating admin/payment mutation evidence.
 - Open Design fix-before-archive remediation completed on 2026-06-01: `SessionDetailView.vue` now uses one full locked-session banner plus compact locked chips, adds inline retryable page/action/payment error feedback, and surfaces attendance mutation failures through toast + inline alerts; `MemberDetailView.vue` adds 44px accessible compact controls and collapses mobile history after four sessions; `/create-session` and `/settings` guest redirects preserve the attempted route and show route-specific login copy; global typography tokens were normalized to 16px base. Verification passed with `pnpm type-check`, `pnpm build`, and targeted browser_harness smoke 5/5. Evidence and screenshots are under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/remediation-evidence` and were uploaded into Open Design project `bmt-ui-review-20260601-0753` under `remediation-evidence/`.
+- Open Design remediation re-review completed on 2026-06-01: Copilot run `95acc6cc-0b43-496d-99df-1859669df6d2` succeeded and produced `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/open-design-ui-review-20260601/OPEN-DESIGN-UI-REVIEW-rerun.md` plus `review-findings-rerun.json`. Verdict: `needs-more-evidence`, score 16/24. Cleared: repeated locked-state messaging, reviewed member-detail QR tap targets, mobile member history density, and auth guard route context. Remaining archive gates are evidence-only: typography source/computed metrics and production-safe or mocked `SessionDetailView` fetch/action/payment failure-state evidence.
 
 ### Quick Tasks Completed
 
@@ -165,7 +167,7 @@ Known follow-up notes:
 
 ## Session Continuity
 
-Last session: 2026-06-01T15:25:00+07:00
-Stopped at: Open Design fix-before-archive remediation complete; targeted browser_harness evidence passed 5/5
+Last session: 2026-06-01T15:45:00+07:00
+Stopped at: Open Design remediation re-review complete; verdict needs-more-evidence, score 16/24
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended rerun Open Design review to confirm the remediation score, or explicitly proceed to `/gsd-complete-milestone`
+Next command: ask user for next action; recommended gather the two missing evidence packets then rerun Open Design review, or proceed to `/gsd-complete-milestone` only if accepting evidence-only risk
