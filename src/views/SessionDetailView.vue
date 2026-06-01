@@ -84,31 +84,9 @@ const groupPaymentData = ref<GroupPaymentData | null>(null)
 const isCreatingGroupPayment = ref(false)
 const isFetching = ref(false)
 const pendingRefresh = ref<null | 'full' | 'costs'>(null)
-const activeSection = ref('overview-section')
-const lastStatusForActiveSection = ref<string | null>(null)
 const pageError = ref('')
 const paymentDataError = ref('')
 const actionError = ref('')
-
-type SessionSectionId = 'overview-section' | 'attendance-section' | 'costs-section' | 'payments-section'
-
-const getDefaultActiveSection = (status?: string): SessionSectionId => {
-  if (status === 'open') return 'attendance-section'
-  if (status === 'waiting_for_payment' || status === 'done') return 'payments-section'
-  return 'overview-section'
-}
-
-const sectionTabs = computed<{ id: SessionSectionId; label: string; ariaLabel: string }[]>(() => [
-  { id: 'overview-section', label: t.value('session.overview'), ariaLabel: t.value('session.overview') },
-  { id: 'attendance-section', label: t.value('session.attendance'), ariaLabel: t.value('session.attendance') },
-  { id: 'costs-section', label: t.value('session.costs'), ariaLabel: t.value('session.costs') },
-  { id: 'payments-section', label: t.value('session.payments'), ariaLabel: t.value('session.payments') },
-])
-
-function scrollToSection(sectionId: SessionSectionId) {
-  activeSection.value = sectionId
-  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
 
 // Cache formatters for performance
 const currencyFormatters: { [key: string]: Intl.NumberFormat } = {
@@ -212,11 +190,6 @@ async function fetchData(refreshCostsOnly = false) {
     if (sessionError) throw sessionError
     const normalizedSession = normalizeSessionSummary(sessionData)
     session.value = normalizedSession
-
-    if (lastStatusForActiveSection.value !== normalizedSession.status) {
-      activeSection.value = getDefaultActiveSection(normalizedSession.status)
-      lastStatusForActiveSection.value = normalizedSession.status
-    }
 
     if (normalizedSession) {
       sessionForm.value = {
@@ -988,30 +961,6 @@ onUnmounted(() => {
           </div>
         </section>
 
-      <nav
-        class="sticky top-16 z-30 -mx-4 my-4 overflow-x-auto border-y border-gray-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur md:hidden"
-        :aria-label="t('session.cockpitNavLabel')"
-      >
-        <div class="flex min-w-max gap-2">
-          <button
-            v-for="tab in sectionTabs"
-            :key="tab.id"
-            type="button"
-            class="min-h-11 rounded-full px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            :class="
-              activeSection === tab.id
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700'
-            "
-            :aria-label="tab.ariaLabel"
-            :aria-controls="tab.id"
-            :aria-current="activeSection === tab.id ? 'true' : undefined"
-            @click="scrollToSection(tab.id)"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-      </nav>
       <!-- Cancelled Banner -->
       <div
         v-if="isSessionCancelled"
