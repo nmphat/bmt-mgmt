@@ -806,7 +806,7 @@ onUnmounted(() => {
 
       <section
           id="overview-section"
-          class="scroll-mt-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 md:scroll-mt-24"
+          class="session-scroll-target rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <div class="mb-4 flex items-center justify-between gap-3">
             <router-link
@@ -1006,7 +1006,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Attendance -->
-      <section id="attendance-section" class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24">
+      <section id="attendance-section" class="session-scroll-target rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50"
         >
@@ -1287,7 +1287,7 @@ onUnmounted(() => {
       <!-- Cost Summary (Live mode) -->
       <section
         id="costs-section"
-        class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24"
+        class="session-scroll-target rounded-2xl border border-gray-100 bg-white shadow-sm"
       >
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
           <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">
@@ -1440,7 +1440,7 @@ onUnmounted(() => {
       <!-- Snapshot View (Waiting/Done mode) -->
       <section
         id="payments-section"
-        class="scroll-mt-32 rounded-2xl border border-gray-100 bg-white shadow-sm md:scroll-mt-24"
+        class="session-scroll-target rounded-2xl border border-gray-100 bg-white shadow-sm"
       >
         <div
           class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
@@ -1831,6 +1831,10 @@ onUnmounted(() => {
   bottom: calc(65px + max(8px, env(safe-area-inset-bottom)));
 }
 
+.session-scroll-target {
+  scroll-margin-top: 57px;
+}
+
 .session-group-payment-bar {
   bottom: calc(135px + max(8px, env(safe-area-inset-bottom)));
   width: calc(100% - 2rem);
@@ -1843,6 +1847,10 @@ onUnmounted(() => {
 
   .session-group-payment-bar {
     bottom: 2rem;
+  }
+
+  .session-scroll-target {
+    scroll-margin-top: 6rem;
   }
 }
 </style>

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: SessionDetail quick-navigation ribbon moved above mobile bottom nav
-last_updated: "2026-06-01T16:19:41+07:00"
-last_activity: 2026-06-01 -- SessionDetail mobile quick-navigation ribbon fixed above bottom app nav for one-handed use
+stopped_at: SessionDetail quick-navigation scroll offset tightened under sticky header
+last_updated: "2026-06-01T16:23:14+07:00"
+last_activity: 2026-06-01 -- SessionDetail bottom quick-nav clicks now land sections immediately under the header
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, and the SessionDetail mobile quick-navigation ribbon is fixed above the bottom app nav for one-handed use
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, and the SessionDetail mobile quick-navigation ribbon is fixed above the bottom app nav with tight section scroll offsets
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; SessionDetail quick-navigation ribbon bottom placement complete
-Last activity: 2026-06-01 -- Moved the SessionDetail mobile quick-navigation ribbon to a fixed position immediately above the bottom app nav; `pnpm type-check`, `pnpm build`, and browser_harness evidence passed
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; SessionDetail quick-navigation ribbon bottom placement and scroll offset complete
+Last activity: 2026-06-01 -- Tightened mobile quick-nav section scroll offsets so target sections land immediately under the sticky app header; `pnpm type-check`, `pnpm build`, and browser_harness evidence passed
 
 Progress: ██████████ 100%
 
