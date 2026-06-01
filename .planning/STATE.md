@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: DB-backed bank settings moved to Settings
-last_updated: "2026-05-27T08:49:43.547Z"
-last_activity: 2026-05-27 -- bank config moved from hardcoded/profile-style setup into admin Settings backed by public.bank_config
+stopped_at: Quick task 260601-nav completed: member detail sessions link to session detail
+last_updated: "2026-06-01T14:34:00+07:00"
+last_activity: 2026-06-01 -- completed quick task 260601-nav: member detail session history now navigates to session detail on card/row click
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, and DB-backed bank settings restored
+**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, and member detail session history links restored
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed
-Last activity: 2026-05-27 -- bank config moved from hardcoded/profile-style setup into admin Settings backed by public.bank_config
+Status: Milestone complete; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete
+Last activity: 2026-06-01 -- completed quick task 260601-nav: member detail session history now navigates to session detail on card/row click
 
 Progress: ██████████ 100%
 
@@ -145,16 +145,21 @@ Known follow-up gate:
 - Mobile debt/QR feedback fixed in `7a1ad79`: debt cards show full member names, QR CTA labels are compact for iPhone SE, and group QR polling checks `snapshot_ids` instead of group codes so empty results stay pending. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-home-feedback-fix`.
 - Settings route fixed in `5e890b3`: admin menu now opens `/settings`, unauthenticated access redirects to `/login`, the settings page displays payment QR config, and VietQR generation uses `TPB`/TPBank. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-settings-fix`.
 - Bank config moved to DB-backed Settings in `841cfac`: `src/stores/bankConfig.ts` reads/writes `public.bank_config`, Settings supports add/set-default/delete, QR modal uses the active DB config, and fallback/seed is TPB `10003392871` / `CLB CAU LONG BMT`. Supabase migration `restore_bank_config_settings` seeded TPB active + MB inactive and changed `bank_config` RLS to public read/admin write. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/07dceea9-e423-4717-900e-03af338018ed/files/browser-harness-20260527-bank-config-settings`.
+- Browser harness MCP checked on 2026-06-01: `browser_harness run` is operational; `browser_harness doctor` initially reported daemon/connection failures, then passed daemon + active browser connection after reload/run. Optional `profile-use` and `BROWSER_USE_API_KEY` remain unavailable and are only needed for cloud/profile sync.
+- Smoke test cases and categorized screenshots captured on 2026-06-01: 15/15 passed using CDP certificate bypass because initial Supabase REST calls failed with `ERR_CERT_AUTHORITY_INVALID`. Evidence is under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/browser-harness-20260601-smoke` with `TEST-CASES.md`, `manifest.json`, and category folders `01-public-debt` through `07-auth-admin-guards`.
+- 2026-06-01 smoke policy: production-data safety preserved by not executing admin mutations, manual payments, session mutations, or group QR creation; admin-only create/settings were covered by guest guards, group payment by selection bar, and single QR by existing member snapshot modal.
+- Quick task `260601-nav` fixed member detail session history navigation in `1c4f7a4`: mobile cards and desktop rows on `/member/:id` now open `/session/:session_id`, while QR buttons stop propagation and still open the payment modal. Browser_harness evidence is under `/home/phatngo/.copilot/session-state/2d00395f-5b2a-4898-a036-90f73efbadd6/files/member-detail-session-nav-20260601`.
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260525-m9g | Browser harness smoke test, cert bypass, and mobile/desktop screenshots for `http://localhost:5173/`. | 2026-05-25 | dfa6974 | [260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing](./quick/260525-m9g-h-y-ki-m-tra-mcp-harness-browser-testing/) |
+| 260601-nav | Member detail session history navigates to session detail when clicking a session. | 2026-06-01 | 1c4f7a4 | [260601-nav-member-detail-session-navigation](./quick/260601-nav-member-detail-session-navigation/) |
 
 ## Session Continuity
 
-Last session: 2026-05-27T08:49:43.547Z
-Stopped at: DB-backed bank settings moved to Settings
+Last session: 2026-06-01T14:34:00+07:00
+Stopped at: Quick task 260601-nav complete; member detail session history links to session detail
 Resume file: .planning/HANDOFF.json
-Next command: ask user for next action; recommended `/gsd-secure-phase 03`
+Next command: ask user for next action; recommended `/gsd-secure-phase 03`, or provide admin credentials/dev branch if full authenticated mutation smoke is required
