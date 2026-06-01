@@ -24,7 +24,6 @@ const newMember = ref({
   display_name: '',
   role: 'member' as 'admin' | 'member',
   is_active: true,
-  is_permanent: false,
 })
 
 async function fetchMembers() {
@@ -77,7 +76,6 @@ async function addMember() {
       display_name: '',
       role: 'member',
       is_active: true,
-      is_permanent: false,
     }
   } catch (error: any) {
     console.error('Error adding member:', error)
@@ -127,7 +125,6 @@ async function saveEdit(id: string) {
       display_name: editForm.value.display_name,
       role: editForm.value.role,
       is_active: editForm.value.is_active,
-      is_permanent: editForm.value.is_permanent,
       updated_at: new Date().toISOString(),
     }
 
@@ -214,14 +211,6 @@ onMounted(fetchMembers)
               class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-2"
             />
             {{ t('member.active') }}
-          </label>
-          <label class="flex min-h-11 items-center text-base text-gray-700 cursor-pointer">
-            <input
-              v-model="newMember.is_permanent"
-              type="checkbox"
-              class="h-4 w-4 text-indigo-600 rounded border-gray-300 mr-2"
-            />
-            {{ t('member.permanent') }}
           </label>
           <label
             class="flex min-h-11 items-center text-base text-indigo-600 font-bold cursor-pointer border-l pl-4 border-gray-200"
@@ -312,16 +301,6 @@ onMounted(fetchMembers)
                 />
                 {{ t('member.active') }}
               </label>
-              <label
-                class="flex min-h-11 items-center rounded-xl border border-gray-200 bg-white px-3 text-base text-gray-700"
-              >
-                <input
-                  v-model="editForm.is_permanent"
-                  type="checkbox"
-                  class="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                {{ t('member.permanent') }}
-              </label>
             </div>
 
             <div class="grid grid-cols-2 gap-2">
@@ -372,20 +351,6 @@ onMounted(fetchMembers)
               >
                 {{
                   member.is_active ? t('member.activeStatus') : t('member.inactiveStatus')
-                }}
-              </span>
-              <span
-                :class="[
-                  'rounded-full px-3 py-1 text-sm font-bold',
-                  member.is_permanent
-                    ? 'bg-indigo-100 text-indigo-800'
-                    : 'bg-gray-100 text-gray-700',
-                ]"
-              >
-                {{
-                  member.is_permanent
-                    ? t('member.permanentStatus')
-                    : t('member.temporaryStatus')
                 }}
               </span>
             </div>
@@ -449,12 +414,6 @@ onMounted(fetchMembers)
               </th>
               <th
                 scope="col"
-                class="px-6 py-3 text-center text-sm font-bold text-gray-500 uppercase tracking-wider"
-              >
-                {{ t('member.permanent') }}
-              </th>
-              <th
-                scope="col"
                 class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
               >
                 {{ t('common.actions') }}
@@ -513,21 +472,6 @@ onMounted(fetchMembers)
                 <div v-else>
                   <Check v-if="member.is_active" class="w-5 h-5 text-green-500 mx-auto" />
                   <X v-else class="w-5 h-5 text-gray-300 mx-auto" />
-                </div>
-              </td>
-
-              <!-- Is Permanent -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-base text-gray-500">
-                <div v-if="editingMemberId === member.id" class="flex justify-center">
-                  <input
-                    v-model="editForm.is_permanent"
-                    type="checkbox"
-                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-                  />
-                </div>
-                <div v-else>
-                  <Check v-if="member.is_permanent" class="w-5 h-5 text-indigo-500 mx-auto" />
-                  <span v-else class="text-gray-300">-</span>
                 </div>
               </td>
 

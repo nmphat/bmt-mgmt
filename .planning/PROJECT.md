@@ -29,9 +29,9 @@ Members and guests can understand what they owe and pay it quickly, while admins
 
 - ✓ Guests can view the debt-focused home page and member debt summaries without logging in — existing `/` route and `view_member_debt_summary` usage.
 - ✓ Guests and members can open member debt history and create QR payment flows for single or grouped unpaid items — existing `/member/:id`, `PaymentQRModal`, and `create_group_payment` usage.
-- ✓ Authenticated admins can view sessions, create sessions through `create_session_with_intervals`, and open session detail pages — existing `/sessions`, `/create-session`, and `/session/:id` routes.
+- ✓ Authenticated admins can view sessions, create sessions through `create_session_with_bookings`, and open session detail pages — existing `/sessions`, `/create-session`, and `/session/:id` routes.
 - ✓ Session detail supports interval attendance, adding/removing registered members, registered-but-absent marking, live cost summaries from `calculate_session_costs`, realtime updates, session editing, cancellation, finalization, QR payments, group payments, and manual cash payments.
-- ✓ Admins can add, edit, and delete members, including role, active, and permanent flags.
+- ✓ Admins can add, edit, and delete members, including role and active flags.
 - ✓ The app supports Vietnamese and English labels through the language store and `src/locales/messages.ts`.
 - ✓ Phase 1 validated the mobile shell, debt-first homepage/member debt flows, QR payment foundation, auth/header/language preservation, and initial no-regression guardrails.
 - ✓ Phase 2 validated the session detail mobile task cockpit for overview, attendance, costs, and payments while preserving session operations, realtime/polling, snapshots, QR/group/manual payments, and public read-only access.

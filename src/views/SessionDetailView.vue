@@ -151,7 +151,8 @@ const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary =>
 const sessionForm = ref({
   title: '',
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
-  court_fee_total: 0,
+  price_per_hour: 0,
+  court_fee_addon: 0,
   shuttle_fee_total: 0,
 })
 let realtimeChannel: RealtimeChannel | null = null
@@ -222,7 +223,8 @@ async function fetchData(refreshCostsOnly = false) {
       sessionForm.value = {
         title: normalizedSession.title,
         status: normalizedSession.status,
-        court_fee_total: normalizedSession.court_fee_total,
+        price_per_hour: normalizedSession.price_per_hour,
+        court_fee_addon: normalizedSession.court_fee_addon,
         shuttle_fee_total: normalizedSession.shuttle_fee_total,
       }
     }
@@ -403,7 +405,8 @@ async function saveSession() {
       .update({
         title: sessionForm.value.title,
         status: sessionForm.value.status,
-        court_fee_total: sessionForm.value.court_fee_total,
+        price_per_hour: sessionForm.value.price_per_hour,
+        court_fee_addon: sessionForm.value.court_fee_addon,
         shuttle_fee_total: sessionForm.value.shuttle_fee_total,
         updated_at: new Date().toISOString(),
       })
@@ -849,7 +852,7 @@ onUnmounted(() => {
               <X class="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
                 t('session.title')
@@ -876,10 +879,21 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.courtFee')
+                t('session.pricePerHour')
               }}</label>
               <input
-                v-model.number="sessionForm.court_fee_total"
+                v-model.number="sessionForm.price_per_hour"
+                type="number"
+                step="1000"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700">{{
+                t('session.courtFeeAddon')
+              }}</label>
+              <input
+                v-model.number="sessionForm.court_fee_addon"
                 type="number"
                 step="1000"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"

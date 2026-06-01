@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: v1.0 milestone audit found blockers after PR merge
-last_updated: "2026-06-01T17:55:00+07:00"
-last_activity: 2026-06-01 -- PR #2 merged before post-merge audit commits; audit found v1.0 blockers on feat/refactor-ui
+stopped_at: v1.0 audit gaps closed on fix branch
+last_updated: "2026-06-01T18:00:55+07:00"
+last_activity: 2026-06-01 -- fix/v1-audit-gaps closed all v1.0 milestone audit blockers and audit now passes
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone implementation complete, but `/gsd-audit-milestone v1.0` found blockers before archive/tag; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; post-merge audit docs are on `feat/refactor-ui` at `da0288f`
-Last activity: 2026-06-01 -- Confirmed PR #2 is merged (`origin/master` merge commit `4f0ac59`), while `.planning/v1.0-MILESTONE-AUDIT.md` and audit memory commits were created afterward on `feat/refactor-ui`; audit status remains `gaps_found` for ADMIN-02, ADMIN-03, and SESS-03
+Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`
+Last activity: 2026-06-01 -- Created `fix/v1-audit-gaps` from latest `origin/master`, cherry-picked audit docs, closed ADMIN-02/ADMIN-03/SESS-03 backend-contract gaps, passed `pnpm type-check`, `pnpm build`, `pnpm i18n:audit`, passed integration recheck, and updated `.planning/v1.0-MILESTONE-AUDIT.md` to `status: passed`
 
 Progress: ██████████ 100%
 

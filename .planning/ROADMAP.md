@@ -101,8 +101,8 @@ This is a preservation-first UI refactor:
 
 **Success Criteria** (what must be TRUE):
 
-1. User can view the sessions list read-only, navigate to session detail, and admins can create sessions through the guarded `create_session_with_intervals` flow with validation and feedback preserved.
-2. User can view the member list on mobile, and currently authorized users can add, edit, and delete members without losing role, active, permanent, create-another, loading, toast, or confirmation behavior.
+1. User can view the sessions list read-only, navigate to session detail, and admins can create sessions through the guarded `create_session_with_bookings` flow with validation and feedback preserved.
+2. User can view the member list on mobile, and currently authorized users can add, edit, and delete members without losing role, active status, create-another, loading, toast, or confirmation behavior.
 3. User can use QR and manual payment dialogs as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, payment polling, refresh behavior, or admin-only cash payment gates.
 4. User can view converted mobile card layouts without losing financial fields, status fields, route actions, or desktop-table information.
 5. Developer can complete the final no-regression pass confirming route/access behavior, Supabase contract preservation, i18n completeness, mobile safe-area behavior, and build/type-check health.
@@ -110,7 +110,7 @@ This is a preservation-first UI refactor:
 **Validation Notes**:
 
 - Preserve `/sessions` public read-only behavior, `/create-session` admin guard, `/members`, `/member/:id`, `/login`, and payment modal behavior.
-- Preserve Supabase contracts: `create_session_with_intervals`, member CRUD table behavior, payment polling/refresh behavior, and manual payment flow.
+- Preserve Supabase contracts: `create_session_with_bookings`, member CRUD table behavior, payment polling/refresh behavior, and manual payment flow.
 - Stop ship if table-to-card layouts omit financial/status/action fields, payment sheets lose accessibility semantics, or any new UI string exists in only one locale.
 - Final validation should include no-regression guardrails from all phases.
 
@@ -186,7 +186,7 @@ The UI refactor must preserve current Supabase tables, views, RPC names, paramet
 - `view_member_debt_summary`
 - `view_member_session_details`
 - `view_session_summary`
-- `create_session_with_intervals`
+- `create_session_with_bookings`
 - `calculate_session_costs`
 - `finalize_session`
 - `add_member_to_session_full_presence`

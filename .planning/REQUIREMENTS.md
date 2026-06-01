@@ -42,8 +42,8 @@ Requirements for the Open Design-guided UI refactor. This is preservation-first:
 ### Admin and Supporting Screens
 
 - [x] **ADMIN-01**: User can view the sessions list read-only, see session cards with status/date/interval/registration counts, and navigate to session detail while create/mutation actions remain admin-only.
-- [x] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_intervals`, with end-time validation and loading/error/success feedback preserved.
-- [x] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active, permanent, and create-another behavior preserved.
+- [x] **ADMIN-02**: Admin can create a session with title, date, start time, end time, court fee, and shuttle fee through `create_session_with_bookings`, with end-time validation and loading/error/success feedback preserved.
+- [x] **ADMIN-03**: User can view the member list on mobile, and currently authorized users can add, edit, and delete members with display name, role, active status, and create-another behavior preserved.
 - [x] **ADMIN-04**: User can log in, see login errors, log out, access profile/member link, see authenticated debt badge, and use header actions after the shell refactor.
 - [x] **ADMIN-05**: User can use QR and manual payment modals as responsive mobile sheets or desktop dialogs without losing dialog semantics, close actions, QR alt text, or payment polling/refresh behavior.
 - [x] **ADMIN-06**: User can view table-to-card mobile layouts without losing financial fields, status fields, or actions that existed in desktop tables.
