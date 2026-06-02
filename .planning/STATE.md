@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: v1.0 audit gap branch pushed
-last_updated: "2026-06-01T18:05:00+07:00"
-last_activity: 2026-06-01 -- fix/v1-audit-gaps pushed with audit blockers closed
+stopped_at: follow-up PR creation blocked by GitHub auth
+last_updated: "2026-06-01T18:12:00+07:00"
+last_activity: 2026-06-01 -- attempted follow-up PR creation for fix/v1-audit-gaps; automation blocked by missing gh/token and signed-out browser
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; follow-up branch `fix/v1-audit-gaps` is pushed at `8c6a729`
-Last activity: 2026-06-01 -- Pushed `fix/v1-audit-gaps` with commit `8c6a729`; it closes ADMIN-02/ADMIN-03/SESS-03 audit gaps, preserves the audit artifact, and leaves next choice as follow-up PR, additional smoke, or `/gsd-complete-milestone v1.0`
+Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; follow-up branch `fix/v1-audit-gaps` is pushed and PR creation URL is ready
+Last activity: 2026-06-01 -- Tried to create the follow-up PR automatically, but `gh` is not installed, `GH_TOKEN`/`GITHUB_TOKEN` are not set, and browser_harness opened GitHub signed out. Manual URL: https://github.com/nmphat/bmt-mgmt/compare/master...fix/v1-audit-gaps?quick_pull=1
 
 Progress: ██████████ 100%
 
