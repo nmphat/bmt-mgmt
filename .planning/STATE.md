@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: follow-up PR creation blocked by GitHub auth
-last_updated: "2026-06-01T18:12:00+07:00"
-last_activity: 2026-06-01 -- attempted follow-up PR creation for fix/v1-audit-gaps; automation blocked by missing gh/token and signed-out browser
+stopped_at: continuing v1.0 milestone completion
+last_updated: "2026-06-02T11:00:10+07:00"
+last_activity: 2026-06-02 -- created Markdown MR description for fix/v1-audit-gaps and resumed /gsd-complete-milestone v1.0
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; follow-up branch `fix/v1-audit-gaps` is pushed and PR creation URL is ready
-Last activity: 2026-06-01 -- Tried to create the follow-up PR automatically, but `gh` is not installed, `GH_TOKEN`/`GITHUB_TOKEN` are not set, and browser_harness opened GitHub signed out. Manual URL: https://github.com/nmphat/bmt-mgmt/compare/master...fix/v1-audit-gaps?quick_pull=1
+Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; follow-up branch `fix/v1-audit-gaps` is pushed and PR creation URL is ready; MR description is saved at `.planning/mr-summary-v1-audit-gaps.md`
+Last activity: 2026-06-02 -- Created `.planning/mr-summary-v1-audit-gaps.md` for the follow-up audit-gap PR and resumed `/gsd-complete-milestone v1.0` from branch `fix/v1-audit-gaps`.
 
 Progress: ██████████ 100%
 
