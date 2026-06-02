@@ -27,6 +27,7 @@ This follow-up MR closes the v1.0 milestone audit gaps found after PR #2 was mer
   - `.planning/MILESTONES.md`
   - `.planning/RETROSPECTIVE.md`
 - Collapses `.planning/ROADMAP.md` to the shipped v1.0 archive link and evolves `.planning/PROJECT.md` to current shipped state.
+- Removes active `.planning/REQUIREMENTS.md` after archiving it so the next milestone starts with fresh requirements.
 
 ## Validation
 
