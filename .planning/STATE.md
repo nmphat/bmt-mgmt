@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-stopped_at: continuing v1.0 milestone completion
-last_updated: "2026-06-02T11:02:26+07:00"
-last_activity: 2026-06-02 -- cleaned stale quick-task plan status before v1.0 milestone archive readiness gate
+status: archived
+stopped_at: v1.0 milestone archived
+last_updated: "2026-06-02T11:10:00+07:00"
+last_activity: 2026-06-02 -- archived v1.0 milestone files, collapsed ROADMAP.md, evolved PROJECT.md, and prepared REQUIREMENTS.md removal
 progress:
   total_phases: 3
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** Members and guests can understand what they owe and pay it quickly, while admins can manage sessions without redoing spreadsheet work.
-**Current focus:** Milestone v1.0 complete — UI refactor verified, browser-tested, UI re-audited, mobile debt/QR feedback fixed, DB-backed bank settings restored, 2026-06-01 smoke screenshots captured, member detail session history links restored, Phase 3 security gate passed, Git origin uses SSH, Open Design review is ready-to-archive, SessionDetail bottom quick-navigation is accepted, origin/master has been merged and smoke-tested, and mark absent now works with the interval_presence-only schema
+**Current focus:** v1.0 archived — next step is creating a fresh milestone with `/gsd-new-milestone` after the follow-up audit-gap branch is merged or otherwise handled.
 
 ## Current Position
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: Milestone implementation complete; `/gsd-audit-milestone v1.0` now passes on branch `fix/v1-audit-gaps`; Phase 3 UI re-audit score is 19/24; DB-backed settings bank config fixed; browser_harness smoke suite passed 15/15; quick task 260601-nav complete; Phase 3 security gate passed with threats_open=0; Open Design final review is ready-to-archive at 19/24; origin/master merge and UI smoke complete; mark absent fix validated; PR #2 merged from `feat/refactor-ui` into `master` at head `3b30d02`; follow-up branch `fix/v1-audit-gaps` is pushed and PR creation URL is ready; MR description is saved at `.planning/mr-summary-v1-audit-gaps.md`
-Last activity: 2026-06-02 -- Updated `.planning/quick/260601-nav-member-detail-session-navigation/260601-nav-PLAN.md` from `status: in_progress` to `status: complete` so the quick-task artifact matches its completed summary before milestone archival.
+Status: v1.0 milestone archived on branch `fix/v1-audit-gaps`; archive files are under `.planning/milestones/`; ROADMAP.md is collapsed to a v1.0 archive link; PROJECT.md records current shipped state and next-milestone guidance; v1.0 audit passed with 29/29 requirements and 11/11 integration flows.
+Last activity: 2026-06-02 -- Created `.planning/milestones/v1.0-ROADMAP.md`, `.planning/milestones/v1.0-REQUIREMENTS.md`, `.planning/MILESTONES.md`, `.planning/RETROSPECTIVE.md`, collapsed `.planning/ROADMAP.md`, and evolved `.planning/PROJECT.md` for v1.0 closeout.
 
 Progress: ██████████ 100%
 
@@ -71,6 +71,16 @@ Progress: ██████████ 100%
 | Phase 03-admin-supporting-screens-payment-polish-regression-pass P05 | 170 | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-06-02:
+
+| Category | Item | Status |
+|----------|------|--------|
+| release-workflow | Follow-up PR creation for `fix/v1-audit-gaps` | Blocked by missing GitHub auth/CLI in this environment; manual PR URL is in `.planning/mr-summary-v1-audit-gaps.md` |
+| qa | Full authenticated admin mutation smoke | Deferred; requires admin credentials and preferably dev/test data |
+| ui-hardening | Non-color cues for dense financial rows/cards | Deferred as low-priority non-blocking UI hardening |
 
 ### Decisions
 
