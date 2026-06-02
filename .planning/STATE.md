@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: archived
 stopped_at: v1.0 milestone archived
-last_updated: "2026-06-02T11:20:00+07:00"
-last_activity: 2026-06-02 -- pushed archived milestone branch and prepared local tag v1.0 for optional push
+last_updated: "2026-06-02T11:24:00+07:00"
+last_activity: 2026-06-02 -- user approved pushing v1.0 tag; final memory commit will be tagged and pushed
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: v1.0 milestone archived on branch `fix/v1-audit-gaps`; archive files are under `.planning/milestones/`; ROADMAP.md is collapsed to a v1.0 archive link; PROJECT.md records current shipped state and next-milestone guidance; v1.0 audit passed with 29/29 requirements and 11/11 integration flows; active `.planning/REQUIREMENTS.md` is removed after archival so the next milestone starts fresh; branch is pushed; local annotated tag `v1.0` exists and still needs push confirmation.
-Last activity: 2026-06-02 -- Pushed `fix/v1-audit-gaps` with v1.0 archive artifacts and prepared local annotated tag `v1.0` for optional remote push.
+Status: v1.0 milestone archived on branch `fix/v1-audit-gaps`; archive files are under `.planning/milestones/`; ROADMAP.md is collapsed to a v1.0 archive link; PROJECT.md records current shipped state and next-milestone guidance; v1.0 audit passed with 29/29 requirements and 11/11 integration flows; active `.planning/REQUIREMENTS.md` is removed after archival so the next milestone starts fresh; branch is pushed; user approved remote tag push for `v1.0`.
+Last activity: 2026-06-02 -- User approved pushing tag `v1.0`; the tag will be retargeted to the final memory commit and pushed to origin with the branch.
 
 Progress: ██████████ 100%
 
