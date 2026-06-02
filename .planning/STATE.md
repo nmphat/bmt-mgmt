@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: archived
 stopped_at: v1.0 milestone archived
-last_updated: "2026-06-02T11:14:00+07:00"
-last_activity: 2026-06-02 -- safety-committed v1.0 archive files and removed active REQUIREMENTS.md for next milestone reset
+last_updated: "2026-06-02T11:16:00+07:00"
+last_activity: 2026-06-02 -- committed v1.0 requirements removal and created local tag v1.0
 progress:
   total_phases: 3
   completed_phases: 3
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 03 (admin/supporting-screens-payment-polish-regression-pass) — COMPLETE
 Plan: 5 of 5
-Status: v1.0 milestone archived on branch `fix/v1-audit-gaps`; archive files are under `.planning/milestones/`; ROADMAP.md is collapsed to a v1.0 archive link; PROJECT.md records current shipped state and next-milestone guidance; v1.0 audit passed with 29/29 requirements and 11/11 integration flows; active `.planning/REQUIREMENTS.md` is removed after archival so the next milestone starts fresh.
-Last activity: 2026-06-02 -- Safety-committed archive files in `e0361f2`, then removed active `.planning/REQUIREMENTS.md` with `git rm` after preserving `.planning/milestones/v1.0-REQUIREMENTS.md`.
+Status: v1.0 milestone archived on branch `fix/v1-audit-gaps`; archive files are under `.planning/milestones/`; ROADMAP.md is collapsed to a v1.0 archive link; PROJECT.md records current shipped state and next-milestone guidance; v1.0 audit passed with 29/29 requirements and 11/11 integration flows; active `.planning/REQUIREMENTS.md` is removed after archival so the next milestone starts fresh; local annotated tag `v1.0` exists and still needs push confirmation.
+Last activity: 2026-06-02 -- Safety-committed archive files in `e0361f2`, removed active `.planning/REQUIREMENTS.md` in `e8c3282`, and created local annotated tag `v1.0`.
 
 Progress: ██████████ 100%
 
