@@ -62,7 +62,6 @@ export interface Member {
   display_name: string
   role: 'admin' | 'member'
   is_active: boolean
-  is_permanent: boolean
 }
 
 export interface SessionRegistration {

@@ -43,13 +43,17 @@ async function createSession() {
 
   try {
     loading.value = true
-    const { error } = await supabase.rpc('create_session_with_intervals', {
+    const startTime = new Date(startDateTime.value).toISOString()
+    const endTime = new Date(endDateTime.value).toISOString()
+    const { error } = await supabase.rpc('create_session_with_bookings', {
       p_title: form.value.title,
-      p_start_time: new Date(startDateTime.value).toISOString(),
-      p_end_time: new Date(endDateTime.value).toISOString(),
-      p_court_fee: form.value.courtFee,
+      p_start_time: startTime,
+      p_end_time: endTime,
+      p_price_per_hour: 0,
       p_shuttle_fee: form.value.shuttleFee,
       p_created_by: authStore.user.id,
+      p_bookings: [{ court_name: 'Sân 1', start_time: startTime, end_time: endTime }],
+      p_court_fee_addon: form.value.courtFee,
     })
 
     if (error) throw error

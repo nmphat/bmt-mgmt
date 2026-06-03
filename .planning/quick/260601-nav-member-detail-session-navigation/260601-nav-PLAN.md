@@ -1,7 +1,8 @@
 ---
 quick_id: 260601-nav
-status: in_progress
+status: complete
 description: Member detail session history navigates to session detail when clicking a session
+completed_at: "2026-06-01T14:34:00+07:00"
 ---
 
 # Quick Task 260601-nav: Member detail session navigation

@@ -1,0 +1,43 @@
+# MR: Close v1.0 milestone audit backend-contract gaps
+
+Base: `master`
+Head: `fix/v1-audit-gaps`
+Compare: https://github.com/nmphat/bmt-mgmt/compare/master...fix/v1-audit-gaps?expand=1
+Manual PR URL: https://github.com/nmphat/bmt-mgmt/compare/master...fix/v1-audit-gaps?quick_pull=1
+
+## Summary
+
+This follow-up MR closes the v1.0 milestone audit gaps found after PR #2 was merged, then archives the v1.0 milestone artifacts from the gap-closure branch. It aligns the UI refactor with the current Supabase/Postgres backend contract and records the milestone as shipped.
+
+## Key changes
+
+- Replaces the retired `create_session_with_intervals` RPC call with `create_session_with_bookings` in the create-session flow.
+- Removes the retired `members.is_permanent` field from frontend member CRUD and TypeScript types.
+- Updates session edit writes to use current `sessions` table fields: `price_per_hour`, `court_fee_addon`, and `shuttle_fee_total`.
+- Preserves `court_fee_total` only as a read-model/view value, not a writable `sessions` column.
+- Archives the v1.0 milestone audit report with all three blockers closed:
+  - `ADMIN-02` create-session RPC mismatch.
+  - `ADMIN-03` member CRUD removed-column mismatch.
+  - `SESS-03` session edit non-table field mismatch.
+- Updates current planning docs to reference the current backend contract.
+- Adds milestone archive artifacts:
+  - `.planning/milestones/v1.0-ROADMAP.md`
+  - `.planning/milestones/v1.0-REQUIREMENTS.md`
+  - `.planning/milestones/v1.0-MILESTONE-AUDIT.md`
+  - `.planning/MILESTONES.md`
+  - `.planning/RETROSPECTIVE.md`
+- Collapses `.planning/ROADMAP.md` to the shipped v1.0 archive link and evolves `.planning/PROJECT.md` to current shipped state.
+- Removes active `.planning/REQUIREMENTS.md` after archiving it so the next milestone starts with fresh requirements.
+
+## Validation
+
+- `pnpm type-check`
+- `pnpm build`
+- `pnpm i18n:audit` with `MISSING_COUNT=0`
+- Scoped GSD integration recheck: `verdict: passed`
+- `.planning/milestones/v1.0-MILESTONE-AUDIT.md`: `status: passed`, requirements `29/29`, phases `3/3`, integration `11/11`, flows `11/11`
+
+## Notes
+
+- PR #2 (`feat/refactor-ui` into `master`) was already merged before the audit-gap closure branch was created, so this branch should be merged as a follow-up carrying the audit-gap closure and v1.0 archive artifacts.
+- Automatic PR creation was unavailable in the CLI environment because `gh` was not installed, GitHub token environment variables were not set, and the browser harness GitHub session was signed out.
