@@ -30,6 +30,7 @@ import {
 } from 'lucide-vue-next'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
+import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -53,6 +54,7 @@ const showMemberDropdown = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const presence = ref<Record<string, Record<string, boolean>>>({}) // memberId -> intervalId -> isPresent
 const costs = ref<MemberCost[]>([])
+const extraChargesRef = ref<InstanceType<typeof SessionExtraCharges> | null>(null)
 const getBreakdown = (memberId: string) => {
   return costs.value.find((c) => c.member_id === memberId)
 }
@@ -497,6 +499,10 @@ async function fetchCosts() {
   costs.value = sortedCosts
 }
 
+function handleExtraChargesChanged() {
+  fetchCosts()
+}
+
 async function togglePresence(memberId: string, intervalId: string) {
   if (!isSessionEditable.value) return
 
@@ -752,6 +758,19 @@ function initRealtime() {
             display_name: oldDisplayName,
           }
         }
+      },
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'session_extra_charges',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      () => {
+        extraChargesRef.value?.fetchCharges()
+        fetchCosts()
       },
     )
     .subscribe()
@@ -1371,6 +1390,16 @@ onUnmounted(() => {
                     {{ formatCurrency(cost.total_shuttle_fee) }}
                   </dd>
                 </div>
+                <div
+                  v-if="cost.total_extra_fee !== 0"
+                  class="flex justify-between gap-3 rounded-xl px-3 py-2"
+                  :class="cost.total_extra_fee > 0 ? 'bg-red-50' : 'bg-green-50'"
+                >
+                  <dt class="font-bold" :class="cost.total_extra_fee > 0 ? 'text-red-700' : 'text-green-700'">{{ t('session.extraFee') }}</dt>
+                  <dd class="font-bold tabular-nums" :class="cost.total_extra_fee > 0 ? 'text-red-600' : 'text-green-600'">
+                    {{ (cost.total_extra_fee > 0 ? '+' : '') + formatCurrency(cost.total_extra_fee) }}
+                  </dd>
+                </div>
                 <div class="flex justify-between gap-3 rounded-xl bg-green-50 px-3 py-2">
                   <dt class="font-bold text-green-800">{{ t('session.surplusFund') }}</dt>
                   <dd class="font-bold text-green-700 tabular-nums">
@@ -1415,6 +1444,12 @@ onUnmounted(() => {
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
+                >
+                  {{ t('session.extraFee') }}
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -1436,10 +1471,16 @@ onUnmounted(() => {
                 <td class="px-6 py-4 whitespace-nowrap text-base text-right text-gray-500">
                   {{ formatCurrency(cost.total_shuttle_fee) }}
                 </td>
+                <td
+                  class="px-6 py-4 whitespace-nowrap text-base text-right"
+                  :class="cost.total_extra_fee > 0 ? 'text-red-600 font-bold' : cost.total_extra_fee < 0 ? 'text-green-600 font-bold' : 'text-gray-400'"
+                >
+                  {{ cost.total_extra_fee !== 0 ? (cost.total_extra_fee > 0 ? '+' : '') + formatCurrency(cost.total_extra_fee) : '—' }}
+                </td>
               </tr>
               <!-- Surplus Row -->
               <tr class="bg-gray-50">
-                <td colspan="4" class="px-6 py-4 text-right text-base font-bold text-gray-700">
+                <td colspan="5" class="px-6 py-4 text-right text-base font-bold text-gray-700">
                   {{ t('session.surplusFund') }}
                 </td>
                 <td class="px-6 py-4 text-right text-base font-bold text-green-600">
@@ -1459,6 +1500,16 @@ onUnmounted(() => {
       </section>
 
       <!-- Snapshot View (Waiting/Done mode) -->
+      <SessionExtraCharges
+        v-if="session.status !== 'cancelled'"
+        ref="extraChargesRef"
+        :sessionId="sessionId"
+        :members="allMembers"
+        :isAdmin="authStore.isAuthenticated"
+        :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
+        @changed="handleExtraChargesChanged"
+      />
+
       <section
         id="payments-section"
         class="session-scroll-target rounded-2xl border border-gray-100 bg-white shadow-sm"
