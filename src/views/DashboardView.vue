@@ -68,7 +68,7 @@ onMounted(fetchSessions)
       <h1 class="text-[20px] font-bold leading-tight text-gray-900">{{ t('dashboard.title') }}</h1>
       <router-link
         v-if="authStore.isAdmin"
-        to="/create-session"
+        to="/create-session?from=sessions"
         class="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
         <Plus class="mr-2 h-5 w-5" />

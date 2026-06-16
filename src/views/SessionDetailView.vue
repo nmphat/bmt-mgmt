@@ -851,13 +851,14 @@ onUnmounted(() => {
           class="session-scroll-target rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <div class="mb-4 flex items-center justify-between gap-3">
-            <router-link
-              to="/"
+            <button
+              type="button"
+              @click="$router.back()"
               class="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               <ChevronLeft class="h-5 w-5" aria-hidden="true" />
-              {{ t('common.backToHome') }}
-            </router-link>
+              {{ t('common.back') }}
+            </button>
             <button
               type="button"
               @click="() => fetchData()"

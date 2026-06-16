@@ -254,9 +254,9 @@ onMounted(fetchMemberDetails)
     <div class="flex items-center mb-6">
       <button
         type="button"
-        @click="router.push('/')"
+        @click="router.back()"
         class="mr-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        :aria-label="t('common.backToHome')"
+        :aria-label="t('common.back')"
       >
         <ArrowLeft class="w-6 h-6" aria-hidden="true" />
       </button>

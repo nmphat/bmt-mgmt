@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   ChevronLeft,
   Edit,
@@ -35,6 +36,7 @@ const emit = defineEmits<{
 
 const langStore = useLangStore()
 const authStore = useAuthStore()
+const router = useRouter()
 const toast = useToast()
 const t = computed(() => langStore.t)
 
@@ -303,13 +305,13 @@ async function cancelSession() {
   <div class="bg-white rounded-lg shadow-sm p-4 md:p-6 mb-6 border border-gray-100">
     <!-- Header row: back + refresh -->
     <div class="flex items-center justify-between mb-4">
-      <router-link
-        to="/"
+      <button
+        @click="router.back()"
         class="flex items-center text-indigo-600 hover:text-indigo-800 transition text-sm"
       >
         <ChevronLeft class="w-4 h-4 mr-1" />
-        {{ t('common.backToHome') }}
-      </router-link>
+        {{ t('common.back') }}
+      </button>
       <button @click="$emit('refresh')" class="p-2 text-gray-400 hover:text-indigo-600 transition">
         <RefreshCcw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
       </button>
