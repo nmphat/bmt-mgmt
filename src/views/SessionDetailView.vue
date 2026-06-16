@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type {
   SessionSummary,
@@ -37,6 +37,7 @@ import { useToast } from 'vue-toastification'
 import type { CostSnapshot } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const langStore = useLangStore()
 const toast = useToast()
@@ -779,6 +780,16 @@ function initRealtime() {
 
 onMounted(async () => {
   await fetchData()
+
+  // Auto-open member dropdown when navigating from create-session
+  if (route.query.register === 'true' && session.value?.status === 'open' && authStore.isAdmin) {
+    showMemberDropdown.value = true
+  }
+  // Strip query param to clean URL
+  if (route.query.register) {
+    router.replace({ name: route.name as string, params: route.params })
+  }
+
   initRealtime()
   document.addEventListener('click', handleClickOutside)
   startPolling()
