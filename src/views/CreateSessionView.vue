@@ -258,7 +258,51 @@ async function createSession() {
               :key="index"
               class="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200"
             >
-              <div class="flex items-end gap-2">
+              <div class="flex items-center gap-2 sm:hidden">
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs text-gray-500 mb-1">{{
+                    t('createSession.courtName')
+                  }}</label>
+                  <input
+                    v-model="booking.court_name"
+                    type="text"
+                    class="block w-full rounded-lg border border-gray-300 text-sm px-3 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  @click="removeBooking(index)"
+                  :disabled="bookings.length <= 1"
+                  class="p-1.5 text-gray-400 hover:text-red-500 transition disabled:opacity-30 self-end mb-0.5"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2 sm:hidden">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">{{
+                    t('createSession.startTime')
+                  }}</label>
+                  <input
+                    v-model="booking.start_time"
+                    type="time"
+                    class="block w-full rounded-lg border border-gray-300 text-sm px-2 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
+                    @change="validateBookingTime(index)"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">{{
+                    t('createSession.endTime')
+                  }}</label>
+                  <input
+                    v-model="booking.end_time"
+                    type="time"
+                    class="block w-full rounded-lg border border-gray-300 text-sm px-2 py-1.5 focus:border-indigo-500 focus:ring-indigo-500"
+                    @change="validateBookingTime(index)"
+                  />
+                </div>
+              </div>
+              <div class="hidden sm:flex sm:items-end sm:gap-2">
                 <div class="flex-1 min-w-0">
                   <label class="block text-xs text-gray-500 mb-1">{{
                     t('createSession.courtName')
