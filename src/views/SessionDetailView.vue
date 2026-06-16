@@ -640,10 +640,11 @@ const surplus = computed(() => {
   if (!session.value || costs.value.length === 0) return 0
 
   const totalCollected = costs.value.reduce((sum, c) => sum + c.final_total, 0)
-  // Note: session.court_fee_total and shuttle_fee_total might be string or number depending on DB driver, usually number in JS client
+  // Exclude extra charges — they are designated expenses/refunds, not surplus
+  const totalExtra = costs.value.reduce((sum, c) => sum + c.total_extra_fee, 0)
   const totalCost = toNumber(session.value.court_fee_total) + toNumber(session.value.shuttle_fee_total)
 
-  return totalCollected - totalCost
+  return totalCollected - totalExtra - totalCost
 })
 
 const totalSelectedAmount = computed(() => {
