@@ -60,6 +60,7 @@ watch(
       amount.value = props.totalDebt
     }
   },
+  { immediate: true },
 )
 
 async function fetchSnapshots() {
