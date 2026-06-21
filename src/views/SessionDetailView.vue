@@ -469,15 +469,25 @@ async function registerMembers() {
   }
 }
 
-async function removeRegistration(regId: string, name: string) {
+async function removeRegistration(regId: string, name: string, memberId?: string) {
   if (!isSessionEditable.value) return
   if (!confirm(t.value('session.removeConfirm', { name }))) return
 
   try {
     actionError.value = ''
-    const { error } = await supabase.from('session_registrations').delete().eq('id', regId)
 
-    if (error) throw error
+    if (memberId) {
+      // Use RPC to clean up all related data (presence, charges, snapshots, registration)
+      const { error } = await supabase.rpc('remove_member_from_session', {
+        p_session_id: sessionId,
+        p_member_id: memberId,
+      })
+      if (error) throw error
+    } else {
+      // Fallback: direct delete if memberId not available
+      const { error } = await supabase.from('session_registrations').delete().eq('id', regId)
+      if (error) throw error
+    }
 
     toast.success(t.value('toast.registrationRemoved'))
     await fetchData(true)
@@ -1204,7 +1214,7 @@ onUnmounted(() => {
               </button>
               <button
                 type="button"
-                @click="removeRegistration(reg.id, reg.member?.display_name || '')"
+                @click="removeRegistration(reg.id, reg.member?.display_name || '', reg.member_id)"
                 class="flex min-h-11 items-center justify-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 <Trash2 class="mr-1.5 h-4 w-4" aria-hidden="true" />
@@ -1292,7 +1302,7 @@ onUnmounted(() => {
                 >
                   <button
                     type="button"
-                    @click="removeRegistration(reg.id, reg.member?.display_name || '')"
+                    @click="removeRegistration(reg.id, reg.member?.display_name || '', reg.member_id)"
                     class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-300 transition hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     :title="t('session.removeRegistrationTooltip')"
                   >
