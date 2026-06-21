@@ -10,11 +10,13 @@ const props = defineProps<{
   hasMore: boolean
   search: string
   errorMessage?: string
+  isAdmin?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'pay-single', memberId: string): void
   (e: 'pay-group', memberIds: string[]): void
+  (e: 'pay-cash', memberId: string): void
   (e: 'load-more'): void
   (e: 'update:search', value: string): void
 }>()
@@ -176,7 +178,7 @@ const handlePayGroup = () => {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 border-t border-gray-100 px-4 py-3">
+        <div class="grid grid-cols-3 gap-2 border-t border-gray-100 px-4 py-3">
           <router-link
             :to="`/member/${member.member_id}`"
             class="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border border-indigo-100 bg-white px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -189,6 +191,13 @@ const handlePayGroup = () => {
           >
             <QrCode class="h-4 w-4" />
             <span>{{ t('debt.createPaymentQR') }}</span>
+          </button>
+          <button
+            v-if="isAdmin"
+            @click="emit('pay-cash', member.member_id)"
+            class="inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-green-600 bg-white px-3 text-sm font-bold text-green-600 transition hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <span>{{ t('payment.cashPay') }}</span>
           </button>
         </div>
       </div>
@@ -285,6 +294,13 @@ const handlePayGroup = () => {
               >
                 <QrCode class="mr-1 h-4 w-4" />
                 {{ t('payment.qrPay') }}
+              </button>
+              <button
+                v-if="isAdmin"
+                @click="emit('pay-cash', member.member_id)"
+                class="ml-2 inline-flex items-center rounded-md border border-green-600 bg-white px-3 py-1 text-green-600 transition hover:bg-green-50 hover:text-green-900"
+              >
+                {{ t('payment.cashPay') }}
               </button>
             </td>
           </tr>
