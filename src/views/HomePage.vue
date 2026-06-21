@@ -6,10 +6,13 @@ import { useLangStore } from '@/stores/lang'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import HomeDebtTable from '@/components/HomeDebtTable.vue'
 import { useToast } from 'vue-toastification'
+import CashPaymentModal from '@/components/CashPaymentModal.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
 const toast = useToast()
+const authStore = useAuthStore()
 
 const members = ref<MemberDebtSummary[]>([])
 const loading = ref(true)
@@ -19,6 +22,8 @@ const showPaymentModal = ref(false)
 const selectedGroupPayment = ref<GroupPaymentData | null>(null)
 const debtTableKey = ref(0)
 const groupPaymentCompleted = ref(false)
+const showCashModal = ref(false)
+const selectedCashMember = ref<{ id: string; name: string; debt: number } | null>(null)
 let paymentRefreshPromise: Promise<void> | null = null
 
 // Pagination
@@ -196,6 +201,28 @@ async function handlePaymentModalClose() {
   groupPaymentCompleted.value = false
 }
 
+function handleCashPay(memberId: string) {
+  const member = members.value.find((m) => m.member_id === memberId)
+  if (!member) return
+  selectedCashMember.value = {
+    id: member.member_id,
+    name: member.display_name,
+    debt: member.total_debt,
+  }
+  showCashModal.value = true
+}
+
+function handleCashModalClose() {
+  showCashModal.value = false
+  selectedCashMember.value = null
+}
+
+async function handleCashSuccess() {
+  currentPage.value = 1
+  await fetchDebts()
+  debtTableKey.value += 1
+}
+
 onMounted(fetchDebts)
 </script>
 
@@ -212,9 +239,11 @@ onMounted(fetchDebts)
       :has-more="hasMore"
       :search="searchQuery"
       :error-message="errorMessage"
+      :is-admin="authStore.isAdmin"
       @update:search="handleSearchChange"
       @pay-single="handleSinglePay"
       @pay-group="handleGroupPay"
+      @pay-cash="handleCashPay"
       @load-more="loadMore"
     />
 
@@ -225,6 +254,15 @@ onMounted(fetchDebts)
       member-name=""
       @close="handlePaymentModalClose"
       @payment-complete="handlePaymentComplete"
+    />
+    <CashPaymentModal
+      v-if="selectedCashMember"
+      :show="showCashModal"
+      :member-id="selectedCashMember.id"
+      :member-name="selectedCashMember.name"
+      :total-debt="selectedCashMember.debt"
+      @close="handleCashModalClose"
+      @success="handleCashSuccess"
     />
   </div>
 </template>
