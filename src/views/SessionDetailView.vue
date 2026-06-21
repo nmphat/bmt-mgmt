@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import type {
   SessionSummary,
@@ -37,6 +37,7 @@ import { useToast } from 'vue-toastification'
 import type { CostSnapshot } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const langStore = useLangStore()
 const toast = useToast()
@@ -779,6 +780,16 @@ function initRealtime() {
 
 onMounted(async () => {
   await fetchData()
+
+  // Auto-open member dropdown when navigating from create-session
+  if (route.query.register === 'true' && session.value?.status === 'open' && authStore.isAdmin) {
+    showMemberDropdown.value = true
+  }
+  // Strip query param to clean URL
+  if (route.query.register) {
+    router.replace({ name: route.name as string, params: route.params })
+  }
+
   initRealtime()
   document.addEventListener('click', handleClickOutside)
   startPolling()
@@ -840,13 +851,14 @@ onUnmounted(() => {
           class="session-scroll-target rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <div class="mb-4 flex items-center justify-between gap-3">
-            <router-link
-              to="/"
+            <button
+              type="button"
+              @click="$router.back()"
               class="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 hover:text-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               <ChevronLeft class="h-5 w-5" aria-hidden="true" />
-              {{ t('common.backToHome') }}
-            </router-link>
+              {{ t('common.back') }}
+            </button>
             <button
               type="button"
               @click="() => fetchData()"
