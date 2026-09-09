@@ -679,11 +679,20 @@ BEGIN
                 r.total_extra_fee -- [MỚI]
             )
             ON CONFLICT (session_id, member_id) DO UPDATE
-            SET 
+            SET
                 final_amount = EXCLUDED.final_amount,
                 court_fee_amount = EXCLUDED.court_fee_amount,
                 shuttle_fee_amount = EXCLUDED.shuttle_fee_amount,
-                extra_fee_amount = EXCLUDED.extra_fee_amount;
+                extra_fee_amount = EXCLUDED.extra_fee_amount,
+                -- Recompute status: re-finalizing after a price change must not
+                -- leave a row marked 'paid' while it owes money again.
+                status = CASE
+                    WHEN session_costs_snapshot.paid_amount >= EXCLUDED.final_amount
+                        THEN 'paid'::public.payment_status
+                    WHEN session_costs_snapshot.paid_amount > 0
+                        THEN 'partial'::public.payment_status
+                    ELSE 'pending'::public.payment_status
+                END;
         END IF;
     END LOOP;
 END;
