@@ -79,7 +79,7 @@ BEGIN
     DO UPDATE SET is_present = true;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.search_sessions_list(
     p_query text DEFAULT NULL,
@@ -192,7 +192,7 @@ BEGIN
     DO UPDATE SET is_present = true;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.calculate_session_costs(p_session_id uuid)
  RETURNS TABLE(member_id uuid, display_name text, final_total numeric, total_court_fee numeric, total_shuttle_fee numeric, total_extra_fee numeric, intervals_count integer)
@@ -337,7 +337,7 @@ BEGIN
     GROUP BY mic.mem_id, mic.display_name, ef.total_extra
     ORDER BY mic.display_name ASC;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.check_qr_status(p_code text)
  RETURNS jsonb
@@ -421,7 +421,7 @@ BEGIN
         'details', v_details
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.check_session_completion()
  RETURNS trigger
@@ -449,7 +449,7 @@ BEGIN
     
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_group_payment(p_snapshot_ids uuid[])
  RETURNS jsonb
@@ -521,7 +521,7 @@ BEGIN
         'total_amount', v_total
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb)
  RETURNS uuid
@@ -578,7 +578,7 @@ BEGIN
 
     RETURN v_session_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb, p_court_fee_addon numeric DEFAULT 0)
  RETURNS uuid
@@ -637,7 +637,7 @@ BEGIN
 
     RETURN v_session_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.finalize_session(p_session_id uuid)
  RETURNS void
@@ -687,7 +687,7 @@ BEGIN
         END IF;
     END LOOP;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
@@ -704,7 +704,7 @@ BEGIN
   );
   RETURN new;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_change_on_locked_session()
  RETURNS trigger
@@ -738,7 +738,7 @@ BEGIN
     
     RETURN NEW; -- Nếu thêm/sửa, trả về NEW
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.recreate_session_intervals(p_session_id uuid, p_start_time timestamp with time zone, p_end_time timestamp with time zone)
  RETURNS void
@@ -783,7 +783,7 @@ BEGIN
   -- 5. Recalculate active_court_count from existing court bookings
   PERFORM refresh_interval_courts(p_session_id);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.refresh_interval_courts(p_session_id uuid)
  RETURNS void
@@ -803,7 +803,7 @@ BEGIN
     )
     WHERE si.session_id = p_session_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.remove_member_from_session(p_session_id uuid, p_member_id uuid)
  RETURNS void
@@ -840,7 +840,7 @@ BEGIN
     WHERE session_id = p_session_id AND member_id = p_member_id;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.trigger_refresh_courts()
  RETURNS trigger
@@ -850,7 +850,7 @@ BEGIN
     PERFORM refresh_interval_courts(COALESCE(NEW.session_id, OLD.session_id));
     RETURN NULL;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
@@ -860,7 +860,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_session_delete_impact(p_session_id uuid)
  RETURNS TABLE(session_id uuid, registrations_count integer, intervals_count integer, presence_count integer, court_bookings_count integer, extra_charges_count integer, snapshots_count integer, payments_count integer)
@@ -915,7 +915,7 @@ BEGIN
         RAISE EXCEPTION 'Session not found or already deleted';
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.soft_delete_cancelled_session(p_session_id uuid)
  RETURNS jsonb
@@ -1004,7 +1004,7 @@ BEGIN
         'payments_count', COALESCE(v_impact.payments_count, 0)
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.soft_delete_cancelled_sessions_bulk(p_session_ids uuid[])
  RETURNS TABLE(session_id uuid, deleted boolean, message text)
@@ -1030,7 +1030,7 @@ BEGIN
         END;
     END LOOP;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.gc_soft_deleted_sessions(p_older_than interval DEFAULT '30 days'::interval)
  RETURNS integer
@@ -1081,7 +1081,7 @@ BEGIN
 
     RETURN v_deleted_count;
 END;
-$function$
+$function$;
 
 DO $do$
 BEGIN
