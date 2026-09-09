@@ -20,4 +20,24 @@ SELECT assert_eq(
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   140000::numeric, 'member B final_total');
 
+-- RLS negative/positive control: proves the bed can tell the difference
+-- between "blocked by RLS" and "blocked for the wrong reason" (e.g. a
+-- typo'd table name, or the assertion silently running as superuser).
+--
+-- Negative: anon has only a SELECT policy on members at this point in the
+-- plan, so an UPDATE as anon must affect 0 rows.
+SELECT login_as('anon');
+SELECT assert_denied($$UPDATE members SET display_name = 'hacked'$$, 'anon cannot rename members');
+
+-- Positive: the same UPDATE, as the superuser connection, must actually
+-- work and hit all 3 seeded rows — otherwise the negative control above
+-- could be passing because the UPDATE itself is broken, not because RLS
+-- blocked it.
+RESET ROLE;
+WITH updated AS (
+  UPDATE members SET display_name = 'hacked' RETURNING 1
+)
+SELECT assert_eq(count(*)::int, 3, 'superuser can rename members (positive control)') FROM updated;
+
+-- Rolled back below, so none of this persists — display_name is restored.
 ROLLBACK;
