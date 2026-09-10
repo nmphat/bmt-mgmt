@@ -670,18 +670,41 @@ BEGIN
         RAISE EXCEPTION 'Không thể sửa tiền cầu khi buổi đang ở trạng thái "%".', v_status;
     END IF;
 
+    -- Mỗi phần tử phải có đủ used/tube_price/per_tube và hợp lệ -- thiếu
+    -- (NULL) thì SUM() bên dưới sẽ lặng lẽ bỏ qua phần tử đó (đóng góp 0)
+    -- trong khi nó vẫn được lưu trong shuttle_usage, làm breakdown và tổng
+    -- lệch nhau mà không có tín hiệu gì; used âm thì lặng lẽ trừ tiền;
+    -- per_tube = 0 thì NULLIF bên dưới cũng lặng lẽ biến phần tử thành 0.
+    -- Từ chối cả ba trước khi ghi.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'used' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu số lượng ống cầu (used) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'tube_price' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu giá ống cầu (tube_price) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'per_tube' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu số cầu mỗi ống (per_tube) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'used')::numeric < 0) THEN
+        RAISE EXCEPTION 'Số lượng ống cầu (used) không được âm';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'per_tube')::numeric <= 0) THEN
+        RAISE EXCEPTION 'Số cầu mỗi ống (per_tube) phải lớn hơn 0';
+    END IF;
+
     -- Breakdown và tổng tiền được ghi trong cùng một lệnh, nên không có
-    -- đường nào để hai giá trị lệch nhau.
+    -- đường nào để hai giá trị lệch nhau. Tổng được làm tròn một lần, về
+    -- nguyên đồng, sau khi cộng hết -- không làm tròn từng phần tử.
     UPDATE sessions
     SET shuttle_usage = p_usage,
-        shuttle_fee_total = COALESCE((
+        shuttle_fee_total = ROUND(COALESCE((
             SELECT SUM(
                 (e->>'tube_price')::numeric
                 / NULLIF((e->>'per_tube')::numeric, 0)
                 * (e->>'used')::numeric
             )
             FROM jsonb_array_elements(p_usage) e
-        ), 0),
+        ), 0)),
         updated_at = now()
     WHERE id = p_session_id;
 END;

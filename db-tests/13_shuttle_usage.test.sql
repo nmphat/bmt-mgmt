@@ -36,6 +36,147 @@ SELECT assert_eq(
   (SELECT shuttle_fee_total FROM sessions WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   0::numeric, 'clearing usage zeroes the total');
 
+-- Input validation: dữ liệu thiếu hoặc vô lý phải bị từ chối tại RPC,
+-- không được lặng lẽ biến thành 0 hay số âm trong tổng tiền.
+--
+-- Trước tiên: một payload hợp lệ vẫn phải ghi được bình thường -- các
+-- guard mới không được false-positive trên dữ liệu tốt.
+SELECT set_session_shuttle_usage(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":315000,"per_tube":12,"used":1}]'::jsonb);
+-- 315000/12*1 = 26250
+SELECT assert_eq(
+  (SELECT shuttle_fee_total FROM sessions WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  26250::numeric, 'a valid payload still writes after the new guards');
+
+-- Thiếu "used": SUM() sẽ lặng lẽ bỏ qua phần tử này (đóng góp 0) trong khi
+-- nó vẫn được lưu trong shuttle_usage -- breakdown và tổng lệch nhau mà
+-- không có tín hiệu gì.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":315000,"per_tube":12}]'::jsonb);
+    RAISE EXCEPTION 'FAIL usage missing "used" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu số lượng ống cầu (used)%' THEN
+      RAISE EXCEPTION 'FAIL missing "used" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   missing "used" rejected';
+  END;
+END $$;
+
+-- Thiếu "tube_price".
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","per_tube":12,"used":1}]'::jsonb);
+    RAISE EXCEPTION 'FAIL usage missing "tube_price" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu giá ống cầu (tube_price)%' THEN
+      RAISE EXCEPTION 'FAIL missing "tube_price" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   missing "tube_price" rejected';
+  END;
+END $$;
+
+-- Thiếu "per_tube".
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":315000,"used":1}]'::jsonb);
+    RAISE EXCEPTION 'FAIL usage missing "per_tube" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu số cầu mỗi ống (per_tube)%' THEN
+      RAISE EXCEPTION 'FAIL missing "per_tube" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   missing "per_tube" rejected';
+  END;
+END $$;
+
+-- "used" âm: lặng lẽ trừ tiền khỏi tổng nếu không bị chặn.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":315000,"per_tube":12,"used":-1}]'::jsonb);
+    RAISE EXCEPTION 'FAIL negative "used" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Số lượng ống cầu (used) không được âm%' THEN
+      RAISE EXCEPTION 'FAIL negative "used" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   negative "used" rejected';
+  END;
+END $$;
+
+-- "per_tube" = 0: NULLIF trong công thức sẽ lặng lẽ biến phần tử này
+-- thành 0 nếu không bị chặn trước.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":315000,"per_tube":0,"used":1}]'::jsonb);
+    RAISE EXCEPTION 'FAIL "per_tube" = 0 was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Số cầu mỗi ống (per_tube) phải lớn hơn 0%' THEN
+      RAISE EXCEPTION 'FAIL "per_tube" = 0 was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   "per_tube" = 0 rejected';
+  END;
+END $$;
+
+-- Làm tròn: tổng được làm tròn một lần, về nguyên đồng, sau khi cộng --
+-- không làm tròn từng phần tử. 320000 không chia hết cho 12.
+-- 320000 / 12 = 26666.666... ; used = 1 -> đóng góp 26666.666... ;
+-- ROUND(26666.666...) = 26667.
+SELECT set_session_shuttle_usage(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"type_id":"88888888-8888-8888-8888-888888888888","name":"Carlton","tube_price":320000,"per_tube":12,"used":1}]'::jsonb);
+SELECT assert_eq(
+  (SELECT shuttle_fee_total FROM sessions WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  26667::numeric, 'total is rounded once to integer đồng, not per element');
+
+-- Guard trạng thái: buổi không còn 'open' thì không sửa tiền cầu được
+-- nữa, kể cả admin -- đúng thông điệp lỗi, không chỉ "có lỗi nào đó".
+UPDATE sessions SET status = 'waiting_for_payment'
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '[]'::jsonb);
+    RAISE EXCEPTION 'FAIL admin could edit shuttle usage on a non-open session';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Không thể sửa tiền cầu%' THEN
+      RAISE EXCEPTION 'FAIL non-open session was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-open session rejected';
+  END;
+END $$;
+
+-- Guard buổi không tồn tại: đúng thông điệp lỗi.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('99999999-9999-9999-9999-999999999999', '[]'::jsonb);
+    RAISE EXCEPTION 'FAIL a non-existent session was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Không tìm thấy buổi%' THEN
+      RAISE EXCEPTION 'FAIL non-existent session was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-existent session rejected';
+  END;
+END $$;
+
 RESET ROLE;
 
 -- Admin guard: không phải admin thì set_session_shuttle_usage phải từ chối,
