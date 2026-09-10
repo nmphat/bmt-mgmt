@@ -463,6 +463,8 @@ $function$;
 CREATE OR REPLACE FUNCTION public.create_group_payment(p_snapshot_ids uuid[])
  RETURNS jsonb
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_total NUMERIC := 0;
