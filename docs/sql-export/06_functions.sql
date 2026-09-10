@@ -1,12 +1,21 @@
 CREATE OR REPLACE FUNCTION public.add_manual_payment(p_snapshot_id uuid, p_amount numeric, p_note text DEFAULT 'Tiền mặt'::text)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_final_amount NUMERIC;
     v_current_paid NUMERIC;
     v_new_paid NUMERIC;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     IF p_snapshot_id IS NULL THEN
         RAISE EXCEPTION 'p_snapshot_id is required';
     END IF;
@@ -642,11 +651,20 @@ $function$;
 CREATE OR REPLACE FUNCTION public.finalize_session(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     r RECORD;
     v_payment_code TEXT;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Update Session Status
     UPDATE sessions 
     SET status = 'waiting_for_payment', updated_at = NOW()
@@ -817,10 +835,19 @@ $function$;
 CREATE OR REPLACE FUNCTION public.remove_member_from_session(p_session_id uuid, p_member_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_status TEXT;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Kiểm tra trạng thái Session (Chỉ cho xóa khi OPEN)
     SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
     
