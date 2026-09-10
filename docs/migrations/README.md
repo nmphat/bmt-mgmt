@@ -175,8 +175,6 @@ CREATE POLICY "Public Access" ON public.session_costs_snapshot
   AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
 CREATE POLICY "Public Access" ON public.session_payments
   AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
-CREATE POLICY "Public Access" ON public.bank_config
-  AS PERMISSIVE FOR ALL TO public USING (true) WITH CHECK (true);
 
 -- Mở lại lỗ hổng cũ: cho anon gọi lại ba RPC admin.
 GRANT EXECUTE ON FUNCTION public.add_manual_payment(uuid, numeric, text) TO anon;
@@ -184,7 +182,11 @@ GRANT EXECUTE ON FUNCTION public.finalize_session(uuid) TO anon;
 GRANT EXECUTE ON FUNCTION public.remove_member_from_session(uuid, uuid) TO anon;
 ```
 
-Chỉ dùng khi thật sự phải quay lui: ba policy và ba grant này chính là lỗ
+`bank_config` không cần khôi phục gì ở đây: policy `"Public Access"` của nó
+chưa từng tồn tại trên production, chỉ có trong file export (đã sửa ở Task
+5) -- không có bước migration nào chạy trên production cần đảo ngược.
+
+Chỉ dùng khi thật sự phải quay lui: hai policy và ba grant này chính là lỗ
 hổng mà migration vá.
 
 `rpc_generate_draft` (bị `DROP` ở bước 4) **không** có cách rollback bằng
