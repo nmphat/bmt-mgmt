@@ -33,3 +33,15 @@ GRANT EXECUTE ON FUNCTION public.check_qr_status(text) TO anon, authenticated;
 
 -- Trigger function; nothing should call it over the REST API.
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+
+-- Soft-delete/gc family: SECURITY INVOKER, no admin guard in the body, and
+-- not currently exploitable (RLS still blocks anon's DELETEs on
+-- session_payments and session_costs_snapshot) -- but their defence should
+-- not rest on RLS alone. Not called from any UI yet.
+-- gc_soft_deleted_sessions is driven by pg_cron and needs no role grant.
+REVOKE EXECUTE ON FUNCTION public.soft_delete_cancelled_session(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.soft_delete_cancelled_sessions_bulk(uuid[]) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.gc_soft_deleted_sessions(interval) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_session(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_sessions_bulk(uuid[]) TO authenticated;
