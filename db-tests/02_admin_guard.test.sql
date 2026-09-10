@@ -49,6 +49,48 @@ BEGIN
   END;
 END $$;
 
+-- Prove the REVOKE actually fires at the grant layer and isn't just
+-- riding on the in-function admin check above: anon must be refused
+-- specifically with insufficient_privilege (42501, "permission denied for
+-- function ..."). add_manual_payment gets EXECUTE from two independent
+-- sources by default (PostgreSQL's PUBLIC grant, and Supabase's own
+-- default-privileges grant direct to anon) — 09_grants.sql must revoke
+-- both, or anon still gets in through whichever one was missed and this
+-- call falls through to raise_exception (the admin check) instead.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM add_manual_payment(
+      (SELECT id FROM session_costs_snapshot LIMIT 1), 1000, 'hack');
+    RAISE EXCEPTION 'FAIL anon executed add_manual_payment (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on add_manual_payment (REVOKE ... FROM PUBLIC, anon is effective)';
+    WHEN raise_exception THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon was stopped only by the admin check, not by REVOKE — the grant-level REVOKE on add_manual_payment is inert';
+  END;
+END $$;
+
+-- The mirror image: create_group_payment is deliberately NOT revoked from
+-- anon (guests pay from the public home page), so anon must still reach
+-- its function body. Any exception raised from inside the body is fine —
+-- insufficient_privilege is not, since that would mean anon's grant on it
+-- got stripped too.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM create_group_payment(ARRAY['00000000-0000-0000-0000-000000000000'::uuid]);
+    RAISE EXCEPTION 'FAIL create_group_payment succeeded with a bogus snapshot id (test bug, not a real pass)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE EXCEPTION 'FAIL anon lost EXECUTE on create_group_payment — the public group-payment flow would be broken';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE NOTICE 'ok   anon still reaches create_group_payment''s body (%), the public-payment flow is intact', SQLERRM;
+  END;
+END $$;
+
 RESET ROLE;
 
 -- As a signed-in non-admin member: also refused, for ALL THREE functions.
