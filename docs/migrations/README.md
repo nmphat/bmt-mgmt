@@ -85,30 +85,57 @@ SELECT has_function_privilege('anon', 'public.add_manual_payment(uuid, numeric, 
 
 ### Kết quả kiểm chứng (2026-09-09-phase0-verify.sql)
 
-Chạy `docs/migrations/2026-09-09-phase0-verify.sql` ngay trước và ngay sau
-khi chạy migration (Task 9), dán kết quả cả năm truy vấn vào bảng dưới đây
-để có mốc so sánh cho lần sau:
+Đã chạy trên production `bufpmpehugzysvmbjlub` ngày 2026-09-10, ngay trước
+và ngay sau khi áp migration.
 
 | Truy vấn | Trước | Sau |
 | --- | --- | --- |
-| 1. anon/authenticated theo hàm | | |
-| 2. Policy "Public Access" còn lại | | |
-| 3. Số liệu tiền | | |
-| 4. proacl thô của sáu hàm | | |
-| 5. Hàm dò tạm `_phase0%` còn sót | | |
+| 1. anon/authenticated theo hàm | cả 8 hàm: `anon = true`, `authenticated = true` | `add_manual_payment`, `finalize_session`, `remove_member_from_session`: `anon = false`, `authenticated = true`. `create_group_payment`, `check_qr_status`, `health`: `anon = true`. `handle_new_user`: cả hai `false`. `rpc_generate_draft`: không còn |
+| 2. Policy "Public Access" còn lại | 2 dòng — `session_costs_snapshot`, `session_payments` (`bank_config` vốn đã không có, nó chỉ tồn tại trong file export) | **0 dòng** |
+| 3. Số liệu tiền | 266 snapshot, paid 17948000, final 19207000, 250 paid / 0 partial / 16 pending, 239 dòng payment | **giống hệt từng cột** |
+| 4. proacl thô của sáu hàm | mọi hàm đều có cả `=X/postgres` (PUBLIC) lẫn `anon=X/postgres` (grant trực tiếp của Supabase) | ba RPC admin còn `postgres=X \| authenticated=X \| service_role=X` — **mất cả hai đường**. `create_group_payment` giữ nguyên cả hai |
+| 5. Hàm dò tạm `_phase0%` còn sót | 0 | **0** |
 
-Kết quả kiểm hành vi bằng `_phase0_verify_guard()` (bước 5 của Task 9 --
-gọi không JWT, JWT admin, JWT người lạ, rồi DROP FUNCTION và xác nhận
-`pg_proc` không còn hàm nào tên `_phase0%`):
+Truy vấn 4 là truy vấn đáng đọc nhất. Nó cho thấy vì sao hai lần revoke đầu
+tiên của plan này không có tác dụng: `anon` vào được bằng hai đường độc lập,
+cắt một đường thì đường kia vẫn mở, và `has_function_privilege` vẫn trả
+`true`. Chỉ `REVOKE ... FROM PUBLIC, anon` mới cắt hết.
 
-- Không JWT:
-- JWT admin:
-- JWT người lạ:
-- `pg_proc` sau khi DROP còn hàm `_phase0%` nào không:
+Kết quả kiểm hành vi bằng `_phase0_verify_guard()` (bước 5 của Task 9):
+
+- Không JWT: `auth.uid()` trả `NULL`, guard **không** cho qua.
+- JWT admin (`0a5399cd-46ea-46b2-bb26-f2869a239e25`): `auth.uid()` trả đúng
+  UUID đó, guard **cho qua**.
+- JWT người lạ (`11111111-2222-3333-4444-555555555555`): `auth.uid()` trả
+  đúng UUID đó, guard **không** cho qua.
+- `pg_proc` sau khi DROP: **0** hàm tên `_phase0%`.
+
+Cả ba trường hợp đều đi qua đường `request.jwt.claims` dạng JSON — đúng
+đường PostgREST dùng — bên trong một hàm `SECURITY DEFINER` có
+`SET search_path = public, pg_temp`.
+
+Kiểm trực tiếp lỗ hổng, chạy dưới role `anon` thật trên production trong một
+transaction rồi `ROLLBACK`:
+
+| Hành động của khách | Số dòng bị ảnh hưởng |
+| --- | --- |
+| `UPDATE session_costs_snapshot SET paid_amount = final_amount` | **0** |
+| `DELETE FROM session_payments` | **0** |
+| `UPDATE bank_config SET account_number = '0000000000'` | **0** |
+
+Trước migration, câu đầu tiên sẽ xóa sạch nợ của cả câu lạc bộ.
+
+Khách vẫn đọc được đủ thứ cần cho luồng chính: 266 snapshot, 1 `bank_config`
+đang bật, 36 member, 60 session, 239 payment, 158 group request.
 
 Kết quả kiểm luồng khách chưa đăng nhập (bước 6 -- đăng xuất, mở trang
 chủ, chọn người còn nợ, bấm trả tiền, QR có hiện và polling có chạy
 không):
+
+- Phần cơ sở dữ liệu: đã kiểm ở bảng trên — khách đọc được, ghi không được,
+  và `create_group_payment` cùng `check_qr_status` vẫn gọi được bằng `anon`.
+- Phần giao diện: **chưa kiểm.** Phải mở trình duyệt thật mới kiểm được.
+  Người vận hành xác nhận rồi ghi kết quả vào đây.
 
 ### Ghi chú đã biết
 
