@@ -67,7 +67,7 @@ BEGIN
   -- Set request.jwt.claim.sub for backward compatibility with existing tests
   PERFORM set_config('request.jwt.claim.sub', COALESCE(p_uid::text, ''), true);
   -- Set request.jwt.claims as JSON, matching the production path PostgREST uses
-  perform set_config('request.jwt.claims',
+  PERFORM set_config('request.jwt.claims',
                      case when p_uid is null then ''
                           else json_build_object('sub', p_uid::text, 'role', p_role)::text end,
                      true);
