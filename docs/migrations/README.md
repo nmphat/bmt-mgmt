@@ -134,8 +134,22 @@ không):
 
 - Phần cơ sở dữ liệu: đã kiểm ở bảng trên — khách đọc được, ghi không được,
   và `create_group_payment` cùng `check_qr_status` vẫn gọi được bằng `anon`.
-- Phần giao diện: **chưa kiểm.** Phải mở trình duyệt thật mới kiểm được.
-  Người vận hành xác nhận rồi ghi kết quả vào đây.
+- Phần giao diện: **đã kiểm, chạy tốt** (2026-09-10, sau khi áp migration).
+  Khách chưa đăng nhập trả 170.000 cho một thành viên, mã nhóm `GR0D4586`,
+  QR hiện và polling báo thành công. Đối chiếu trong database:
+
+  | Bước | Kết quả |
+  | --- | --- |
+  | `create_group_payment` gọi bởi `anon` | `GR0D4586`, tổng 170000, 2 snapshot, 03:42:51 UTC |
+  | Webhook ngân hàng ghi payment (`service_role`) | 2 dòng, `payment_method = transfer`, 03:43:16 UTC |
+  | Snapshot sau khi trả | `CLE6459D` 80000/80000 và `CL6949ED` 90000/90000, cả hai `paid` |
+  | Polling | thấy nợ còn lại đã hết, báo thành công |
+
+  25 giây từ lúc tạo mã tới lúc tiền được ghi nhận. Đây là bằng chứng cho hai
+  điều: `create_group_payment` ghi được `group_payment_requests` là nhờ
+  `SECURITY DEFINER` (bảng đó không có policy INSERT/UPDATE nào cho `anon`),
+  và các edge function ghi `session_payments` bằng `service_role` nên không
+  hề cần policy `"Public Access"` vừa bị xóa.
 
 ### Ghi chú đã biết
 
