@@ -14,7 +14,8 @@
 
 - **Nguồn sự thật của DB là `docs/sql-export/*.sql`**, không phải thư mục migration. `docs/sql-export/README.md` ghi rõ: "Every DB/RPC/RLS change must be updated directly in these SQL files." Mọi task đổi DB đều phải sửa file export tương ứng trong cùng commit.
 - **Nhưng đừng tin file export cho tới khi đã đối chiếu.** Nó được cập nhật bằng tay, nên trôi khỏi production theo hai đường: người sửa thẳng trên Supabase dashboard rồi quên file, hoặc agent áp thay đổi qua Supabase MCP rồi không ghi ngược lại. Task 0 là bước đối chiếu bắt buộc và phải chạy lại mỗi khi quay lại plan này.
-- **Tuyệt đối không chạy lệnh ghi lên production.** Project Supabase `bufpmpehugzysvmbjlub` chỉ được đọc. Mọi thay đổi được giao cho người dùng dưới dạng file SQL để họ tự chạy.
+- **Ghi lên production: chỉ những gì được cho phép rõ ràng.** Mặc định là chỉ đọc. Ngày 2026-09-10 người dùng cho phép tạo function tạm trên production để kiểm chứng, và chạy migration của plan này. Function tạm phải mang tiền tố `_phase0_`, không đụng vào dữ liệu, và bị `DROP` ngay sau khi kiểm xong — kiểm lại rằng không còn sót. Xem Task 9.
+- **Bàn test cục bộ là Postgres, production là Supabase.** Hai thứ đó không giống nhau ở ba chỗ đã đo được: `auth.uid()` (Supabase đọc cả `request.jwt.claim.sub` lẫn JSON `request.jwt.claims`), mô hình cấp quyền (Supabase cấp EXECUTE trực tiếp cho `anon` **chồng lên** grant mặc định cho `PUBLIC`), và chủ sở hữu function (`postgres` của Supabase không phải superuser nhưng có `rolbypassrls`; chủ sở hữu cục bộ là superuser thật). Bất cứ khẳng định nào về quyền hoặc về JWT đều phải được kiểm trên production, không chỉ trên bàn test.
 - Mọi RPC được sửa hoặc tạo mới trong plan này phải có `SECURITY DEFINER` và `SET search_path = public, pg_temp`.
 - Thông báo lỗi cho người dùng cuối viết tiếng Việt, khớp giọng các `RAISE EXCEPTION` sẵn có (ví dụ: `'Không thể xóa thành viên khi Session đang ở trạng thái "%"...'`).
 - Giữ nguyên comment tiếng Việt đã có trong thân hàm khi sửa; chỉ thêm, không viết lại.
@@ -926,7 +927,7 @@ Nối vào cuối `docs/sql-export/09_grants.sql`:
 
 ```sql
 -- Trigger function; nothing should call it over the REST API.
-REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 ```
 
 - [ ] **Step 3: Nạp lại và chạy test**
@@ -985,7 +986,7 @@ BEGIN;
 REVOKE EXECUTE ON FUNCTION public.add_manual_payment(uuid, numeric, text) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.finalize_session(uuid) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.remove_member_from_session(uuid, uuid) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_group_payment(uuid[]) TO anon, authenticated;
 
 -- 3. Close the holes.
@@ -1112,3 +1113,173 @@ Báo người dùng: script nằm ở `docs/migrations/2026-09-09-phase0-securit
 - [ ] `docs/migrations/2026-09-09-phase0-security.sql` chạy sạch trên database dựng từ file export
 - [ ] Không có lệnh ghi nào được chạy lên project `bufpmpehugzysvmbjlub`
 - [ ] Người dùng đã nhận script và runbook
+
+---
+
+# Replan — 2026-09-10
+
+Hai lỗ hổng trong chính bản plan này lộ ra khi thực thi. Cả hai đều cùng một gốc: plan coi bàn test Postgres cục bộ là bằng chứng đủ cho hành vi trên Supabase. Không đủ.
+
+## Điều đã đo được, không phải suy luận
+
+Chạy trên chính production `bufpmpehugzysvmbjlub` bằng một function tạm rồi xóa đi:
+
+| Câu hỏi | Kết quả |
+| --- | --- |
+| `auth.uid()` có resolve trong `SECURITY DEFINER` + `SET search_path = public, pg_temp` không? | Có. Cả khi JWT đi bằng `request.jwt.claims` dạng JSON. |
+| `REVOKE EXECUTE ... FROM anon` có chặn được `anon` không? | **Không.** ACL còn `=X/postgres`, `has_function_privilege('anon', …)` vẫn `true`. |
+| `REVOKE EXECUTE ... FROM PUBLIC` có chặn được không? | **Không.** ACL còn `anon=X/postgres`, vẫn `true`. |
+| `REVOKE EXECUTE ... FROM PUBLIC, anon` | Chặn được. `anon` `false`, `authenticated` vẫn `true`. |
+
+Lý do: PostgreSQL cấp EXECUTE cho `PUBLIC` khi tạo function, còn Supabase cấp thêm cho `anon` một grant **trực tiếp** qua `ALTER DEFAULT PRIVILEGES`. Hai đường độc lập. Cắt một đường là không cắt gì.
+
+Kèm theo: `DROP` rồi `CREATE` lại một function sẽ áp lại default privileges của Supabase và **âm thầm trả quyền cho `anon`**. `CREATE OR REPLACE` giữ nguyên ACL. Ai tạo lại một trong các function này phải chạy lại `09_grants.sql`.
+
+## Gap 1 — stub `auth.uid()` cục bộ không giống production
+
+`db-tests/helpers.sql` cài stub:
+
+```sql
+SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+```
+
+Production chạy:
+
+```sql
+select coalesce(
+  nullif(current_setting('request.jwt.claim.sub', true), ''),
+  (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+)::uuid
+```
+
+Stub chỉ có nhánh đầu — nhánh legacy. PostgREST hiện đại set `request.jwt.claims` dạng JSON, tức nhánh thứ hai. Mọi test guard từ trước tới giờ đi đường mà production không đi. Chúng không sai, nhưng chúng không chứng minh cái cần chứng minh.
+
+→ **Task 8.**
+
+## Gap 2 — không có bước nào kiểm trên Supabase thật
+
+Bàn test cục bộ không thể chứng minh: PostgREST còn phơi function ra cho `anon` nữa hay không sau khi revoke, JWT thật có chạy qua guard không, và một function `SECURITY DEFINER` do `postgres` (không phải superuser, nhưng `rolbypassrls`) sở hữu có ghi được vào bảng đã siết RLS không.
+
+→ **Task 9.**
+
+---
+
+## Task 8: Đồng bộ stub `auth.uid()` với production
+
+**Files:**
+- Modify: `db-tests/helpers.sql`
+- Create: `db-tests/05_jwt_paths.test.sql`
+
+**Interfaces:**
+- Consumes: `login_as`, `assert_eq` sẵn có
+- Produces: `auth.uid()` cục bộ khớp từng ký tự với production; `login_as` giữ nguyên chữ ký
+
+- [ ] **Step 1: Thay stub bằng đúng định nghĩa production**
+
+Trong `db-tests/helpers.sql`:
+
+```sql
+-- Byte-for-byte the definition Supabase runs in production. Verified against
+-- pg_get_functiondef on project bufpmpehugzysvmbjlub on 2026-09-10.
+-- The second branch is the one PostgREST actually uses; the first is legacy.
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
+LANGUAGE sql STABLE AS $$
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
+$$;
+```
+
+- [ ] **Step 2: Cho `login_as` đi đường JSON**
+
+`login_as` hiện set `request.jwt.claim.sub`. Đổi để nó set `request.jwt.claims` dạng JSON — đó là đường production đi:
+
+```sql
+perform set_config('request.jwt.claims',
+                   case when p_uid is null then ''
+                        else json_build_object('sub', p_uid::text, 'role', p_role)::text end,
+                   true);
+```
+
+Giữ luôn cả `request.jwt.claim.sub` để không phá test cũ nào đang set thẳng GUC đó.
+
+- [ ] **Step 3: Test cả hai đường**
+
+Tạo `db-tests/05_jwt_paths.test.sql`, khẳng định `auth.uid()` trả đúng UUID admin khi chỉ có `request.jwt.claim.sub`, khi chỉ có `request.jwt.claims`, và trả `NULL` khi không có gì. Thêm một assert rằng guard trong `finalize_session` chấp nhận admin đi bằng đường JSON.
+
+- [ ] **Step 4: Chạy lại toàn bộ**
+
+`./db-tests/down.sh && ./db-tests/up.sh && ./db-tests/run.sh` — mọi file phải xanh. Các test cũ dùng `login_as` phải vẫn xanh sau khi đổi.
+
+- [ ] **Step 5: Commit**
+
+`test: match the local auth.uid() stub to Supabase's real definition`
+
+---
+
+## Task 9: Kiểm chứng trên production bằng function tạm
+
+Chạy **sau** Task 7 đã viết xong script migration, và bao quanh việc áp nó.
+
+**Files:**
+- Create: `docs/migrations/2026-09-09-phase0-verify.sql`
+
+**Interfaces:**
+- Consumes: script migration của Task 7
+- Produces: một bộ truy vấn kiểm chứng chạy trực tiếp trên production, cộng kết quả trước và sau
+
+- [ ] **Step 1: Viết bộ kiểm chứng**
+
+`docs/migrations/2026-09-09-phase0-verify.sql`, thuần đọc, chạy được cả trước lẫn sau migration:
+
+```sql
+-- 1. Ai còn gọi được các RPC ghi tiền?
+SELECT p.proname,
+       has_function_privilege('anon', p.oid, 'execute')          AS anon,
+       has_function_privilege('authenticated', p.oid, 'execute') AS authenticated,
+       p.prosecdef                                               AS security_definer,
+       coalesce(array_to_string(p.proconfig, ','), '-')          AS config
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('add_manual_payment','finalize_session','remove_member_from_session',
+                    'create_group_payment','check_qr_status','handle_new_user')
+ORDER BY p.proname;
+
+-- 2. Hai policy mở toàn quyền còn không?
+SELECT tablename, policyname FROM pg_policies
+WHERE schemaname = 'public' AND policyname = 'Public Access';
+
+-- 3. Số liệu tiền — phải không đổi qua migration.
+SELECT count(*) AS snapshots,
+       sum(paid_amount) AS total_paid,
+       count(*) FILTER (WHERE status = 'paid') AS paid_rows
+FROM session_costs_snapshot;
+```
+
+Kỳ vọng sau migration: truy vấn 1 cho `anon = false` với ba RPC admin và `anon = true` với `create_group_payment` và `check_qr_status`; truy vấn 2 trả 0 dòng; truy vấn 3 khớp y hệt lần chạy trước.
+
+- [ ] **Step 2: Chụp trạng thái trước**
+
+Chạy cả ba truy vấn qua MCP, lưu kết quả vào ledger.
+
+- [ ] **Step 3: Áp migration**
+
+Chạy `docs/migrations/2026-09-09-phase0-security.sql`.
+
+- [ ] **Step 4: Chụp trạng thái sau và so**
+
+Chạy lại. Truy vấn 3 lệch dù chỉ một đồng là dấu hiệu migration đụng vào dữ liệu — quay lui ngay.
+
+- [ ] **Step 5: Kiểm hành vi bằng function tạm**
+
+Tạo `public._phase0_verify_guard()` — `SECURITY DEFINER`, `SET search_path = public, pg_temp`, đọc `auth.uid()` và trả về xem caller có phải admin không. Gọi ba lần: không JWT, JWT của admin, JWT của người lạ. Xác nhận guard phân biệt đúng cả ba. Rồi `DROP FUNCTION`, và kiểm `pg_proc` không còn hàm nào tên `_phase0%`.
+
+- [ ] **Step 6: Kiểm luồng khách chưa đăng nhập**
+
+Trên chính ứng dụng: đăng xuất, mở trang chủ, chọn người còn nợ, bấm trả tiền. QR phải hiện và polling phải chạy. Đây là luồng chính; nếu nó gãy thì migration đã revoke quá tay.
+
+- [ ] **Step 7: Ghi kết quả**
+
+Ghi cả hai bản chụp và kết quả kiểm hành vi vào `docs/migrations/README.md`, để lần sau có mốc so sánh.
