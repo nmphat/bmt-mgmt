@@ -16,9 +16,16 @@ CREATE ROLE service_role NOLOGIN BYPASSRLS;
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE auth.users (id uuid PRIMARY KEY);
 
+-- Byte-for-byte the definition Supabase runs in production. Verified against
+-- pg_get_functiondef on project bufpmpehugzysvmbjlub on 2026-09-10.
+-- The second branch is the one PostgREST actually uses; the first is legacy.
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
 LANGUAGE sql STABLE AS $$
-  SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
 $$;
 
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
@@ -57,7 +64,13 @@ GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 CREATE OR REPLACE FUNCTION login_as(p_role text, p_uid uuid DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
+  -- Set request.jwt.claim.sub for backward compatibility with existing tests
   PERFORM set_config('request.jwt.claim.sub', COALESCE(p_uid::text, ''), true);
+  -- Set request.jwt.claims as JSON, matching the production path PostgREST uses
+  perform set_config('request.jwt.claims',
+                     case when p_uid is null then ''
+                          else json_build_object('sub', p_uid::text, 'role', p_role)::text end,
+                     true);
   EXECUTE format('SET LOCAL ROLE %I', p_role);
 END;
 $$;
