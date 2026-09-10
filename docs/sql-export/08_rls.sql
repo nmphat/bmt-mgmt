@@ -68,3 +68,21 @@ ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anon read sessions" ON public.sessions; CREATE POLICY "Anon read sessions" ON public.sessions AS PERMISSIVE FOR SELECT TO anon USING (true);
 DROP POLICY IF EXISTS "Auth users full access sessions" ON public.sessions; CREATE POLICY "Auth users full access sessions" ON public.sessions AS PERMISSIVE FOR ALL TO authenticated USING (true);
 DROP POLICY IF EXISTS "Public read access" ON public.sessions; CREATE POLICY "Public read access" ON public.sessions AS PERMISSIVE FOR SELECT TO anon, authenticated USING (true);
+
+-- shuttle_types: admin configuration, not consumed by anything anon-facing
+-- (settings screen and session editors are both behind login). helpers.sql
+-- reproduces Supabase's ALTER DEFAULT PRIVILEGES that table-grants ALL to
+-- anon on every new table, so this policy's role list is the only thing
+-- standing between anon and this catalogue.
+ALTER TABLE public.shuttle_types ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS shuttle_types_public_read ON public.shuttle_types;
+DROP POLICY IF EXISTS shuttle_types_authenticated_read ON public.shuttle_types;
+CREATE POLICY shuttle_types_authenticated_read ON public.shuttle_types
+  AS PERMISSIVE FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS shuttle_types_admin_write ON public.shuttle_types;
+CREATE POLICY shuttle_types_admin_write ON public.shuttle_types
+  AS PERMISSIVE FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'));

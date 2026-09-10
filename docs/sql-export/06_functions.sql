@@ -647,6 +647,46 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.set_session_shuttle_usage(p_session_id uuid, p_usage jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa tiền cầu khi buổi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    -- Breakdown và tổng tiền được ghi trong cùng một lệnh, nên không có
+    -- đường nào để hai giá trị lệch nhau.
+    UPDATE sessions
+    SET shuttle_usage = p_usage,
+        shuttle_fee_total = COALESCE((
+            SELECT SUM(
+                (e->>'tube_price')::numeric
+                / NULLIF((e->>'per_tube')::numeric, 0)
+                * (e->>'used')::numeric
+            )
+            FROM jsonb_array_elements(p_usage) e
+        ), 0),
+        updated_at = now()
+    WHERE id = p_session_id;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.finalize_session(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql

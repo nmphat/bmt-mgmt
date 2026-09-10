@@ -57,3 +57,9 @@ GRANT EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) TO authenticated;
 -- bookings and refreshes court_cost in the same transaction).
 REVOKE EXECUTE ON FUNCTION public.set_session_court_bookings(uuid, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.set_session_court_bookings(uuid, jsonb) TO authenticated;
+
+-- set_session_shuttle_usage: SECURITY DEFINER, admin-only (writes the
+-- session's shuttle usage breakdown and recomputes shuttle_fee_total in
+-- the same transaction).
+REVOKE EXECUTE ON FUNCTION public.set_session_shuttle_usage(uuid, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_session_shuttle_usage(uuid, jsonb) TO authenticated;

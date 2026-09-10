@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS public.sessions (
   updated_at timestamp with time zone DEFAULT now(),
   price_per_hour numeric DEFAULT 0,
   default_court_count integer DEFAULT 1,
-  deleted_at timestamp with time zone
+  deleted_at timestamp with time zone,
+  shuttle_usage jsonb NOT NULL DEFAULT '[]'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS public.session_intervals (
@@ -111,4 +112,13 @@ CREATE TABLE IF NOT EXISTS public.session_extra_charges (
   amount numeric NOT NULL,
   note text,
   created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.shuttle_types (
+  id         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name       text NOT NULL,
+  tube_price numeric NOT NULL,
+  per_tube   integer NOT NULL DEFAULT 12,
+  is_active  boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
