@@ -93,6 +93,14 @@ END $$;
 
 RESET ROLE;
 
+-- remove_member_from_session's own status check only allows removal from
+-- an 'open' session; finalize_session above moved this session to
+-- 'waiting_for_payment'. Put it back so the admin guard below is the only
+-- thing that can stop the non-admin call — otherwise the status check
+-- would raise first, and the test could not tell guard from status check.
+UPDATE sessions SET status = 'open'
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
 -- As a signed-in non-admin member: also refused, for ALL THREE functions.
 -- authenticated holds EXECUTE (09_grants.sql), so only the in-function
 -- admin check can stop this — a guard that only stopped anon would leave
@@ -122,6 +130,10 @@ BEGIN
   END;
 END $$;
 
+-- The session is 'open' (reset above), so the only thing that can stop
+-- this call is the admin guard itself — assert on the guard's own message
+-- rather than accepting any raise_exception, or a guard-less function
+-- would pass this test by tripping some other check instead.
 DO $$
 BEGIN
   BEGIN
@@ -131,7 +143,10 @@ BEGIN
     RAISE EXCEPTION 'FAIL non-admin could remove a member';
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
-    RAISE NOTICE 'ok   non-admin blocked from remove_member_from_session';
+    IF SQLERRM NOT LIKE 'Chỉ admin%' THEN
+      RAISE EXCEPTION 'FAIL non-admin was blocked by the status check, not the admin guard: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-admin blocked from remove_member_from_session by the admin guard';
   END;
 END $$;
 
@@ -177,6 +192,22 @@ SELECT assert_eq(
   (SELECT paid_amount FROM session_costs_snapshot
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   140000::numeric, 'B paid_amount untouched by re-finalize');
+
+-- Positive counterpart: admin CAN remove a member from an open session.
+-- Run last, using member A (not B) so it does not disturb the fixture
+-- state the boundary assertions above depend on.
+UPDATE sessions SET status = 'open'
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+SELECT remove_member_from_session(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '22222222-2222-2222-2222-222222222222');
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_registrations
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+      AND member_id = '22222222-2222-2222-2222-222222222222'),
+  0, 'admin can remove a member from an open session');
 
 RESET ROLE;
 ROLLBACK;
