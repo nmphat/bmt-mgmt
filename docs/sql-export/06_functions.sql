@@ -258,11 +258,12 @@ BEGIN
         SELECT
             i.id AS interval_id,
             i.active_court_count,
+            i.court_cost,
             COUNT(p.member_id) FILTER (WHERE p.is_present = true) AS real_present_count
         FROM session_intervals i
         LEFT JOIN interval_presence p ON p.interval_id = i.id
         WHERE i.session_id = p_session_id
-        GROUP BY i.id, i.active_court_count
+        GROUP BY i.id, i.active_court_count, i.court_cost
     ),
 
     member_interval_costs AS (
@@ -277,9 +278,15 @@ BEGIN
                         WHEN gm.member_id IS NOT NULL OR p.is_present = true THEN
                             CASE
                                 WHEN v_total_court_units > 0 THEN
-                                    -- Normal: both booking cost and addon weighted by court-units
+                                    -- Normal: both booking cost and addon weighted by court-units.
+                                    -- booking_cost prefers the real per-booking price when the
+                                    -- session has one; sessions created before per-court pricing
+                                    -- have court_cost = 0 and fall back to the old formula.
                                     (
-                                        ((v_price_per_hour / 2.0) * ist.active_court_count)
+                                        CASE
+                                            WHEN ist.court_cost > 0 THEN ist.court_cost
+                                            ELSE (v_price_per_hour / 2.0) * ist.active_court_count
+                                        END
                                         +
                                         (COALESCE(v_court_fee_addon, 0) * ist.active_court_count::numeric / v_total_court_units)
                                     ) / (ist.real_present_count + v_ghost_count)
