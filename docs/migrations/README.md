@@ -53,8 +53,9 @@ WHERE schemaname = 'public' AND policyname = 'Public Access';
 -- kỳ vọng: 0 dòng
 ```
 
-Xác nhận năm hàm đã là SECURITY DEFINER (riêng `health` không cần, xem ghi
-chú dưới):
+Xác nhận năm hàm đã là SECURITY DEFINER (riêng `health` không cần: hàm này
+`LANGUAGE sql STABLE`, không đọc bảng nào, chỉ trả về hằng số `1`, nên
+không có gì để lộ qua RLS):
 
 ```sql
 SELECT proname, prosecdef FROM pg_proc p
@@ -81,6 +82,47 @@ SELECT has_function_privilege('anon', 'public.add_manual_payment(uuid, numeric, 
 2. Mở `/pay?code=<một mã CL còn nợ>`. QR phải hiện đúng số tiền.
 3. Đăng nhập admin. Chốt một buổi thử, thu một khoản tiền mặt, xóa một
    thành viên khỏi một buổi đang mở. Cả ba phải chạy.
+
+### Kết quả kiểm chứng (2026-09-09-phase0-verify.sql)
+
+Chạy `docs/migrations/2026-09-09-phase0-verify.sql` ngay trước và ngay sau
+khi chạy migration (Task 9), dán kết quả cả năm truy vấn vào bảng dưới đây
+để có mốc so sánh cho lần sau:
+
+| Truy vấn | Trước | Sau |
+| --- | --- | --- |
+| 1. anon/authenticated theo hàm | | |
+| 2. Policy "Public Access" còn lại | | |
+| 3. Số liệu tiền | | |
+| 4. proacl thô của sáu hàm | | |
+| 5. Hàm dò tạm `_phase0%` còn sót | | |
+
+Kết quả kiểm hành vi bằng `_phase0_verify_guard()` (bước 5 của Task 9 --
+gọi không JWT, JWT admin, JWT người lạ, rồi DROP FUNCTION và xác nhận
+`pg_proc` không còn hàm nào tên `_phase0%`):
+
+- Không JWT:
+- JWT admin:
+- JWT người lạ:
+- `pg_proc` sau khi DROP còn hàm `_phase0%` nào không:
+
+Kết quả kiểm luồng khách chưa đăng nhập (bước 6 -- đăng xuất, mở trang
+chủ, chọn người còn nợ, bấm trả tiền, QR có hiện và polling có chạy
+không):
+
+### Ghi chú đã biết
+
+- Revoke EXECUTE trên `handle_new_user()` KHÔNG làm hỏng signup:
+  PostgreSQL kiểm tra quyền EXECUTE trên function của một trigger tại thời
+  điểm TẠO trigger, không phải khi trigger CHẠY. Đã xác minh trên container
+  local: với `has_function_privilege('authenticated',
+  'public.handle_new_user()', 'execute')` trả về `false`, insert vào
+  `auth.users` vẫn kích hoạt trigger bình thường.
+- Production có trigger `on_auth_user_created` trên `auth.users` gọi
+  `public.handle_new_user()`. Trigger này KHÔNG có trong
+  `docs/sql-export/` -- dựng lại database chỉ từ export sẽ ra một database
+  mà đăng ký tài khoản không tạo dòng `members` nào và cũng không báo lỗi.
+  Đây là drift đã biết, cố tình chưa sửa ở Phase 0.
 
 ### Rollback
 
