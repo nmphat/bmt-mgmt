@@ -54,6 +54,72 @@ SELECT assert_eq(
     WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   1, 'second call replaces rather than appends');
 
+-- Booking có end_time đi trước start_time: CHECK constraint phải từ
+-- chối, đúng SQLSTATE 23514 (check_violation) -- không phải một lý do
+-- khác (vd. một lỗi kiểu dữ liệu hay quyền hạn) trùng hợp cũng chặn được.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"Sân lỗi","start_time":"2026-09-01T11:10:00+00","end_time":"2026-09-01T11:05:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL inverted booking (end before start) was written';
+  EXCEPTION
+    WHEN check_violation THEN
+      RAISE NOTICE 'ok   inverted booking refused by the CHECK constraint (23514)';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL inverted booking was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+  END;
+END $$;
+
+-- Booking có độ dài bằng 0 (end_time = start_time) cũng phải bị từ chối
+-- -- đây là lý do constraint dùng '>' chứ không phải '>='.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"Sân lỗi","start_time":"2026-09-01T11:10:00+00","end_time":"2026-09-01T11:10:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL zero-length booking (end = start) was written';
+  EXCEPTION
+    WHEN check_violation THEN
+      RAISE NOTICE 'ok   zero-length booking refused by the CHECK constraint (23514)';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL zero-length booking was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+  END;
+END $$;
+
+-- Cả hai lần ghi hỏng ở trên đều bị từ chối bởi INSERT, nhưng hàm xóa
+-- (DELETE) trước rồi mới ghi (INSERT) -- nếu INSERT thất bại mà DELETE
+-- không được cuộn lại theo, booking "Sân 2" của lần gọi thành công trước
+-- đó sẽ biến mất mà không có gì thay thế. Phải còn nguyên y hệt.
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'rejected write left booking count untouched');
+
+SELECT assert_eq(
+  (SELECT court_name FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  'Sân 2', 'rejected write did not delete the pre-existing booking');
+
+SELECT assert_eq(
+  (SELECT court_cost FROM session_intervals WHERE idx = 0
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  50000::numeric, 'rejected write left interval 0 court_cost untouched');
+
+SELECT assert_eq(
+  (SELECT court_cost FROM session_intervals WHERE idx = 1
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  50000::numeric, 'rejected write left interval 1 court_cost untouched');
+
+SELECT assert_eq(
+  (SELECT active_court_count FROM session_intervals WHERE idx = 0
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'rejected write left interval 0 active_court_count untouched');
+
 RESET ROLE;
 
 -- Không phải admin: bị từ chối.
