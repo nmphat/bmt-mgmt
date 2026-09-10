@@ -1,8 +1,8 @@
 -- Read-only drift check between docs/sql-export/*.sql and production.
 -- SELECT statements only — this is meant to run against production one day.
 --
--- Run order matters: results are concatenated 1->4 into one file with no
--- headers, so the same four queries must run in the same order on both
+-- Run order matters: results are concatenated 1->6 into one file with no
+-- headers, so the same six queries must run in the same order on both
 -- sides for `diff` to line up.
 
 -- 1. tables and columns
@@ -58,3 +58,36 @@ WHERE n.nspname = 'public'
                         'word_similarity_commutator_op','word_similarity_dist_commutator_op')
   AND p.proname NOT IN ('assert_eq','assert_denied','login_as')
 ORDER BY p.proname, pg_get_function_identity_arguments(p.oid);
+
+-- 5. function grants: name, args, anon/authenticated has_function_privilege,
+-- and the raw ACL. has_function_privilege alone can't tell a working
+-- REVOKE from an inert one — anon reaches EXECUTE through two independent
+-- grants (PostgreSQL's PUBLIC default and Supabase's ALTER DEFAULT
+-- PRIVILEGES direct grant), and has_function_privilege returns true if
+-- either one survives. The raw proacl is what actually proves both were
+-- revoked. Same exclusions as query 4.
+SELECT p.proname || ' | ' || pg_get_function_identity_arguments(p.oid)
+       || ' | anon=' || has_function_privilege('anon', p.oid, 'execute')
+       || ' | authenticated=' || has_function_privilege('authenticated', p.oid, 'execute')
+       || ' | acl=' || coalesce(p.proacl::text, '-') AS row
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname NOT LIKE 'gtrgm%' AND p.proname NOT LIKE 'gin_%'
+  AND p.proname NOT IN ('set_limit','show_limit','show_trgm','similarity','similarity_dist',
+                        'similarity_op','strict_word_similarity','strict_word_similarity_op',
+                        'strict_word_similarity_dist_op','strict_word_similarity_commutator_op',
+                        'strict_word_similarity_dist_commutator_op','word_similarity',
+                        'word_similarity_op','word_similarity_dist_op',
+                        'word_similarity_commutator_op','word_similarity_dist_commutator_op')
+  AND p.proname NOT IN ('assert_eq','assert_denied','login_as')
+ORDER BY p.proname, pg_get_function_identity_arguments(p.oid);
+
+-- 6. triggers, non-internal, including the auth schema — on_auth_user_created
+-- lives on auth.users, not public, and query 4 alone missed it before.
+SELECT n.nspname || '.' || c.relname || ' | ' || t.tgname || ' | ' || p.proname AS row
+FROM pg_trigger t
+JOIN pg_class c ON c.oid = t.tgrelid
+JOIN pg_namespace n ON n.oid = c.relnamespace
+JOIN pg_proc p ON p.oid = t.tgfoid
+WHERE NOT t.tgisinternal AND n.nspname IN ('public', 'auth')
+ORDER BY 1;
