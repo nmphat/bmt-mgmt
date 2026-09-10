@@ -45,3 +45,10 @@ REVOKE EXECUTE ON FUNCTION public.gc_soft_deleted_sessions(interval) FROM PUBLIC
 
 GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_session(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_sessions_bulk(uuid[]) TO authenticated;
+
+-- refresh_interval_courts: SECURITY DEFINER (writes court_cost to session_intervals).
+-- Called by SECURITY INVOKER functions (create_session_with_bookings, recreate_session_intervals,
+-- trigger_refresh_courts) and frontend RPC, so authenticated role must retain EXECUTE.
+-- anon must be revoked from both PUBLIC and its direct Supabase grant.
+REVOKE EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) TO authenticated;

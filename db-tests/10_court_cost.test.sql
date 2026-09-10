@@ -1,5 +1,22 @@
 BEGIN;
 
+-- anon cannot call refresh_interval_courts (SECURITY DEFINER, revoked from anon)
+SELECT login_as('anon', NULL);
+DO $$
+BEGIN
+  BEGIN
+    PERFORM refresh_interval_courts('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+    RAISE EXCEPTION 'FAIL anon executed refresh_interval_courts (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on refresh_interval_courts';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon reached refresh_interval_courts body (%) — the REVOKE is inert', SQLERRM;
+  END;
+END $$;
+SELECT login_as('authenticated', '11111111-1111-1111-1111-111111111111');
+
 -- Sân 1 chia hai khung giá, sân 2 một khung phủ cả buổi.
 INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour) VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân 1',
