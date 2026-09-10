@@ -1139,3 +1139,12 @@ EXCEPTION WHEN OTHERS THEN
     NULL;
 END;
 $do$;
+
+CREATE OR REPLACE FUNCTION public.health()
+ RETURNS integer
+ LANGUAGE sql
+ STABLE
+ SET search_path = public, pg_temp
+AS $function$
+  select 1;
+$function$;

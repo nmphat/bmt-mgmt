@@ -30,3 +30,6 @@ GRANT EXECUTE ON FUNCTION public.create_group_payment(uuid[]) TO anon, authentic
 
 -- Read-only, safe for guests.
 GRANT EXECUTE ON FUNCTION public.check_qr_status(text) TO anon, authenticated;
+
+-- Trigger function; nothing should call it over the REST API.
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
