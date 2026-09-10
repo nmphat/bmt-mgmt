@@ -104,7 +104,7 @@ cắt một đường thì đường kia vẫn mở, và `has_function_privilege
 Kết quả kiểm hành vi bằng `_phase0_verify_guard()` (bước 5 của Task 9):
 
 - Không JWT: `auth.uid()` trả `NULL`, guard **không** cho qua.
-- JWT admin (`0a5399cd-46ea-46b2-bb26-f2869a239e25`): `auth.uid()` trả đúng
+- JWT admin (uuid lấy từ bảng `members` trên production, không ghi ra đây): `auth.uid()` trả đúng
   UUID đó, guard **cho qua**.
 - JWT người lạ (`11111111-2222-3333-4444-555555555555`): `auth.uid()` trả
   đúng UUID đó, guard **không** cho qua.
