@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS public.session_intervals (
   end_time timestamp with time zone NOT NULL,
   idx integer NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  active_court_count integer DEFAULT 1
+  active_court_count integer DEFAULT 1,
+  court_cost numeric NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.session_registrations (
@@ -99,6 +100,7 @@ CREATE TABLE IF NOT EXISTS public.session_court_bookings (
   court_name text,
   start_time timestamp with time zone NOT NULL,
   end_time timestamp with time zone NOT NULL,
+  price_per_hour numeric NOT NULL DEFAULT 0,
   created_at timestamp with time zone DEFAULT now()
 );
 

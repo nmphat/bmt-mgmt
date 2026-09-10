@@ -7,3 +7,4 @@ CREATE INDEX idx_sessions_title_trgm ON public.sessions USING gin (title gin_trg
 CREATE INDEX idx_intervals_session ON public.session_intervals USING btree (session_id);
 CREATE INDEX idx_registrations_session ON public.session_registrations USING btree (session_id);
 CREATE INDEX idx_presence_interval_member ON public.interval_presence USING btree (interval_id, member_id);
+CREATE INDEX IF NOT EXISTS idx_court_bookings_session ON public.session_court_bookings (session_id);

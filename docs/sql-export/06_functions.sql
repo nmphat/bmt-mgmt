@@ -817,19 +817,37 @@ $function$;
 CREATE OR REPLACE FUNCTION public.refresh_interval_courts(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
-    -- Update lại active_court_count cho từng interval thuộc session đó
+    -- Update lại active_court_count VÀ court_cost cho từng interval thuộc session đó.
+    -- active_court_count: đếm số sân phủ interval (hành vi cũ, giữ nguyên).
+    -- court_cost: tổng tiền thật của các sân phủ interval, tính theo số giờ overlap.
+    --   Buổi cũ có price_per_hour = 0 nên court_cost = 0, và
+    --   calculate_session_costs sẽ rơi về công thức cũ.
     UPDATE session_intervals si
     SET active_court_count = (
         SELECT COUNT(*)
         FROM session_court_bookings b
         WHERE b.session_id = p_session_id
-          -- Logic Overlap: Booking bắt đầu trước khi Interval kết thúc 
+          -- Logic Overlap: Booking bắt đầu trước khi Interval kết thúc
           -- VÀ Booking kết thúc sau khi Interval bắt đầu
           AND b.start_time < si.end_time
           AND b.end_time > si.start_time
-    )
+    ),
+    court_cost = COALESCE((
+        SELECT SUM(
+            b.price_per_hour
+            * EXTRACT(epoch FROM (
+                LEAST(b.end_time, si.end_time) - GREATEST(b.start_time, si.start_time)
+              )) / 3600.0
+        )
+        FROM session_court_bookings b
+        WHERE b.session_id = p_session_id
+          AND b.start_time < si.end_time
+          AND b.end_time > si.start_time
+    ), 0)
     WHERE si.session_id = p_session_id;
 END;
 $function$;
