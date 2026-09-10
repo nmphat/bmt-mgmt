@@ -52,3 +52,8 @@ GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_sessions_bulk(uuid[]) TO 
 -- anon must be revoked from both PUBLIC and its direct Supabase grant.
 REVOKE EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) TO authenticated;
+
+-- set_session_court_bookings: SECURITY DEFINER, admin-only (writes court
+-- bookings and refreshes court_cost in the same transaction).
+REVOKE EXECUTE ON FUNCTION public.set_session_court_bookings(uuid, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.set_session_court_bookings(uuid, jsonb) TO authenticated;

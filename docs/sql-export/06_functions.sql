@@ -541,62 +541,13 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb)
- RETURNS uuid
- LANGUAGE plpgsql
-AS $function$
-DECLARE
-    v_session_id UUID;
-    v_interval_start TIMESTAMPTZ;
-    v_interval_end TIMESTAMPTZ;
-    v_idx INT := 0;
-    v_booking_item JSONB;
-BEGIN
-    INSERT INTO sessions (
-        title, start_time, end_time, price_per_hour, shuttle_fee_total, created_by, status
-    )
-    VALUES (
-        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee, p_created_by, 'open'
-    )
-    RETURNING id INTO v_session_id;
-
-    v_interval_start := p_start_time;
-
-    WHILE v_interval_start < p_end_time LOOP
-        v_interval_end := v_interval_start + INTERVAL '30 minutes';
-
-        IF v_interval_end > p_end_time THEN
-            v_interval_end := p_end_time;
-        END IF;
-
-        INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
-        VALUES (v_session_id, v_interval_start, v_interval_end, v_idx, 0);
-
-        v_interval_start := v_interval_end;
-        v_idx := v_idx + 1;
-    END LOOP;
-
-    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
-        FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
-        LOOP
-            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
-            VALUES (
-                v_session_id,
-                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
-                (v_booking_item->>'start_time')::TIMESTAMPTZ,
-                (v_booking_item->>'end_time')::TIMESTAMPTZ
-            );
-        END LOOP;
-    ELSE
-        INSERT INTO session_court_bookings (session_id, start_time, end_time, court_name)
-        VALUES (v_session_id, p_start_time, p_end_time, 'Sân 1 (Mặc định)');
-    END IF;
-
-    PERFORM refresh_interval_courts(v_session_id);
-
-    RETURN v_session_id;
-END;
-$function$;
+-- The 7-argument overload (no p_court_fee_addon) is dropped: it was dead
+-- code once CreateSessionView.vue moved to the 8-argument call, and having
+-- both left PostgREST to disambiguate overloads by argument count, which
+-- is fragile. IF EXISTS makes this a no-op on a fresh rebuild (the
+-- function was never created in this run) and a real drop against a
+-- database where it still exists from an earlier export.
+DROP FUNCTION IF EXISTS public.create_session_with_bookings(text, timestamp with time zone, timestamp with time zone, numeric, numeric, uuid, jsonb);
 
 CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb, p_court_fee_addon numeric DEFAULT 0)
  RETURNS uuid
@@ -638,12 +589,13 @@ BEGIN
     IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
         FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
         LOOP
-            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
+            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
             VALUES (
                 v_session_id,
                 COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
                 (v_booking_item->>'start_time')::TIMESTAMPTZ,
-                (v_booking_item->>'end_time')::TIMESTAMPTZ
+                (v_booking_item->>'end_time')::TIMESTAMPTZ,
+                COALESCE((v_booking_item->>'price_per_hour')::numeric, 0)
             );
         END LOOP;
     ELSE
@@ -654,6 +606,44 @@ BEGIN
     PERFORM refresh_interval_courts(v_session_id);
 
     RETURN v_session_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.set_session_court_bookings(p_session_id uuid, p_bookings jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa sân khi buổi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    DELETE FROM session_court_bookings WHERE session_id = p_session_id;
+
+    INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+    SELECT
+        p_session_id,
+        e->>'court_name',
+        (e->>'start_time')::timestamptz,
+        (e->>'end_time')::timestamptz,
+        COALESCE((e->>'price_per_hour')::numeric, 0)
+    FROM jsonb_array_elements(p_bookings) e;
+
+    PERFORM refresh_interval_courts(p_session_id);
 END;
 $function$;
 
