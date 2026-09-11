@@ -214,12 +214,23 @@ DECLARE
     v_total_court_units    INT := 0;
     v_total_intervals      INT := 0;  -- fallback denominator when court bookings don't overlap
     v_ghost_count          INT;
+    v_has_priced_booking   BOOLEAN;   -- buổi này dùng giá theo sân hay công thức giờ cũ
 BEGIN
     -- 1. Load session config
     SELECT s.court_fee_addon, s.price_per_hour, s.shuttle_fee_total
     INTO v_court_fee_addon, v_price_per_hour, v_total_shuttle_fee
     FROM sessions s
     WHERE s.id = p_session_id;
+
+    -- 1b. Mô hình giá được chốt MỘT LẦN cho cả buổi, không chọn lại theo
+    -- từng interval. Chỉ cần một booking có giá là buổi này tính theo giá
+    -- sân thật; những khung không có giá (price_per_hour = 0) khi đó đóng
+    -- góp đúng 0 đồng, chứ không âm thầm rơi về công thức giờ cũ và bịa ra
+    -- tiền cho một khung mà thực tế không tốn gì.
+    SELECT EXISTS (
+        SELECT 1 FROM session_court_bookings b
+        WHERE b.session_id = p_session_id AND b.price_per_hour > 0
+    ) INTO v_has_priced_booking;
 
     -- 2. Total court-units (SUM of active_court_count across all intervals)
     SELECT COALESCE(SUM(si.active_court_count), 0),
@@ -282,9 +293,15 @@ BEGIN
                                     -- booking_cost prefers the real per-booking price when the
                                     -- session has one; sessions created before per-court pricing
                                     -- have court_cost = 0 and fall back to the old formula.
+                                    -- Nhánh được chọn theo cờ của cả buổi (v_has_priced_booking),
+                                    -- không theo từng interval: buổi có giá sân thì MỌI interval
+                                    -- dùng court_cost (kể cả interval bằng 0 -- đúng là không tốn
+                                    -- tiền); buổi không có giá sân nào thì MỌI interval dùng công
+                                    -- thức giờ cũ. Trộn hai mô hình trong cùng một buổi là cách
+                                    -- tiền sân bị bịa thêm cho khung sân miễn phí.
                                     (
                                         CASE
-                                            WHEN ist.court_cost > 0 THEN ist.court_cost
+                                            WHEN v_has_priced_booking THEN ist.court_cost
                                             ELSE (v_price_per_hour / 2.0) * ist.active_court_count
                                         END
                                         +

@@ -104,6 +104,16 @@ SELECT assert_eq(
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   125000::numeric, 'court money adds up to what the courts cost');
 
+-- Danh sách buổi (view_session_summary.total_court_cost) phải khớp với
+-- engine tính tiền. Nếu view quay về công thức cũ
+-- (active_court_count * price_per_hour / 2) thì mọi buổi tính theo giá sân
+-- -- vốn có price_per_hour = 0 -- sẽ hiện 0 đồng trong danh sách trong khi
+-- thành viên vẫn bị tính đủ tiền.
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  'session list total_court_cost agrees with the engine');
+
 -- ── Ghost vẫn chịu tiền sân ──
 INSERT INTO members (id, display_name, role, is_active)
 VALUES ('44444444-4444-4444-4444-444444444444', 'Ghost', 'member', true);
@@ -117,5 +127,98 @@ SELECT assert_eq(
   (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
     WHERE member_id = '44444444-4444-4444-4444-444444444444'),
   53000::numeric, 'ghost still pays court fee under the new model');
+
+-- ── CHỐT SỐ TIỀN CHO HÌNH DẠNG CỦA 43 BUỔI TRÊN PRODUCTION ──
+-- Đây là hình dạng thật của toàn bộ dữ liệu cũ: price_per_hour > 0, booking
+-- có tồn tại nhưng price_per_hour = 0 (47/47 dòng trên production), tiền sân
+-- nằm ở court_fee_addon, và hai thành viên có số buổi có mặt KHÁC nhau (nếu
+-- bằng nhau thì mọi cách chia đều cho ra cùng một con số và assertion không
+-- chứng minh được gì). Cờ v_has_priced_booking phải là FALSE ở đây, nên cả
+-- buổi đi theo công thức giờ cũ và số tiền phải y hệt trước khi sửa.
+DELETE FROM session_registrations
+WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+  AND member_id = '44444444-4444-4444-4444-444444444444';
+DELETE FROM session_court_bookings WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+UPDATE sessions
+SET price_per_hour = 100000, court_fee_addon = 300000, shuttle_fee_total = 120000
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+-- Sân 1 phủ cả buổi, Sân 2 chỉ nửa đầu -> active_court_count 2 rồi 1, đúng
+-- như fixture ban đầu; cả hai đều price_per_hour = 0 nên court_cost = 0.
+INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân 1',
+   '2026-09-01 11:00:00+00', '2026-09-01 12:00:00+00', 0),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân 2',
+   '2026-09-01 11:00:00+00', '2026-09-01 11:30:00+00', 0);
+
+SELECT refresh_interval_courts('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+SELECT assert_eq(
+  (SELECT sum(court_cost) FROM session_intervals
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  0::numeric, 'legacy shape: every booking priced 0 leaves court_cost at 0');
+
+SELECT assert_eq(
+  (SELECT sum(active_court_count)::int FROM session_intervals
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  3, 'legacy shape: court-units are 2 + 1 as on production');
+
+-- v_total_court_units = 3, ghost = 0.
+-- interval 0 (2 sân, A và B): court ((100000/2)*2 + 300000*2/3)/2 = 150000/người
+--                             shuttle (120000*2/3)/2 = 40000/người
+-- interval 1 (1 sân, chỉ A):  court ((100000/2)*1 + 300000*1/3)/1 = 150000
+--                             shuttle (120000*1/3)/1 = 40000
+-- A = 300000 + 80000 = 380000 ; B = 150000 + 40000 = 190000
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    WHERE member_id = '22222222-2222-2222-2222-222222222222'),
+  380000::numeric, 'production-shaped session: member A still pays exactly 380000');
+
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    WHERE member_id = '33333333-3333-3333-3333-333333333333'),
+  190000::numeric, 'production-shaped session: member B still pays exactly 190000');
+
+-- ── Buổi TRỘN: có giá sân thật ở khung này, sân 0 đồng ở khung kia ──
+-- Trước đây nhánh được chọn theo từng interval (court_cost > 0), nên khung
+-- có sân 0 đồng lặng lẽ quay về công thức giờ cũ và bịa thêm 100000/2 đồng
+-- cho một khung mà câu lạc bộ không trả đồng nào. Nay cờ được chốt cho cả
+-- buổi: đã có giá sân thì khung 0 đồng đóng góp đúng 0 đồng.
+DELETE FROM session_court_bookings WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+UPDATE sessions SET court_fee_addon = 0, shuttle_fee_total = 0
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+-- price_per_hour = 100000 vẫn còn nguyên: đó chính là cái bẫy.
+
+INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân 1',
+   '2026-09-01 11:00:00+00', '2026-09-01 11:30:00+00', 120000),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân 2',
+   '2026-09-01 11:30:00+00', '2026-09-01 12:00:00+00', 0);
+
+SELECT refresh_interval_courts('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+SELECT assert_eq(
+  (SELECT court_cost FROM session_intervals WHERE idx = 1
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  0::numeric, 'mixed session: the free slot really costs nothing');
+
+-- Tiền sân thật của buổi = 120000 * 0.5 = 60000. Không được thành 110000.
+SELECT assert_eq(
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  60000::numeric, 'mixed session: total charged equals what the courts really cost');
+
+-- interval 0 (60000, A và B cùng mặt) -> 30000 mỗi người
+-- interval 1 (0, chỉ A)               -> A thêm 0
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    WHERE member_id = '22222222-2222-2222-2222-222222222222'),
+  30000::numeric, 'mixed session: member A is not billed the legacy hourly rate for the free slot');
+
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    WHERE member_id = '33333333-3333-3333-3333-333333333333'),
+  30000::numeric, 'mixed session: member B pays her share of the one priced slot');
 
 ROLLBACK;
