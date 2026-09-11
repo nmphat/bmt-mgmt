@@ -267,8 +267,11 @@ SELECT count(*) FROM sessions WHERE shuttle_usage <> '[]'::jsonb;              -
 ```
 
 Xác nhận `refresh_interval_courts` là `SECURITY DEFINER`, constraint mới đã
-có, overload 7 tham số đã biến mất, và `anon` đã mất quyền gọi cả 5 hàm (2
-hàm mới + 3 hàm Phase 0 sót lại):
+có, overload 7 tham số đã biến mất, và `anon` đã mất quyền gọi cả sáu hàm:
+hai hàm mới (`set_session_court_bookings`, `set_session_shuttle_usage`), ba
+hàm Phase 0 sót lại, và `refresh_interval_courts` — hàm thứ sáu, vì
+migration này vừa biến nó thành `SECURITY DEFINER` (mandated addition #1),
+nên nó cũng phải nằm trong diện revoke `anon`:
 
 ```sql
 SELECT proname, prosecdef FROM pg_proc
@@ -329,6 +332,17 @@ bộ, ở `.superpowers/sdd/2026-09-09-pricing-model-and-create-session-ux/task-
 
 ### Rollback
 
+**Cảnh báo: rollback này không trung lập với tiền.** `DROP COLUMN` trên
+`price_per_hour`, `court_cost` và `shuttle_usage` là không thể hoàn tác. Nếu
+đến lúc rollback đã có buổi nào dùng nhánh giá mới, xóa các cột đó rồi nạp
+lại hàm cũ sẽ khiến buổi đó bị tính lại theo công thức cũ — tiền sân của nó
+sụp về chỉ còn `court_fee_addon`, tức rollback tự nó là một sự kiện tiền,
+không phải một cú undo vô hại. Chạy lại ba câu đếm ở mục "Sau khi chạy" bên
+trên (`price_per_hour <> 0`, `court_cost <> 0`, `shuttle_usage <> '[]'`)
+ngay trước khi rollback — **nếu bất kỳ câu nào khác 0, dừng lại và suy nghĩ
+kỹ** trước khi chạy tiếp, vì rollback lúc đó sẽ đổi tiền của đúng những
+buổi ấy.
+
 Bốn hàm bên dưới phải nạp lại **trước** khi `DROP COLUMN` — plpgsql resolve
 tên cột lúc THỰC THI, không phải lúc `CREATE FUNCTION`, nên nếu làm ngược
 lại, mọi lệnh gọi `calculate_session_costs`/`refresh_interval_courts` (kể
@@ -343,6 +357,11 @@ commit `3efe1a4` (export cuối cùng trước Task 1):
 
 ```sql
 BEGIN;
+
+-- Cùng lý do với forward migration: ba DROP COLUMN bên dưới giữ khóa ACCESS
+-- EXCLUSIVE trên cùng ba bảng, và rollback thường chạy trong điều kiện xấu
+-- hơn (đã có sự cố). Fail nhanh thay vì treo.
+SET LOCAL lock_timeout = '5s';
 
 CREATE OR REPLACE FUNCTION public.refresh_interval_courts(p_session_id uuid)
  RETURNS void
@@ -645,6 +664,15 @@ trước migration này, mở lại EXECUTE cho `anon` trên ba hàm Phase 0
 (`soft_delete_cancelled_session`, `soft_delete_cancelled_sessions_bulk`,
 `gc_soft_deleted_sessions`) — nhưng đó chính là lỗ hổng Phase 0 đang vá,
 nên chỉ làm khi bắt buộc.
+
+Rollback này **không** mở lại `anon` trên `refresh_interval_courts`, và
+sau rollback nó vẫn bị revoke: migration revoke `FROM PUBLIC, anon` trên
+hàm đó, `CREATE OR REPLACE FUNCTION` (kể cả bản cũ nạp lại ở trên) giữ
+nguyên ACL hiện có chứ không reset về mặc định, nên revoke đó sống sót qua
+rollback. Đây là lựa chọn nên giữ, không phải một việc cần khôi phục: hàm
+sau rollback là `SECURITY INVOKER` (không còn `SECURITY DEFINER`), nên nếu
+`anon` gọi được thì cũng chỉ đụng RLS — không còn nguy hiểm như trước Task
+1 — nhưng cũng không có lý do gì để trả lại quyền đó.
 
 ### Ghi chú đã biết
 
