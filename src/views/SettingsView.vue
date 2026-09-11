@@ -142,7 +142,7 @@ async function handleAddShuttleType() {
     showShuttleForm.value = false
     toast.success(t.value('common.save'))
   } catch (error: any) {
-    toast.error(error.message || 'Error adding shuttle type')
+    toast.error(error.message || t.value('shuttle.addError'))
   }
 }
 
@@ -343,7 +343,7 @@ async function handleToggleShuttleActive(st: ShuttleType) {
         >
           <X v-if="showShuttleForm" class="h-4 w-4" aria-hidden="true" />
           <Plus v-else class="h-4 w-4" aria-hidden="true" />
-          {{ t('shuttle.type') }}
+          {{ t('shuttle.addType') }}
         </button>
       </div>
 
@@ -408,7 +408,8 @@ async function handleToggleShuttleActive(st: ShuttleType) {
           <button
             type="button"
             class="shrink-0 transition hover:scale-110"
-            :title="st.is_active ? 'Active' : 'Inactive'"
+            :title="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
+            :aria-label="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
             @click="handleToggleShuttleActive(st)"
           >
             <CircleCheck

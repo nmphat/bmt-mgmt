@@ -359,6 +359,10 @@ export const messages = {
       catalogEmpty: 'Chưa có loại cầu nào',
       saved: 'Đã lưu tiền cầu',
       loadError: 'Không tải được danh mục cầu',
+      active: 'Hoạt động',
+      inactive: 'Ngừng hoạt động',
+      saveError: 'Không lưu được tiền cầu',
+      addError: 'Không thêm được loại cầu',
     },
     profile: {
       myDebt: 'Công nợ của tôi',
@@ -745,6 +749,10 @@ export const messages = {
       catalogEmpty: 'No shuttle types yet',
       saved: 'Shuttle cost saved',
       loadError: 'Could not load shuttle catalogue',
+      active: 'Active',
+      inactive: 'Inactive',
+      saveError: 'Error saving shuttle usage',
+      addError: 'Error adding shuttle type',
     },
     profile: {
       myDebt: 'My debt',

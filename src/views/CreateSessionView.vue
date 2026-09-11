@@ -197,7 +197,7 @@ async function createSession() {
 
         <div>
           <label for="courtFee" class="block text-sm font-bold text-gray-700"
-            >{{ t('session.courtFeeAddon') }} (VND)</label
+            >{{ t('session.courtFeeAddon') }}</label
           >
           <input
             v-model.number="form.courtFee"

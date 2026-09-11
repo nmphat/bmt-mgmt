@@ -89,7 +89,7 @@ async function handleSave() {
     toast.success(t.value('shuttle.saved'))
     emit('saved', rows.value.map((r) => ({ ...r })))
   } catch (err: any) {
-    toast.error(err.message || 'Error saving shuttle usage')
+    toast.error(err.message || t.value('shuttle.saveError'))
   } finally {
     saving.value = false
   }
@@ -181,7 +181,7 @@ async function handleSave() {
         @click="addRow"
       >
         <Plus class="h-4 w-4" />
-        {{ t('shuttle.type') }}
+        {{ t('shuttle.addType') }}
       </button>
       <div class="text-right">
         <span class="text-sm text-gray-500">{{ t('shuttle.total') }}:</span>
