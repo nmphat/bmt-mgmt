@@ -204,7 +204,11 @@ public.rpc_generate_draft(p_tournament_id uuid, p_num_teams integer, p_assigned_
 
 ## 2026-09-09-phase1-pricing.sql
 
-Chạy sau `2026-09-09-phase0-security.sql`. Đưa production từ trạng thái
+Chạy sau `2026-09-09-phase0-security.sql`, trong một cửa sổ vắng người
+dùng — script có `SET LOCAL lock_timeout = '5s'` nên một lần chạy bị nghẽn
+sẽ tự fail nhanh và rollback thay vì treo, nhưng ba `ADD COLUMN` vẫn giữ
+khóa ACCESS EXCLUSIVE trên `sessions`, `session_intervals` và
+`session_court_bookings` tới lúc `COMMIT`. Đưa production từ trạng thái
 trước Task 1 (per-court pricing + shuttle tube pricing) sang trạng thái mà
 `docs/sql-export/` mô tả ở commit `2e22461`: thêm cột `price_per_hour` /
 `court_cost` / `shuttle_usage`, bảng `shuttle_types`, constraint thứ tự thời
@@ -222,44 +226,91 @@ chạy phase0 trước chưa áp dụng lên production (đo ngày 2026-09-10, v
 tiền của 53 buổi đang có: `court_cost = 0` khiến `calculate_session_costs`
 rơi về công thức cũ. Không có UPDATE nào ghi dữ liệu trong script này.
 
-### Trước khi chạy — chụp ảnh tiền của mọi buổi
+### Trước khi chạy — kiểm tra dữ liệu rồi chụp ảnh tiền
 
-Dùng `docs/migrations/2026-09-09-phase1-pricing-money-snapshot.sql` (2 câu
-SELECT: tổng tiền từng buổi, và tổng tất cả buổi). Lưu kết quả ra
-`before.csv`:
+Hai câu kiểm tra nhanh trước, vì `ADD CONSTRAINT` ở bước 1b của script
+validate ngay lập tức — nếu có booking mới xuất hiện từ sau lần đo
+2026-09-10 với `end_time <= start_time`, cả transaction sẽ abort (rollback
+sạch, nhưng là một lỗi mù mờ ngay tại cổng production):
+
+```sql
+SELECT count(*) FROM session_court_bookings WHERE end_time <= start_time;  -- kỳ vọng: 0
+SELECT to_regclass('public.shuttle_types');                                -- kỳ vọng: NULL
+```
+
+Sau đó dùng `docs/migrations/2026-09-09-phase1-pricing-money-snapshot.sql`
+(per-member final_total, fingerprint của cùng dữ liệu đó, tổng cộng, và
+ledger `session_costs_snapshot` đã chốt). Lưu kết quả ra `before.csv`:
 
 ```bash
 psql "$DATABASE_URL" -t -A -F',' -f docs/migrations/2026-09-09-phase1-pricing-money-snapshot.sql > before.csv
 ```
 
+Không có `psql` (ví dụ chạy trong Supabase SQL editor)? Chạy riêng câu
+"Query 1b" trong file đó và chỉ cần chép lại một giá trị fingerprint.
+
 ### Sau khi chạy — chụp lại và so
 
 Chạy lại đúng lệnh trên ra `after.csv`, rồi `diff before.csv after.csv`.
-**Phải không có khác biệt nào** — cả theo từng buổi lẫn tổng cộng. Có khác
-biệt nghĩa là một buổi cũ vừa bị đổi tiền; quay lui ngay và tìm nguyên nhân
-trước khi làm tiếp.
+**Phải không có khác biệt nào** — cả theo từng thành viên trong từng buổi,
+fingerprint, tổng cộng, lẫn ledger đã chốt. Có khác biệt nghĩa là một buổi
+cũ vừa bị đổi tiền (hoặc tệ hơn, tiền bị xáo trộn giữa các thành viên trong
+cùng buổi mà tổng buổi không đổi); quay lui ngay và tìm nguyên nhân trước
+khi làm tiếp.
 
-Kiểm tra thêm rằng chưa buổi nào rơi sang nhánh giá mới:
+Kiểm tra thêm rằng chưa buổi nào rơi sang nhánh giá mới (cả ba cột mới):
 
 ```sql
-SELECT count(*) FROM session_court_bookings WHERE price_per_hour <> 0;
--- kỳ vọng: 0
+SELECT count(*) FROM session_court_bookings WHERE price_per_hour <> 0;         -- kỳ vọng: 0
+SELECT count(*) FROM session_intervals WHERE court_cost <> 0;                  -- kỳ vọng: 0
+SELECT count(*) FROM sessions WHERE shuttle_usage <> '[]'::jsonb;              -- kỳ vọng: 0
 ```
 
-Xác nhận `refresh_interval_courts` là `SECURITY DEFINER` và `anon` đã mất
-quyền gọi cả 5 hàm (2 hàm mới + 3 hàm Phase 0 sót lại):
+Xác nhận `refresh_interval_courts` là `SECURITY DEFINER`, constraint mới đã
+có, overload 7 tham số đã biến mất, và `anon` đã mất quyền gọi cả 5 hàm (2
+hàm mới + 3 hàm Phase 0 sót lại):
 
 ```sql
 SELECT proname, prosecdef FROM pg_proc
 WHERE pronamespace = 'public'::regnamespace AND proname = 'refresh_interval_courts';
 -- kỳ vọng: prosecdef = true
 
-SELECT has_function_privilege('anon', 'public.set_session_court_bookings(uuid, jsonb)', 'execute') AS set_bookings,
+SELECT conname FROM pg_constraint WHERE conname = 'session_court_bookings_time_order_check';
+-- kỳ vọng: 1 dòng
+
+SELECT count(*) FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace AND proname = 'create_session_with_bookings' AND pronargs = 7;
+-- kỳ vọng: 0
+
+SELECT has_function_privilege('anon', 'public.refresh_interval_courts(uuid)', 'execute') AS refresh_courts,
+       has_function_privilege('anon', 'public.set_session_court_bookings(uuid, jsonb)', 'execute') AS set_bookings,
        has_function_privilege('anon', 'public.set_session_shuttle_usage(uuid, jsonb)', 'execute') AS set_shuttle,
        has_function_privilege('anon', 'public.soft_delete_cancelled_session(uuid)', 'execute') AS soft_delete,
        has_function_privilege('anon', 'public.soft_delete_cancelled_sessions_bulk(uuid[])', 'execute') AS soft_delete_bulk,
        has_function_privilege('anon', 'public.gc_soft_deleted_sessions(interval)', 'execute') AS gc;
--- kỳ vọng: false cho cả năm
+-- kỳ vọng: false cho cả sáu
+```
+
+Một revoke lỡ tay cắt luôn cả `authenticated` sẽ làm hỏng ngay luồng sửa
+buổi đang chạy mà truy vấn `anon` ở trên vẫn báo "an toàn" — nên phải kiểm
+cả chiều ngược lại:
+
+```sql
+SELECT has_function_privilege('authenticated', 'public.refresh_interval_courts(uuid)', 'execute') AS refresh_courts,
+       has_function_privilege('authenticated', 'public.set_session_court_bookings(uuid, jsonb)', 'execute') AS set_bookings,
+       has_function_privilege('authenticated', 'public.set_session_shuttle_usage(uuid, jsonb)', 'execute') AS set_shuttle,
+       has_function_privilege('authenticated', 'public.soft_delete_cancelled_session(uuid)', 'execute') AS soft_delete,
+       has_function_privilege('authenticated', 'public.soft_delete_cancelled_sessions_bulk(uuid[])', 'execute') AS soft_delete_bulk;
+-- kỳ vọng: true cho cả năm
+```
+
+`shuttle_types` là bảng mới; quyền của nó phụ thuộc `ALTER DEFAULT
+PRIVILEGES` của Supabase có chạy đúng cho role đã chạy script hay không —
+không gì trong export khẳng định điều đó, nên kiểm luôn:
+
+```sql
+SELECT has_table_privilege('authenticated', 'public.shuttle_types', 'select');
+-- kỳ vọng: true
 ```
 
 ### Kiểm chứng cục bộ (Docker, không chạm production)
@@ -278,8 +329,301 @@ bộ, ở `.superpowers/sdd/2026-09-09-pricing-model-and-create-session-ux/task-
 
 ### Rollback
 
+Bốn hàm bên dưới phải nạp lại **trước** khi `DROP COLUMN` — plpgsql resolve
+tên cột lúc THỰC THI, không phải lúc `CREATE FUNCTION`, nên nếu làm ngược
+lại, mọi lệnh gọi `calculate_session_costs`/`refresh_interval_courts` (kể
+cả từ `create_session_with_bookings`) sẽ báo lỗi "column does not exist"
+suốt khoảng thời gian giữa `COMMIT` này và lúc nạp lại — hiển thị tiền,
+chốt buổi, sửa buổi đều sập trong cửa sổ đó. Cả hai overload của
+`create_session_with_bookings` (7 và 8 tham số) đều phải nạp lại: bản 8
+tham số hiện tại (HEAD) ghi cột `price_per_hour` mà rollback này vừa xóa,
+và giao diện đang bind vào đúng bản 8 tham số đó
+(`src/views/CreateSessionView.vue:111`). Thân cả bốn hàm chép nguyên văn từ
+commit `3efe1a4` (export cuối cùng trước Task 1):
+
 ```sql
 BEGIN;
+
+CREATE OR REPLACE FUNCTION public.refresh_interval_courts(p_session_id uuid)
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- Update lại active_court_count cho từng interval thuộc session đó
+    UPDATE session_intervals si
+    SET active_court_count = (
+        SELECT COUNT(*)
+        FROM session_court_bookings b
+        WHERE b.session_id = p_session_id
+          -- Logic Overlap: Booking bắt đầu trước khi Interval kết thúc 
+          -- VÀ Booking kết thúc sau khi Interval bắt đầu
+          AND b.start_time < si.end_time
+          AND b.end_time > si.start_time
+    )
+    WHERE si.session_id = p_session_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.calculate_session_costs(p_session_id uuid)
+ RETURNS TABLE(member_id uuid, display_name text, final_total numeric, total_court_fee numeric, total_shuttle_fee numeric, total_extra_fee numeric, intervals_count integer)
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_court_fee_addon      NUMERIC;
+    v_price_per_hour       NUMERIC;
+    v_total_shuttle_fee    NUMERIC;
+    v_total_court_units    INT := 0;
+    v_total_intervals      INT := 0;  -- fallback denominator when court bookings don't overlap
+    v_ghost_count          INT;
+BEGIN
+    -- 1. Load session config
+    SELECT s.court_fee_addon, s.price_per_hour, s.shuttle_fee_total
+    INTO v_court_fee_addon, v_price_per_hour, v_total_shuttle_fee
+    FROM sessions s
+    WHERE s.id = p_session_id;
+
+    -- 2. Total court-units (SUM of active_court_count across all intervals)
+    SELECT COALESCE(SUM(si.active_court_count), 0),
+           COUNT(si.id)
+    INTO v_total_court_units, v_total_intervals
+    FROM session_intervals si
+    WHERE si.session_id = p_session_id;
+
+    -- 3. Count ghost members
+    WITH member_presence_counts AS (
+        SELECT r.member_id, COUNT(p.id) FILTER (WHERE p.is_present = true) AS presence_count
+        FROM session_registrations r
+        JOIN session_intervals i ON i.session_id = r.session_id
+        LEFT JOIN interval_presence p ON p.interval_id = i.id AND p.member_id = r.member_id
+        WHERE r.session_id = p_session_id
+        GROUP BY r.member_id
+    )
+    SELECT COUNT(*) INTO v_ghost_count
+    FROM member_presence_counts
+    WHERE presence_count = 0;
+
+    -- 4. Compute costs
+    RETURN QUERY
+    WITH
+    ghost_members AS (
+        SELECT r.member_id
+        FROM session_registrations r
+        JOIN session_intervals i ON i.session_id = r.session_id
+        LEFT JOIN interval_presence p ON p.interval_id = i.id AND p.member_id = r.member_id
+        WHERE r.session_id = p_session_id
+        GROUP BY r.member_id
+        HAVING COUNT(p.id) FILTER (WHERE p.is_present = true) = 0
+    ),
+
+    interval_stats AS (
+        SELECT
+            i.id AS interval_id,
+            i.active_court_count,
+            COUNT(p.member_id) FILTER (WHERE p.is_present = true) AS real_present_count
+        FROM session_intervals i
+        LEFT JOIN interval_presence p ON p.interval_id = i.id
+        WHERE i.session_id = p_session_id
+        GROUP BY i.id, i.active_court_count
+    ),
+
+    member_interval_costs AS (
+        SELECT
+            m.id AS mem_id,
+            m.display_name,
+
+            -- A. COURT FEE — Option C additive (booking cost + addon)
+            CASE
+                WHEN (ist.real_present_count + v_ghost_count) > 0 THEN
+                    CASE
+                        WHEN gm.member_id IS NOT NULL OR p.is_present = true THEN
+                            CASE
+                                WHEN v_total_court_units > 0 THEN
+                                    -- Normal: both booking cost and addon weighted by court-units
+                                    (
+                                        ((v_price_per_hour / 2.0) * ist.active_court_count)
+                                        +
+                                        (COALESCE(v_court_fee_addon, 0) * ist.active_court_count::numeric / v_total_court_units)
+                                    ) / (ist.real_present_count + v_ghost_count)
+                                WHEN v_total_intervals > 0 AND COALESCE(v_court_fee_addon, 0) > 0 THEN
+                                    -- Fallback: court bookings don't overlap with intervals
+                                    -- (e.g. timezone mismatch). Distribute addon equally per interval.
+                                    -- price_per_hour booking cost = 0 (no valid court overlap).
+                                    (v_court_fee_addon::numeric / v_total_intervals)
+                                    / (ist.real_present_count + v_ghost_count)
+                                ELSE 0
+                            END
+                        ELSE 0
+                    END
+                ELSE 0
+            END AS court_cost,
+
+            -- B. SHUTTLE FEE — only real attendees
+            CASE
+                WHEN ist.real_present_count > 0 AND v_total_court_units > 0 THEN
+                    CASE
+                        WHEN p.is_present = true THEN
+                            (v_total_shuttle_fee * ist.active_court_count::numeric / v_total_court_units)
+                            / ist.real_present_count
+                        ELSE 0
+                    END
+                WHEN ist.real_present_count > 0 AND v_total_intervals > 0 THEN
+                    -- Fallback for shuttle when no court overlap either
+                    CASE
+                        WHEN p.is_present = true THEN
+                            (v_total_shuttle_fee / v_total_intervals) / ist.real_present_count
+                        ELSE 0
+                    END
+                ELSE 0
+            END AS shuttle_cost,
+
+            CASE WHEN p.is_present = true THEN 1 ELSE 0 END AS is_present_flag
+
+        FROM members m
+        CROSS JOIN session_intervals i
+        JOIN interval_stats ist ON ist.interval_id = i.id
+        LEFT JOIN interval_presence p ON p.interval_id = i.id AND p.member_id = m.id
+        JOIN session_registrations r ON r.member_id = m.id AND r.session_id = p_session_id
+        LEFT JOIN ghost_members gm ON gm.member_id = m.id
+        WHERE i.session_id = p_session_id
+    ),
+
+    extra_fee_calc AS (
+        SELECT ex.member_id, SUM(ex.amount) AS total_extra
+        FROM session_extra_charges ex
+        WHERE ex.session_id = p_session_id
+        GROUP BY ex.member_id
+    )
+
+    SELECT
+        mic.mem_id,
+        mic.display_name,
+        COALESCE(CEIL((SUM(mic.court_cost) + SUM(mic.shuttle_cost) + COALESCE(ef.total_extra, 0)) / 1000.0) * 1000, 0) AS final_total,
+        COALESCE(SUM(mic.court_cost), 0)   AS total_court_fee,
+        COALESCE(SUM(mic.shuttle_cost), 0) AS total_shuttle_fee,
+        COALESCE(ef.total_extra, 0)         AS total_extra_fee,
+        COALESCE(SUM(mic.is_present_flag), 0)::INT AS intervals_count
+    FROM member_interval_costs mic
+    LEFT JOIN extra_fee_calc ef ON ef.member_id = mic.mem_id
+    GROUP BY mic.mem_id, mic.display_name, ef.total_extra
+    ORDER BY mic.display_name ASC;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_session_id UUID;
+    v_interval_start TIMESTAMPTZ;
+    v_interval_end TIMESTAMPTZ;
+    v_idx INT := 0;
+    v_booking_item JSONB;
+BEGIN
+    INSERT INTO sessions (
+        title, start_time, end_time, price_per_hour, shuttle_fee_total, created_by, status
+    )
+    VALUES (
+        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee, p_created_by, 'open'
+    )
+    RETURNING id INTO v_session_id;
+
+    v_interval_start := p_start_time;
+
+    WHILE v_interval_start < p_end_time LOOP
+        v_interval_end := v_interval_start + INTERVAL '30 minutes';
+
+        IF v_interval_end > p_end_time THEN
+            v_interval_end := p_end_time;
+        END IF;
+
+        INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
+        VALUES (v_session_id, v_interval_start, v_interval_end, v_idx, 0);
+
+        v_interval_start := v_interval_end;
+        v_idx := v_idx + 1;
+    END LOOP;
+
+    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
+        FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
+        LOOP
+            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
+            VALUES (
+                v_session_id,
+                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
+                (v_booking_item->>'start_time')::TIMESTAMPTZ,
+                (v_booking_item->>'end_time')::TIMESTAMPTZ
+            );
+        END LOOP;
+    ELSE
+        INSERT INTO session_court_bookings (session_id, start_time, end_time, court_name)
+        VALUES (v_session_id, p_start_time, p_end_time, 'Sân 1 (Mặc định)');
+    END IF;
+
+    PERFORM refresh_interval_courts(v_session_id);
+
+    RETURN v_session_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb, p_court_fee_addon numeric DEFAULT 0)
+ RETURNS uuid
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_session_id UUID;
+    v_interval_start TIMESTAMPTZ;
+    v_interval_end TIMESTAMPTZ;
+    v_idx INT := 0;
+    v_booking_item JSONB;
+BEGIN
+    INSERT INTO sessions (
+        title, start_time, end_time, price_per_hour, shuttle_fee_total,
+        court_fee_addon, created_by, status
+    )
+    VALUES (
+        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee,
+        p_court_fee_addon, p_created_by, 'open'
+    )
+    RETURNING id INTO v_session_id;
+
+    v_interval_start := p_start_time;
+
+    WHILE v_interval_start < p_end_time LOOP
+        v_interval_end := v_interval_start + INTERVAL '30 minutes';
+
+        IF v_interval_end > p_end_time THEN
+            v_interval_end := p_end_time;
+        END IF;
+
+        INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
+        VALUES (v_session_id, v_interval_start, v_interval_end, v_idx, 0);
+
+        v_interval_start := v_interval_end;
+        v_idx := v_idx + 1;
+    END LOOP;
+
+    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
+        FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
+        LOOP
+            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
+            VALUES (
+                v_session_id,
+                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
+                (v_booking_item->>'start_time')::TIMESTAMPTZ,
+                (v_booking_item->>'end_time')::TIMESTAMPTZ
+            );
+        END LOOP;
+    ELSE
+        INSERT INTO session_court_bookings (session_id, start_time, end_time, court_name)
+        VALUES (v_session_id, p_start_time, p_end_time, 'Sân 1 (Mặc định)');
+    END IF;
+
+    PERFORM refresh_interval_courts(v_session_id);
+
+    RETURN v_session_id;
+END;
+$function$;
 
 DROP POLICY IF EXISTS shuttle_types_authenticated_read ON public.shuttle_types;
 DROP POLICY IF EXISTS shuttle_types_admin_write ON public.shuttle_types;
@@ -296,12 +640,10 @@ DROP FUNCTION IF EXISTS public.set_session_shuttle_usage(uuid, jsonb);
 COMMIT;
 ```
 
-Sau đó nạp lại `refresh_interval_courts`, `calculate_session_costs` và
-`create_session_with_bookings` (bản 7 tham số) từ commit trước Task 1
-(`3efe1a4`), và mở lại EXECUTE cho `anon` trên ba hàm Phase 0
+Sau khi `COMMIT`, nếu thật sự cần quay lại đúng trạng thái production
+trước migration này, mở lại EXECUTE cho `anon` trên ba hàm Phase 0
 (`soft_delete_cancelled_session`, `soft_delete_cancelled_sessions_bulk`,
-`gc_soft_deleted_sessions`) nếu thật sự cần quay lại đúng trạng thái
-production trước migration này — nhưng đó chính là lỗ hổng Phase 0 đang vá,
+`gc_soft_deleted_sessions`) — nhưng đó chính là lỗ hổng Phase 0 đang vá,
 nên chỉ làm khi bắt buộc.
 
 ### Ghi chú đã biết

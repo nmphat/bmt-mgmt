@@ -9,6 +9,13 @@
 
 BEGIN;
 
+-- The three ADD COLUMNs below take ACCESS EXCLUSIVE on sessions,
+-- session_intervals and session_court_bookings and hold it to COMMIT,
+-- queuing ahead of new readers while they wait. Fail fast instead of
+-- blocking behind one long-running guest SELECT. Run this migration in a
+-- quiet window regardless.
+SET LOCAL lock_timeout = '5s';
+
 -- 1. Columns. Defaults are chosen so existing rows keep the old behaviour:
 --    price_per_hour = 0 -> court_cost = 0 -> calculate_session_costs falls
 --    back to the pre-existing formula. No backfill, on purpose: the 53
