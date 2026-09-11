@@ -201,3 +201,112 @@ sự cần khôi phục, đường duy nhất là Supabase point-in-time recover
 ```sql
 public.rpc_generate_draft(p_tournament_id uuid, p_num_teams integer, p_assigned_by text DEFAULT 'snake'::text)
 ```
+
+## 2026-09-09-phase1-pricing.sql
+
+Chạy sau `2026-09-09-phase0-security.sql`. Đưa production từ trạng thái
+trước Task 1 (per-court pricing + shuttle tube pricing) sang trạng thái mà
+`docs/sql-export/` mô tả ở commit `2e22461`: thêm cột `price_per_hour` /
+`court_cost` / `shuttle_usage`, bảng `shuttle_types`, constraint thứ tự thời
+gian trên `session_court_bookings`, 5 hàm sửa/thêm (`refresh_interval_courts`,
+`calculate_session_costs`, `create_session_with_bookings` 8 tham số,
+`set_session_court_bookings`, `set_session_shuttle_usage`), drop overload 7
+tham số của `create_session_with_bookings`, và grant/revoke đi kèm — kể cả
+ba revoke sót lại từ Phase 0 (`soft_delete_cancelled_session`,
+`soft_delete_cancelled_sessions_bulk`, `gc_soft_deleted_sessions`) mà lần
+chạy phase0 trước chưa áp dụng lên production (đo ngày 2026-09-10, vẫn
+`anon = true`).
+
+**Không có backfill.** Default của các cột mới (`price_per_hour = 0`,
+`court_cost = 0`, `shuttle_usage = '[]'`) là toàn bộ cơ chế giữ nguyên số
+tiền của 53 buổi đang có: `court_cost = 0` khiến `calculate_session_costs`
+rơi về công thức cũ. Không có UPDATE nào ghi dữ liệu trong script này.
+
+### Trước khi chạy — chụp ảnh tiền của mọi buổi
+
+Dùng `docs/migrations/2026-09-09-phase1-pricing-money-snapshot.sql` (2 câu
+SELECT: tổng tiền từng buổi, và tổng tất cả buổi). Lưu kết quả ra
+`before.csv`:
+
+```bash
+psql "$DATABASE_URL" -t -A -F',' -f docs/migrations/2026-09-09-phase1-pricing-money-snapshot.sql > before.csv
+```
+
+### Sau khi chạy — chụp lại và so
+
+Chạy lại đúng lệnh trên ra `after.csv`, rồi `diff before.csv after.csv`.
+**Phải không có khác biệt nào** — cả theo từng buổi lẫn tổng cộng. Có khác
+biệt nghĩa là một buổi cũ vừa bị đổi tiền; quay lui ngay và tìm nguyên nhân
+trước khi làm tiếp.
+
+Kiểm tra thêm rằng chưa buổi nào rơi sang nhánh giá mới:
+
+```sql
+SELECT count(*) FROM session_court_bookings WHERE price_per_hour <> 0;
+-- kỳ vọng: 0
+```
+
+Xác nhận `refresh_interval_courts` là `SECURITY DEFINER` và `anon` đã mất
+quyền gọi cả 5 hàm (2 hàm mới + 3 hàm Phase 0 sót lại):
+
+```sql
+SELECT proname, prosecdef FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace AND proname = 'refresh_interval_courts';
+-- kỳ vọng: prosecdef = true
+
+SELECT has_function_privilege('anon', 'public.set_session_court_bookings(uuid, jsonb)', 'execute') AS set_bookings,
+       has_function_privilege('anon', 'public.set_session_shuttle_usage(uuid, jsonb)', 'execute') AS set_shuttle,
+       has_function_privilege('anon', 'public.soft_delete_cancelled_session(uuid)', 'execute') AS soft_delete,
+       has_function_privilege('anon', 'public.soft_delete_cancelled_sessions_bulk(uuid[])', 'execute') AS soft_delete_bulk,
+       has_function_privilege('anon', 'public.gc_soft_deleted_sessions(interval)', 'execute') AS gc;
+-- kỳ vọng: false cho cả năm
+```
+
+### Kiểm chứng cục bộ (Docker, không chạm production)
+
+Dựng lại trạng thái "trước migration" bằng `git worktree add --detach <path>
+3efe1a4` (commit ngay trước Task 1) rồi chạy `db-tests/up.sh` từ trong
+worktree đó — `db-tests/up.sh` tự nạp `docs/sql-export/*.sql` của chính
+worktree, nên bed dựng ra là schema cũ thật, không phải suy diễn lại bằng
+tay. Áp script này vào bed đó hai lần (lần hai không đổi gì, xác nhận bằng
+snapshot trước/sau của cột, index, policy, constraint và proacl của từng
+hàm), rồi chạy `./db-tests/run.sh` (bộ test hiện tại, 10 file) từ checkout
+HEAD — cả 10 file `PASS`. Chiều ngược lại (`./db-tests/down.sh &&
+./db-tests/up.sh && ./db-tests/run.sh` từ `docs/sql-export/` hiện tại) cũng
+10/10. Chi tiết đầy đủ, gồm log hai lần chạy và snapshot tiền trên bed cục
+bộ, ở `.superpowers/sdd/2026-09-09-pricing-model-and-create-session-ux/task-5-report.md`.
+
+### Rollback
+
+```sql
+BEGIN;
+
+DROP POLICY IF EXISTS shuttle_types_authenticated_read ON public.shuttle_types;
+DROP POLICY IF EXISTS shuttle_types_admin_write ON public.shuttle_types;
+DROP TABLE IF EXISTS public.shuttle_types;
+
+ALTER TABLE public.session_court_bookings DROP CONSTRAINT IF EXISTS session_court_bookings_time_order_check;
+ALTER TABLE public.session_court_bookings DROP COLUMN IF EXISTS price_per_hour;
+ALTER TABLE public.session_intervals      DROP COLUMN IF EXISTS court_cost;
+ALTER TABLE public.sessions               DROP COLUMN IF EXISTS shuttle_usage;
+
+DROP FUNCTION IF EXISTS public.set_session_court_bookings(uuid, jsonb);
+DROP FUNCTION IF EXISTS public.set_session_shuttle_usage(uuid, jsonb);
+
+COMMIT;
+```
+
+Sau đó nạp lại `refresh_interval_courts`, `calculate_session_costs` và
+`create_session_with_bookings` (bản 7 tham số) từ commit trước Task 1
+(`3efe1a4`), và mở lại EXECUTE cho `anon` trên ba hàm Phase 0
+(`soft_delete_cancelled_session`, `soft_delete_cancelled_sessions_bulk`,
+`gc_soft_deleted_sessions`) nếu thật sự cần quay lại đúng trạng thái
+production trước migration này — nhưng đó chính là lỗ hổng Phase 0 đang vá,
+nên chỉ làm khi bắt buộc.
+
+### Ghi chú đã biết
+
+README này đã có hai playbook kiểm chứng chồng nhau (phần "Cách chạy" ở đầu
+file, và các mục con "Trước/Sau khi chạy" riêng của từng migration) mà
+không có mục nào dẫn rõ ràng đến mục kia. Đây là drift đã biết từ Phase 0,
+chưa sửa ở đây — không thuộc phạm vi của Task 5.
