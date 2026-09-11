@@ -120,6 +120,94 @@ SELECT assert_eq(
     AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   1, 'rejected write left interval 0 active_court_count untouched');
 
+-- court_name thiếu, JSON null, hoặc chỉ có khoảng trắng: một sân không tên
+-- là vô nghĩa, không được lặng lẽ ghi. Guard phải chặn cả ba trước khi
+-- xóa/ghi bất cứ gì.
+
+-- Thiếu key "court_name".
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking missing "court_name" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL missing "court_name" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   missing "court_name" rejected';
+  END;
+END $$;
+
+-- court_name là JSON null.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":null,"start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking with court_name = null was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL court_name = null was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   court_name = null rejected';
+  END;
+END $$;
+
+-- court_name chỉ có khoảng trắng.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"   ","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking with blank court_name was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL blank court_name was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   blank court_name rejected';
+  END;
+END $$;
+
+-- Guard chạy trước DELETE, nên ba lần ghi hỏng ở trên không được đụng vào
+-- booking "Sân 2" hay các interval của nó -- phải còn nguyên y hệt.
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'rejected court_name writes left booking count untouched');
+
+SELECT assert_eq(
+  (SELECT court_name FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  'Sân 2', 'rejected court_name writes did not delete the pre-existing booking');
+
+SELECT assert_eq(
+  (SELECT court_cost FROM session_intervals WHERE idx = 0
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  50000::numeric, 'rejected court_name writes left interval 0 court_cost untouched');
+
+SELECT assert_eq(
+  (SELECT court_cost FROM session_intervals WHERE idx = 1
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  50000::numeric, 'rejected court_name writes left interval 1 court_cost untouched');
+
+-- Payload hợp lệ vẫn ghi được bình thường -- guard mới không được
+-- false-positive trên dữ liệu tốt.
+SELECT set_session_court_bookings(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"court_name":"Sân 3","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":110000}]'::jsonb);
+
+SELECT assert_eq(
+  (SELECT court_name FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  'Sân 3', 'a valid court_name still writes after the new guard');
+
 RESET ROLE;
 
 -- Không phải admin: bị từ chối.

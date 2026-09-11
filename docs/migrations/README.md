@@ -680,3 +680,62 @@ README này đã có hai playbook kiểm chứng chồng nhau (phần "Cách ch�
 file, và các mục con "Trước/Sau khi chạy" riêng của từng migration) mà
 không có mục nào dẫn rõ ràng đến mục kia. Đây là drift đã biết từ Phase 0,
 chưa sửa ở đây — không thuộc phạm vi của Task 5.
+
+## 2026-09-11-court-name-not-null.sql
+
+Chạy sau `2026-09-09-phase1-pricing.sql`. `session_court_bookings.court_name`
+là `text` và nullable, và NULL đọc được trong thực tế: `set_session_court_bookings`
+ghi thẳng `e->>'court_name'` không có fallback và không validate — một
+phần tử payload thiếu key này, hoặc gửi JSON null, sẽ lặng lẽ ghi một
+booking không tên sân. Script này thêm guard từ chối `court_name` thiếu,
+JSON null, hoặc chỉ có khoảng trắng vào `set_session_court_bookings`, rồi
+đặt cột `NOT NULL` để trạng thái vô nghĩa đó không còn biểu diễn được nữa.
+
+### Trước khi chạy
+
+```sql
+SELECT count(*) FROM session_court_bookings
+WHERE court_name IS NULL OR trim(court_name) = '';
+-- kỳ vọng: 0
+```
+
+Đo ngày 2026-09-11 trên production: 47/47 dòng booking đều có `court_name`,
+0 dòng NULL — constraint áp dụng sạch. Nếu câu trên ra khác 0 khi chạy
+thật, dừng lại: có booking mới không tên xuất hiện sau lần đo, phải xử lý
+dữ liệu đó trước khi `SET NOT NULL` (nếu không, `ALTER TABLE` sẽ báo lỗi và
+tự rollback toàn bộ transaction).
+
+### Sau khi chạy
+
+```sql
+SELECT is_nullable FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'session_court_bookings'
+  AND column_name = 'court_name';
+-- kỳ vọng: 'NO'
+```
+
+Idempotent: `SET NOT NULL` trên một cột đã `NOT NULL` là no-op, nên chạy
+script này lần thứ hai không đổi gì — an toàn để chạy lại.
+
+### Kiểm chứng cục bộ (Docker, không chạm production)
+
+Dựng lại trạng thái "trước migration" (tức export của nhánh này, trừ thay
+đổi của script này) bằng `git worktree add --detach <path> 822e8c2` — `822e8c2`
+là commit ngay trước script này — rồi chạy `db-tests/up.sh` từ trong
+worktree đó. Áp script này vào bed đó hai lần (lần hai không đổi gì, xác
+nhận bằng snapshot `is_nullable` và thân hàm trước/sau), rồi chạy
+`./db-tests/run.sh` (bộ test hiện tại) từ checkout HEAD. Chi tiết đầy đủ ở
+`.superpowers/sdd/2026-09-09-pricing-model-and-create-session-ux/task-5b-report.md`.
+
+### Rollback
+
+```sql
+BEGIN;
+ALTER TABLE public.session_court_bookings ALTER COLUMN court_name DROP NOT NULL;
+COMMIT;
+```
+
+Hàm `set_session_court_bookings` không cần nạp lại: guard mới trong thân
+hàm chỉ từ chối các payload vốn dĩ đã vô nghĩa (thiếu/null/rỗng
+`court_name`), không đổi hành vi trên payload hợp lệ, nên không có gì phải
+hoàn tác ở đó.

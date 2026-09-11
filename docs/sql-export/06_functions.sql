@@ -632,6 +632,16 @@ BEGIN
         RAISE EXCEPTION 'Không thể sửa sân khi buổi đang ở trạng thái "%".', v_status;
     END IF;
 
+    -- Một sân không tên là vô nghĩa. Thiếu key, JSON null, hoặc chỉ có
+    -- khoảng trắng đều phải bị chặn ở đây, trước khi ghi -- không lặng lẽ
+    -- mặc định về 'Sân 1' như create_session_with_bookings vẫn làm.
+    IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(p_bookings) e
+        WHERE e->>'court_name' IS NULL OR trim(e->>'court_name') = ''
+    ) THEN
+        RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
+    END IF;
+
     DELETE FROM session_court_bookings WHERE session_id = p_session_id;
 
     INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)

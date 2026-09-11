@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS public.session_payments (
 CREATE TABLE IF NOT EXISTS public.session_court_bookings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   session_id uuid,
-  court_name text,
+  court_name text NOT NULL,
   start_time timestamp with time zone NOT NULL,
   end_time timestamp with time zone NOT NULL,
   price_per_hour numeric NOT NULL DEFAULT 0,
