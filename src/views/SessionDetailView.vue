@@ -9,6 +9,8 @@ import type {
   MemberCost,
   Member,
   GroupPaymentData,
+  CourtBooking,
+  CourtBookingDraft,
 } from '@/types'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
@@ -31,6 +33,7 @@ import {
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
+import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -157,7 +160,12 @@ const sessionForm = ref({
   price_per_hour: 0,
   court_fee_addon: 0,
   shuttle_fee_total: 0,
+  session_start: '',
+  session_end: '',
 })
+const courtBookings = ref<CourtBooking[]>([])
+const courtBookingDrafts = ref<CourtBookingDraft[]>([])
+const bookingsValid = ref(true)
 let realtimeChannel: RealtimeChannel | null = null
 let pollTimer: any = null
 
@@ -229,6 +237,8 @@ async function fetchData(refreshCostsOnly = false) {
         price_per_hour: normalizedSession.price_per_hour,
         court_fee_addon: normalizedSession.court_fee_addon,
         shuttle_fee_total: normalizedSession.shuttle_fee_total,
+        session_start: '',
+        session_end: '',
       }
     }
 
@@ -249,6 +259,16 @@ async function fetchData(refreshCostsOnly = false) {
         .order('display_name', { ascending: true })
       if (membersError) throw membersError
       allMembers.value = membersData || []
+
+      // Fetch court bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('session_court_bookings')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('court_name', { ascending: true })
+        .order('start_time', { ascending: true })
+      if (bookingsError) throw bookingsError
+      courtBookings.value = bookingsData || []
     }
 
     // Fetch registrations (with member details)
@@ -397,12 +417,74 @@ function openCashPayment(snapshot: CostSnapshot, name: string) {
   showCashModal.value = true
 }
 
+/** Convert ISO UTC string → "HH:mm" in Vietnam timezone (UTC+7) */
+function toVNHHmm(iso: string): string {
+  const vnMs = new Date(iso).getTime() + 7 * 3600 * 1000
+  return new Date(vnMs).toISOString().slice(11, 16)
+}
+
+function startEditing() {
+  if (!session.value) return
+  isEditingSession.value = true
+  sessionForm.value.session_start = toVNHHmm(session.value.start_time)
+  sessionForm.value.session_end = toVNHHmm(session.value.end_time)
+  courtBookingDrafts.value = courtBookings.value.map((b) => ({
+    id: b.id,
+    court_name: b.court_name,
+    start_time: toVNHHmm(b.start_time),
+    end_time: toVNHHmm(b.end_time),
+    price_per_hour: b.price_per_hour ?? 0,
+  }))
+  // Old sessions with no court bookings: seed one slot covering the whole session.
+  if (courtBookingDrafts.value.length === 0) {
+    courtBookingDrafts.value = [{
+      court_name: 'Sân 1',
+      start_time: sessionForm.value.session_start,
+      end_time: sessionForm.value.session_end,
+      price_per_hour: sessionForm.value.price_per_hour ?? 0,
+    }]
+  }
+}
+
+const timesChanged = computed(() => {
+  if (!session.value) return false
+  return (
+    sessionForm.value.session_start !== toVNHHmm(session.value.start_time) ||
+    sessionForm.value.session_end !== toVNHHmm(session.value.end_time)
+  )
+})
+
 async function saveSession() {
   if (!isSessionEditable.value) return
 
   try {
     isSavingSession.value = true
     actionError.value = ''
+
+    // Compute UTC start/end from VN HH:mm
+    const sessionDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' })
+      .format(new Date(session.value!.start_time))
+    const newStartUTC = new Date(`${sessionDate}T${sessionForm.value.session_start}:00+07:00`)
+    const newEndUTC = new Date(`${sessionDate}T${sessionForm.value.session_end}:00+07:00`)
+
+    if (newEndUTC <= newStartUTC) {
+      toast.error(t.value('createSession.endTimeError'))
+      return
+    }
+
+    const timeChanged =
+      newStartUTC.getTime() !== new Date(session.value!.start_time).getTime() ||
+      newEndUTC.getTime() !== new Date(session.value!.end_time).getTime()
+
+    if (timeChanged) {
+      const { error: recreateErr } = await supabase.rpc('recreate_session_intervals', {
+        p_session_id: sessionId,
+        p_start_time: newStartUTC.toISOString(),
+        p_end_time: newEndUTC.toISOString(),
+      })
+      if (recreateErr) throw recreateErr
+    }
+
     const { error } = await supabase
       .from('sessions')
       .update({
@@ -410,12 +492,23 @@ async function saveSession() {
         status: sessionForm.value.status,
         price_per_hour: sessionForm.value.price_per_hour,
         court_fee_addon: sessionForm.value.court_fee_addon,
-        shuttle_fee_total: sessionForm.value.shuttle_fee_total,
         updated_at: new Date().toISOString(),
       })
       .eq('id', sessionId)
 
     if (error) throw error
+
+    // Save court bookings
+    const { error: bookingsErr } = await supabase.rpc('set_session_court_bookings', {
+      p_session_id: sessionId,
+      p_bookings: courtBookingDrafts.value.map((b) => ({
+        court_name: b.court_name,
+        start_time: new Date(`${sessionDate}T${b.start_time}:00+07:00`).toISOString(),
+        end_time: new Date(`${sessionDate}T${b.end_time}:00+07:00`).toISOString(),
+        price_per_hour: b.price_per_hour,
+      })),
+    })
+    if (bookingsErr) throw bookingsErr
 
     toast.success(t.value('toast.sessionUpdated'))
     isEditingSession.value = false
@@ -894,7 +987,7 @@ onUnmounted(() => {
               <X class="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
                 t('session.title')
@@ -921,15 +1014,26 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.pricePerHour')
+                t('createSession.startTime')
               }}</label>
               <input
-                v-model.number="sessionForm.price_per_hour"
-                type="number"
-                step="1000"
+                v-model="sessionForm.session_start"
+                type="time"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700">{{
+                t('createSession.endTime')
+              }}</label>
+              <input
+                v-model="sessionForm.session_end"
+                type="time"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+              />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
                 t('session.courtFeeAddon')
@@ -943,16 +1047,29 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.shuttleFee')
+                t('session.pricePerHour')
               }}</label>
               <input
-                v-model.number="sessionForm.shuttle_fee_total"
+                v-model.number="sessionForm.price_per_hour"
                 type="number"
                 step="1000"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
           </div>
+          <div v-if="timesChanged" class="md:col-span-2 lg:col-span-5">
+            <div class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <span class="mt-0.5">&#x26A0;&#xFE0F;</span>
+              <span>{{ t('session.intervalsResetWarning') }}</span>
+            </div>
+          </div>
+          <CourtBookingEditor
+            v-model:bookings="courtBookingDrafts"
+            :session-start="sessionForm.session_start"
+            :session-end="sessionForm.session_end"
+            :default-price="sessionForm.price_per_hour"
+            @update:valid="bookingsValid = $event"
+          />
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
             <button
               type="button"
@@ -964,7 +1081,7 @@ onUnmounted(() => {
             <button
               type="button"
               @click="saveSession"
-              :disabled="isSavingSession"
+              :disabled="isSavingSession || !bookingsValid"
               class="flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
@@ -983,7 +1100,7 @@ onUnmounted(() => {
                   <button
                     v-if="isSessionEditable"
                     type="button"
-                    @click="isEditingSession = true"
+                    @click="startEditing"
                     class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     :title="t('session.editSession')"
                     :aria-label="t('session.editSession')"
