@@ -43,3 +43,5 @@ __screenshots__/
 .playwright*
 
 .mcp.json
+# SDD ledgers and review notes — working artifacts, not repo content
+.superpowers/
