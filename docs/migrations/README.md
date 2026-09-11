@@ -772,3 +772,150 @@ sự cố về hiệu năng khóa hay tương tự), thì chỉ chạy script tr
 đủ** — phải nạp lại `set_session_court_bookings` từ `822e8c2` (bản không
 có guard) trong cùng transaction rollback, nếu không hàm vẫn chặn đúng thứ
 mà việc rollback định mở lại.
+
+## 2026-09-11-court-pricing-guards.sql
+
+Chạy sau `2026-09-11-court-name-not-null.sql`. Chưa áp lên production.
+Bảy thay đổi, tất cả đều là `CREATE OR REPLACE` (không `DROP`), cộng một
+trigger mới trên `session_extra_charges`. Không có `ALTER TABLE`, không có
+backfill, không có `DELETE`.
+
+1. **`calculate_session_costs`** — mô hình giá được chốt **một lần cho cả
+   buổi** thay vì chọn lại theo từng interval. Trước đây nhánh tiền sân được
+   chọn trên `ist.court_cost > 0`, không phân biệt được "khung này giá 0 đồng"
+   với "buổi này tính theo `sessions.price_per_hour`", nên một buổi có cả giá
+   sân thật lẫn `price_per_hour > 0` sẽ bịa thêm tiền cho những khung không có
+   giá: 120000 tiền sân thật ra hóa đơn 220000. Nay cờ là "buổi này có ít nhất
+   một `session_court_bookings.price_per_hour > 0` hay không"; có thì **mọi**
+   interval dùng `court_cost`, không thì **mọi** interval dùng công thức giờ
+   cũ. `court_fee_addon` **không đổi**, vẫn chia theo trọng số court-unit.
+2. **`view_session_summary`** — bản sao của đúng biểu thức trên nằm trong
+   `total_court_cost`; sửa cùng lúc để danh sách buổi không lệch với hóa đơn.
+3. **`create_session_with_bookings`** — guard tiếng Việt cho booking đảo giờ
+   và hai khung trùng giờ trên cùng một sân, chạy trước khi ghi dòng nào.
+4. **`set_session_court_bookings`** — từ chối payload `NULL` (trước đây
+   `jsonb_array_elements(NULL)` cho 0 dòng nên mọi guard đều lọt, `DELETE` vẫn
+   chạy và cả buổi mất sạch tiền sân, không lỗi). `'[]'` **vẫn hợp lệ**: bỏ
+   hết sân để quay về tính tiền bằng `court_fee_addon` là thao tác có thật.
+   Thêm guard đảo giờ và trùng sân giống mục 3.
+5. **`set_session_shuttle_usage`** — từ chối `tube_price` âm.
+   `tube_price = 0` vẫn hợp lệ.
+6. **`finalize_session`** — từ chối chốt khi vòng lặp không ghi được dòng
+   snapshot nào. `UPDATE` trạng thái vẫn nằm **trước** vòng lặp (trigger
+   `check_session_completion` chỉ nâng buổi lên `done` khi buổi đang ở
+   `waiting_for_payment`, nên không dời xuống được); `RAISE` hủy cả lời gọi
+   nên `UPDATE` đó được cuộn lại và buổi ở nguyên trạng thái cũ.
+7. **`update_session_details` (hàm mới)** — gộp ba lời gọi rời nhau của màn
+   hình sửa buổi vào một transaction, cộng trigger
+   `check_charge_member_registered` chặn phụ thu cho người chưa đăng ký buổi.
+
+### Trước khi chạy
+
+```sql
+-- 1) Money parity: bất biến của migration này.
+WITH recomputed AS (
+  SELECT s.id AS session_id, c.member_id, c.final_total
+  FROM sessions s
+  CROSS JOIN LATERAL calculate_session_costs(s.id) c
+  WHERE s.deleted_at IS NULL
+)
+SELECT count(*) FILTER (WHERE r.final_total IS DISTINCT FROM snap.final_amount) AS mismatched_rows,
+       COALESCE(sum(abs(r.final_total - snap.final_amount)), 0)                 AS vnd_drift,
+       count(*)                                                                 AS compared_rows
+FROM session_costs_snapshot snap
+JOIN recomputed r ON r.session_id = snap.session_id AND r.member_id = snap.member_id;
+-- kỳ vọng: 0 | 0 | 266
+
+-- 2) Cờ mô hình giá.
+SELECT count(*) FILTER (WHERE price_per_hour > 0) AS priced_bookings,
+       count(*)                                   AS total_bookings
+FROM session_court_bookings;
+-- kỳ vọng: 0 | 47
+
+-- 3) Phụ thu của người chưa đăng ký buổi.
+SELECT count(*) FROM session_extra_charges ex
+WHERE NOT EXISTS (SELECT 1 FROM session_registrations r
+                  WHERE r.session_id = ex.session_id AND r.member_id = ex.member_id);
+-- kỳ vọng: 0
+
+-- 4) Buổi đang mở mà chốt ra 0 đồng cho tất cả.
+SELECT s.id, s.title FROM sessions s
+WHERE s.deleted_at IS NULL AND s.status = 'open'
+  AND NOT EXISTS (SELECT 1 FROM calculate_session_costs(s.id) c WHERE c.final_total > 0);
+```
+
+Câu (2) là lý do bất biến tiền bạc đứng vững: **47/47 booking trên
+production đều có `price_per_hour = 0`** (đo 2026-09-11), nên mọi buổi hiện
+có đều đi nhánh "công thức giờ cũ" và không buổi nào đổi số tiền. Nếu
+`priced_bookings` khác 0 khi chạy thật, **dừng lại**: có buổi đã dùng giá sân
+thật và phải tính lại parity trước.
+
+Câu (3) khác 0 **không** chặn script (trigger chỉ ràng buộc dòng ghi mới,
+không đụng dòng cũ) nhưng phải xử lý trước: mỗi dòng đó là một khoản tiền
+đang biến mất khỏi hóa đơn, không phải một dòng rác.
+
+Câu (4) liệt kê những buổi sẽ **không chốt được** cho tới khi admin nhập giá
+sân hoặc `court_fee_addon`. Đó là mục đích của mục 6, nhưng nên biết trước
+để báo cho admin.
+
+### Sau khi chạy
+
+```sql
+-- 1) Chạy lại đúng câu money parity ở trên. Kỳ vọng KHÔNG ĐỔI: 0 | 0 | 266.
+
+-- 2) Quyền của các hàm SECURITY DEFINER -- đọc proacl THÔ.
+SELECT p.proname, p.prosecdef, p.proconfig, p.proacl
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('update_session_details','set_session_court_bookings',
+                    'set_session_shuttle_usage','refresh_interval_courts');
+-- kỳ vọng cả bốn: prosecdef = t, proconfig = {"search_path=public, pg_temp"},
+--                 proacl KHÔNG chứa '=X/' (PUBLIC) và KHÔNG chứa 'anon='
+
+-- 3) Trigger phụ thu.
+SELECT tgname FROM pg_trigger
+WHERE tgrelid = 'public.session_extra_charges'::regclass AND NOT tgisinternal;
+-- kỳ vọng: check_charge_member_registered
+```
+
+`has_function_privilege()` **không** thay được câu (2): `anon` tới được
+EXECUTE bằng hai đường độc lập (grant mặc định của PostgreSQL cho `PUBLIC`
+và `ALTER DEFAULT PRIVILEGES` của Supabase cấp thẳng cho `anon`), và
+`has_function_privilege` trả `true` ở cả trường hợp hỏng lẫn không hỏng.
+`update_session_details` là hàm **mới** nên nó nhận cả hai grant đó lúc được
+tạo; hai dòng `REVOKE ... FROM PUBLIC, anon` ở cuối script là bắt buộc.
+
+### Idempotent
+
+Toàn bộ là `CREATE OR REPLACE` (giữ nguyên ACL sẵn có -- `DROP` rồi `CREATE`
+sẽ áp lại default privileges của Supabase và lặng lẽ trả EXECUTE cho `anon`),
+`DROP TRIGGER IF EXISTS` rồi `CREATE TRIGGER`, và `REVOKE`/`GRANT` vốn đã
+idempotent. An toàn để chạy lại.
+
+### Kiểm chứng cục bộ (Docker, không chạm production)
+
+Dựng một container thứ hai từ export tại `41f557e` (commit ngay trước loạt
+thay đổi này) bằng `git worktree add --detach <path> 41f557e`, nạp
+`db-tests/helpers.sql` + export của worktree đó + `db-tests/seed.sql`, rồi áp
+script này **hai lần**. Kết quả:
+
+- Lần hai chạy sạch, không đổi gì (idempotent).
+- `db-tests/drift-check.sql` trên container đã migrate và trên container dựng
+  thẳng từ export của nhánh cho ra **222 dòng giống hệt nhau**, `diff` 0 dòng
+  -- gồm md5 thân từng hàm, `prosecdef`, `proconfig`, `proacl` thô, mọi policy,
+  index, cột và trigger.
+- Cả 14 file trong `db-tests/` xanh trên container đã migrate.
+
+### Rollback
+
+```sql
+BEGIN;
+DROP TRIGGER IF EXISTS check_charge_member_registered ON public.session_extra_charges;
+COMMIT;
+```
+
+Rồi nạp lại sáu hàm và view từ git tại `41f557e`
+(`docs/sql-export/{05_views,06_functions}.sql`), bằng `CREATE OR REPLACE`,
+**không** `DROP`. `update_session_details` có thể để lại: sau khi
+`SessionDetailView` quay về ba lời gọi cũ thì không gì gọi nó, và nó đã bị
+`REVOKE` khỏi `anon`.
