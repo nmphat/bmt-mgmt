@@ -132,6 +132,32 @@ BEGIN
   END;
 END $$;
 
+-- "tube_price" âm: cùng nhóm "lặng lẽ trừ tiền" với "used" âm.
+-- Không chặn thì shuttle_fee_total = -78750 và tiền cầu từng thành viên
+-- cũng âm theo, kéo final_total xuống mà không có tín hiệu gì.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_shuttle_usage('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":-315000,"per_tube":12,"used":3}]'::jsonb);
+    RAISE EXCEPTION 'FAIL negative "tube_price" was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Giá ống cầu (tube_price) không được âm%' THEN
+      RAISE EXCEPTION 'FAIL negative "tube_price" was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   negative "tube_price" rejected';
+  END;
+END $$;
+
+-- tube_price = 0 vẫn hợp lệ: cầu được tài trợ/cho không là chuyện có thật.
+SELECT set_session_shuttle_usage(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"type_id":"55555555-5555-5555-5555-555555555555","name":"Vina","tube_price":0,"per_tube":12,"used":3}]'::jsonb);
+SELECT assert_eq(
+  (SELECT shuttle_fee_total FROM sessions WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  0::numeric, 'a free shuttle type is legal and costs nothing');
+
 -- Làm tròn: tổng được làm tròn một lần, về nguyên đồng, sau khi cộng --
 -- không làm tròn từng phần tử. 320000 không chia hết cho 12.
 -- 320000 / 12 = 26666.666... ; used = 1 -> đóng góp 26666.666... ;

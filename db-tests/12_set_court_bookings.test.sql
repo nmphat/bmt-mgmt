@@ -54,9 +54,10 @@ SELECT assert_eq(
     WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   1, 'second call replaces rather than appends');
 
--- Booking có end_time đi trước start_time: CHECK constraint phải từ
--- chối, đúng SQLSTATE 23514 (check_violation) -- không phải một lý do
--- khác (vd. một lỗi kiểu dữ liệu hay quyền hạn) trùng hợp cũng chặn được.
+-- Booking có end_time đi trước start_time: guard của RPC phải chặn bằng
+-- thông báo tiếng Việt, TRƯỚC khi chạm tới CHECK constraint -- người dùng
+-- không được nhận chuỗi 23514 tiếng Anh. (CHECK vẫn là lớp chặn cuối cùng
+-- cho mọi đường ghi khác; nó được kiểm riêng bằng INSERT thẳng bên dưới.)
 DO $$
 BEGIN
   BEGIN
@@ -65,16 +66,19 @@ BEGIN
       '[{"court_name":"Sân lỗi","start_time":"2026-09-01T11:10:00+00","end_time":"2026-09-01T11:05:00+00","price_per_hour":120000}]'::jsonb);
     RAISE EXCEPTION 'FAIL inverted booking (end before start) was written';
   EXCEPTION
-    WHEN check_violation THEN
-      RAISE NOTICE 'ok   inverted booking refused by the CHECK constraint (23514)';
-    WHEN OTHERS THEN
+    WHEN raise_exception THEN
       IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
-      RAISE EXCEPTION 'FAIL inverted booking was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+      IF SQLERRM NOT LIKE 'Giờ kết thúc phải sau giờ bắt đầu%' THEN
+        RAISE EXCEPTION 'FAIL inverted booking was rejected for the wrong reason: %', SQLERRM;
+      END IF;
+      RAISE NOTICE 'ok   inverted booking rejected by the RPC guard in Vietnamese';
+    WHEN OTHERS THEN
+      RAISE EXCEPTION 'FAIL inverted booking reached the CHECK constraint (%) instead of the RPC guard', SQLERRM;
   END;
 END $$;
 
 -- Booking có độ dài bằng 0 (end_time = start_time) cũng phải bị từ chối
--- -- đây là lý do constraint dùng '>' chứ không phải '>='.
+-- -- đây là lý do cả constraint lẫn guard dùng '>' chứ không phải '>='.
 DO $$
 BEGIN
   BEGIN
@@ -83,13 +87,109 @@ BEGIN
       '[{"court_name":"Sân lỗi","start_time":"2026-09-01T11:10:00+00","end_time":"2026-09-01T11:10:00+00","price_per_hour":120000}]'::jsonb);
     RAISE EXCEPTION 'FAIL zero-length booking (end = start) was written';
   EXCEPTION
-    WHEN check_violation THEN
-      RAISE NOTICE 'ok   zero-length booking refused by the CHECK constraint (23514)';
-    WHEN OTHERS THEN
+    WHEN raise_exception THEN
       IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
-      RAISE EXCEPTION 'FAIL zero-length booking was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+      IF SQLERRM NOT LIKE 'Giờ kết thúc phải sau giờ bắt đầu%' THEN
+        RAISE EXCEPTION 'FAIL zero-length booking was rejected for the wrong reason: %', SQLERRM;
+      END IF;
+      RAISE NOTICE 'ok   zero-length booking rejected by the RPC guard in Vietnamese';
+    WHEN OTHERS THEN
+      RAISE EXCEPTION 'FAIL zero-length booking reached the CHECK constraint (%) instead of the RPC guard', SQLERRM;
   END;
 END $$;
+
+-- CHECK constraint vẫn phải tự đứng được, độc lập với guard của RPC: chèn
+-- thẳng một dòng đảo giờ phải bị chặn ở tầng cột với đúng 23514.
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+    VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Sân lỗi',
+            '2026-09-01T11:10:00+00', '2026-09-01T11:05:00+00', 100000);
+    RAISE EXCEPTION 'FAIL direct INSERT with inverted times was accepted';
+  EXCEPTION
+    WHEN check_violation THEN
+      RAISE NOTICE 'ok   direct INSERT with inverted times refused by the CHECK constraint (23514)';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL direct INSERT with inverted times was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+  END;
+END $$;
+
+-- Hai khung cùng một sân chồng giờ nhau: tiền sân bị tính hai lần
+-- (refresh_interval_courts cộng cả hai vào cùng interval). Guard phải chặn
+-- và phải gọi tên đúng cái sân bị trùng.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"Sân 1","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":120000},
+        {"court_name":"Sân 1","start_time":"2026-09-01T11:30:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL overlapping bookings on one court were accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Sân "Sân 1" bị đặt trùng giờ%' THEN
+      RAISE EXCEPTION 'FAIL overlapping bookings were rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   overlapping bookings on one court rejected, naming the court';
+  END;
+END $$;
+
+-- Hai khung khác sân, cùng giờ y hệt, là chuyện bình thường (hai sân cạnh
+-- nhau) -- guard không được false-positive vào đó.
+SELECT set_session_court_bookings(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"court_name":"Sân 1","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":100000},
+    {"court_name":"Sân 2","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":100000}]'::jsonb);
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  2, 'two different courts at the same time are not an overlap');
+
+-- Hai khung cùng sân nối đuôi nhau (11:00-11:30 rồi 11:30-12:00) cũng không
+-- phải trùng: guard dùng so sánh chặt ('<', '>'), không phải '<=' / '>='.
+SELECT set_session_court_bookings(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"court_name":"Sân 2","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":100000}]'::jsonb);
+
+-- Payload NULL phải bị từ chối. Trước đây jsonb_array_elements(NULL) cho 0
+-- dòng nên cả bốn guard đều lọt, DELETE vẫn chạy và cả buổi mất sạch tiền
+-- sân mà không có lỗi nào.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL);
+    RAISE EXCEPTION 'FAIL NULL bookings payload was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu dữ liệu đặt sân%' THEN
+      RAISE EXCEPTION 'FAIL NULL payload was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   NULL bookings payload rejected';
+  END;
+END $$;
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'rejected NULL payload did not delete the existing booking');
+
+-- '[]' thì ngược lại PHẢI hợp lệ: admin bỏ hết sân để quay về tính tiền
+-- bằng court_fee_addon là thao tác có thật, không phải dữ liệu hỏng.
+SELECT set_session_court_bookings('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '[]'::jsonb);
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  0, 'an empty bookings array is a legal way to remove every court');
+
+-- Dựng lại trạng thái mà phần còn lại của file mong đợi: đúng một booking
+-- "Sân 2" phủ cả buổi ở giá 100000/giờ -> court_cost 50000 mỗi interval.
+SELECT set_session_court_bookings(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"court_name":"Sân 2","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":100000}]'::jsonb);
 
 -- Cả hai lần ghi hỏng ở trên đều bị từ chối bởi INSERT, nhưng hàm xóa
 -- (DELETE) trước rồi mới ghi (INSERT) -- nếu INSERT thất bại mà DELETE

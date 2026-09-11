@@ -576,7 +576,42 @@ DECLARE
     v_interval_end TIMESTAMPTZ;
     v_idx INT := 0;
     v_booking_item JSONB;
+    v_court TEXT;
 BEGIN
+    -- Hai guard dưới đây kiểm tra cùng thứ mà set_session_court_bookings
+    -- kiểm tra, và phải chạy TRƯỚC khi ghi bất cứ dòng nào: đây là đường
+    -- tạo buổi duy nhất, và CreateSessionView hiển thị nguyên văn
+    -- error.message cho người dùng -- để CHECK constraint tự chặn thì
+    -- người dùng nhận một chuỗi 23514 tiếng Anh.
+    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
+        -- Giờ kết thúc phải sau giờ bắt đầu.
+        SELECT COALESCE(e->>'court_name', e->>'name', 'Sân 1') INTO v_court
+        FROM jsonb_array_elements(p_bookings) e
+        WHERE (e->>'end_time')::timestamptz <= (e->>'start_time')::timestamptz
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
+        END IF;
+
+        -- Hai khung cùng một sân mà chồng giờ nhau thì tiền sân bị tính hai
+        -- lần: một giờ sân 120000 thành 240000. So sánh theo đúng tên sân sẽ
+        -- được ghi (kể cả khi rơi về mặc định 'Sân 1').
+        WITH b AS (
+            SELECT COALESCE(e->>'court_name', e->>'name', 'Sân 1') AS court,
+                   (e->>'start_time')::timestamptz AS st,
+                   (e->>'end_time')::timestamptz   AS et,
+                   ord
+            FROM jsonb_array_elements(p_bookings) WITH ORDINALITY t(e, ord)
+        )
+        SELECT x.court INTO v_court
+        FROM b x JOIN b y ON y.ord > x.ord
+        WHERE x.court = y.court AND x.st < y.et AND x.et > y.st
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Sân "%" bị đặt trùng giờ', v_court;
+        END IF;
+    END IF;
+
     INSERT INTO sessions (
         title, start_time, end_time, price_per_hour, shuttle_fee_total,
         court_fee_addon, created_by, status
@@ -634,6 +669,7 @@ CREATE OR REPLACE FUNCTION public.set_session_court_bookings(p_session_id uuid, 
 AS $function$
 DECLARE
     v_status TEXT;
+    v_court  TEXT;
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
@@ -649,6 +685,15 @@ BEGIN
         RAISE EXCEPTION 'Không thể sửa sân khi buổi đang ở trạng thái "%".', v_status;
     END IF;
 
+    -- Payload NULL là dữ liệu hỏng, không phải một ý định. jsonb_array_elements(NULL)
+    -- trả về 0 dòng, nên mọi guard bên dưới đều "đạt" một cách vô nghĩa, DELETE
+    -- vẫn chạy và cả buổi mất sạch tiền sân mà không có lỗi nào.
+    -- '[]' thì NGƯỢC LẠI là hợp lệ và phải giữ nguyên như vậy: admin bỏ hết sân
+    -- để quay về tính tiền bằng court_fee_addon là một thao tác có thật.
+    IF p_bookings IS NULL THEN
+        RAISE EXCEPTION 'Thiếu dữ liệu đặt sân (bookings)';
+    END IF;
+
     -- Một sân không tên là vô nghĩa. Thiếu key, JSON null, hoặc chỉ có
     -- khoảng trắng (kể cả tab, xuống dòng -- trim() một tham số chỉ cắt
     -- ký tự space 0x20, không cắt các khoảng trắng khác) đều phải bị chặn
@@ -661,6 +706,34 @@ BEGIN
         WHERE e->>'court_name' IS NULL OR e->>'court_name' ~ '^\s*$'
     ) THEN
         RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
+    END IF;
+
+    -- Giờ kết thúc phải sau giờ bắt đầu. session_court_bookings_time_order_check
+    -- cũng chặn, nhưng nó ném 23514 kèm chuỗi tiếng Anh thẳng lên màn hình.
+    SELECT e->>'court_name' INTO v_court
+    FROM jsonb_array_elements(p_bookings) e
+    WHERE (e->>'end_time')::timestamptz <= (e->>'start_time')::timestamptz
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
+    END IF;
+
+    -- Hai khung cùng một sân mà chồng giờ nhau thì refresh_interval_courts
+    -- cộng cả hai vào cùng một interval: một giờ sân 120000 bị tính thành
+    -- 240000. src/utils/courtCost.ts đã chặn, nhưng đó là máy người dùng.
+    WITH b AS (
+        SELECT e->>'court_name' AS court,
+               (e->>'start_time')::timestamptz AS st,
+               (e->>'end_time')::timestamptz   AS et,
+               ord
+        FROM jsonb_array_elements(p_bookings) WITH ORDINALITY t(e, ord)
+    )
+    SELECT x.court INTO v_court
+    FROM b x JOIN b y ON y.ord > x.ord
+    WHERE x.court = y.court AND x.st < y.et AND x.et > y.st
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Sân "%" bị đặt trùng giờ', v_court;
     END IF;
 
     DELETE FROM session_court_bookings WHERE session_id = p_session_id;
@@ -721,6 +794,12 @@ BEGIN
     END IF;
     IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'per_tube')::numeric <= 0) THEN
         RAISE EXCEPTION 'Số cầu mỗi ống (per_tube) phải lớn hơn 0';
+    END IF;
+    -- tube_price âm thuộc đúng nhóm "lặng lẽ trừ tiền" mà các guard trên
+    -- sinh ra để chặn: shuttle_fee_total ra số âm và tiền cầu của từng
+    -- thành viên cũng âm theo.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'tube_price')::numeric < 0) THEN
+        RAISE EXCEPTION 'Giá ống cầu (tube_price) không được âm';
     END IF;
 
     -- Breakdown và tổng tiền được ghi trong cùng một lệnh, nên không có
