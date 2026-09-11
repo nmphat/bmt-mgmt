@@ -31,3 +31,4 @@ ALTER TABLE public.session_extra_charges ADD CONSTRAINT session_extra_charges_me
 ALTER TABLE public.session_extra_charges ADD CONSTRAINT session_extra_charges_session_id_fkey FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE;
 
 ALTER TABLE public.session_court_bookings ADD CONSTRAINT session_court_bookings_time_order_check CHECK (end_time > start_time);
+ALTER TABLE public.session_court_bookings ADD CONSTRAINT session_court_bookings_court_name_not_blank CHECK (court_name ~ '\S');

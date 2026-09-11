@@ -121,7 +121,7 @@ SELECT assert_eq(
   1, 'rejected write left interval 0 active_court_count untouched');
 
 -- court_name thiếu, JSON null, hoặc chỉ có khoảng trắng: một sân không tên
--- là vô nghĩa, không được lặng lẽ ghi. Guard phải chặn cả ba trước khi
+-- là vô nghĩa, không được lặng lẽ ghi. Guard phải chặn tất cả trước khi
 -- xóa/ghi bất cứ gì.
 
 -- Thiếu key "court_name".
@@ -158,7 +158,7 @@ BEGIN
   END;
 END $$;
 
--- court_name chỉ có khoảng trắng.
+-- court_name chỉ có khoảng trắng (dấu cách).
 DO $$
 BEGIN
   BEGIN
@@ -175,7 +175,84 @@ BEGIN
   END;
 END $$;
 
--- Guard chạy trước DELETE, nên ba lần ghi hỏng ở trên không được đụng vào
+-- court_name chỉ có tab. trim() một tham số không cắt tab -- đây là lý do
+-- guard dùng '^\s*$' thay vì trim(...) = ''. \t ở đây là escape của JSON
+-- (hai ký tự backslash-t trong chuỗi SQL, không có tiền tố E''), JSON
+-- parser mới là bên diễn giải nó thành ký tự tab thật.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"\t","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking with tab-only court_name was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL tab-only court_name was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   tab-only court_name rejected';
+  END;
+END $$;
+
+-- court_name chỉ có ký tự xuống dòng.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":"\n","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking with newline-only court_name was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL newline-only court_name was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   newline-only court_name rejected';
+  END;
+END $$;
+
+-- court_name trộn dấu cách và tab.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM set_session_court_bookings(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '[{"court_name":" \t ","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T11:30:00+00","price_per_hour":120000}]'::jsonb);
+    RAISE EXCEPTION 'FAIL booking with mixed-whitespace court_name was accepted';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Thiếu tên sân (court_name)%' THEN
+      RAISE EXCEPTION 'FAIL mixed-whitespace court_name was rejected for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   mixed-whitespace (" \t ") court_name rejected';
+  END;
+END $$;
+
+-- CHECK constraint phải tự nó có tác dụng, độc lập với guard của RPC:
+-- chèn thẳng (không qua RPC) một dòng court_name rỗng phải bị chặn ở tầng
+-- cột, đúng SQLSTATE 23514 (check_violation) -- không phải P0001 của
+-- guard trong hàm. Đây là bằng chứng cho thấy backstop tồn tại độc lập
+-- với set_session_court_bookings, ví dụ cho create_session_with_bookings
+-- (COALESCE của nó chỉ rơi xuống default khi NULL, không rơi khi '').
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+    VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '   ',
+            '2026-09-01T11:00:00+00', '2026-09-01T11:30:00+00', 100000);
+    RAISE EXCEPTION 'FAIL direct INSERT with blank court_name was accepted';
+  EXCEPTION
+    WHEN check_violation THEN
+      RAISE NOTICE 'ok   direct INSERT with blank court_name refused by the CHECK constraint (23514)';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL direct INSERT with blank court_name was refused for the wrong reason (%), not the CHECK constraint', SQLERRM;
+  END;
+END $$;
+
+-- Guard chạy trước DELETE, và INSERT trực tiếp ở trên cũng bị chặn trước
+-- khi ghi -- không lần ghi hỏng nào trong cả nhóm trên được đụng vào
 -- booking "Sân 2" hay các interval của nó -- phải còn nguyên y hệt.
 SELECT assert_eq(
   (SELECT count(*)::int FROM session_court_bookings
@@ -196,6 +273,11 @@ SELECT assert_eq(
   (SELECT court_cost FROM session_intervals WHERE idx = 1
     AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   50000::numeric, 'rejected court_name writes left interval 1 court_cost untouched');
+
+SELECT assert_eq(
+  (SELECT active_court_count FROM session_intervals WHERE idx = 0
+    AND session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'rejected court_name writes left interval 0 active_court_count untouched');
 
 -- Payload hợp lệ vẫn ghi được bình thường -- guard mới không được
 -- false-positive trên dữ liệu tốt.

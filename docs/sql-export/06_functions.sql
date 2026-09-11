@@ -633,11 +633,15 @@ BEGIN
     END IF;
 
     -- Một sân không tên là vô nghĩa. Thiếu key, JSON null, hoặc chỉ có
-    -- khoảng trắng đều phải bị chặn ở đây, trước khi ghi -- không lặng lẽ
-    -- mặc định về 'Sân 1' như create_session_with_bookings vẫn làm.
+    -- khoảng trắng (kể cả tab, xuống dòng -- trim() một tham số chỉ cắt
+    -- ký tự space 0x20, không cắt các khoảng trắng khác) đều phải bị chặn
+    -- ở đây, trước khi ghi -- không lặng lẽ mặc định về 'Sân 1' như
+    -- create_session_with_bookings vẫn làm. IS NULL vẫn cần giữ riêng vì
+    -- '~' so với NULL cho ra NULL chứ không phải true, nên regex một mình
+    -- sẽ để lọt key bị thiếu.
     IF EXISTS (
         SELECT 1 FROM jsonb_array_elements(p_bookings) e
-        WHERE e->>'court_name' IS NULL OR trim(e->>'court_name') = ''
+        WHERE e->>'court_name' IS NULL OR e->>'court_name' ~ '^\s*$'
     ) THEN
         RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
     END IF;

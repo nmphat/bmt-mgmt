@@ -683,27 +683,46 @@ chưa sửa ở đây — không thuộc phạm vi của Task 5.
 
 ## 2026-09-11-court-name-not-null.sql
 
-Chạy sau `2026-09-09-phase1-pricing.sql`. `session_court_bookings.court_name`
-là `text` và nullable, và NULL đọc được trong thực tế: `set_session_court_bookings`
-ghi thẳng `e->>'court_name'` không có fallback và không validate — một
-phần tử payload thiếu key này, hoặc gửi JSON null, sẽ lặng lẽ ghi một
-booking không tên sân. Script này thêm guard từ chối `court_name` thiếu,
-JSON null, hoặc chỉ có khoảng trắng vào `set_session_court_bookings`, rồi
-đặt cột `NOT NULL` để trạng thái vô nghĩa đó không còn biểu diễn được nữa.
+Chạy sau `2026-09-09-phase1-pricing.sql`. Chưa áp lên production.
+`session_court_bookings.court_name` là `text` và nullable, và NULL đọc
+được trong thực tế: `set_session_court_bookings` ghi thẳng
+`e->>'court_name'` không có fallback và không validate — một phần tử
+payload thiếu key này, hoặc gửi JSON null, sẽ lặng lẽ ghi một booking
+không tên sân. Chỉ chặn ở RPC này thôi thì chưa đủ: `create_session_with_bookings`
+dùng `COALESCE(v_booking_item->>'court_name', ..., 'Sân 1')`, và `COALESCE`
+chỉ rơi xuống default khi giá trị là NULL — không rơi xuống khi giá trị là
+`''` — nên đường đó vẫn ghi được tên rỗng bất kể migration này.
+
+Script này có hai lớp, cố ý: một CHECK constraint (`court_name ~ '\S'`,
+"có ít nhất một ký tự không phải khoảng trắng") trên cột — lớp chặn mọi
+writer, kể cả `create_session_with_bookings` và bất kỳ đường ghi nào xuất
+hiện sau này; và guard trong `set_session_court_bookings` — lớp biến một
+lời gọi RPC hỏng thành thông báo lỗi tiếng Việt rõ ràng thay vì một lỗi
+`23514` thô. Guard RPC dùng `e->>'court_name' ~ '^\s*$'` (khoảng trắng nói
+chung — tab, xuống dòng, không chỉ dấu cách) chứ không dùng `trim() = ''`:
+`trim()` một tham số chỉ cắt ký tự space (0x20), không cắt tab/xuống
+dòng, nên `trim(E'\t') = ''` là false — một `court_name` chỉ có tab sẽ lọt
+qua nếu dùng `trim()`.
 
 ### Trước khi chạy
 
 ```sql
 SELECT count(*) FROM session_court_bookings
-WHERE court_name IS NULL OR trim(court_name) = '';
+WHERE court_name IS NULL OR court_name ~ '^\s*$';
 -- kỳ vọng: 0
+
+SELECT count(*) FROM session_court_bookings
+WHERE court_name ~ '^\s' OR court_name ~ '\s$';
+-- kỳ vọng: 0 (không bắt buộc bởi constraint, chỉ để biết dữ liệu sạch tới đâu)
 ```
 
 Đo ngày 2026-09-11 trên production: 47/47 dòng booking đều có `court_name`,
-0 dòng NULL — constraint áp dụng sạch. Nếu câu trên ra khác 0 khi chạy
-thật, dừng lại: có booking mới không tên xuất hiện sau lần đo, phải xử lý
-dữ liệu đó trước khi `SET NOT NULL` (nếu không, `ALTER TABLE` sẽ báo lỗi và
-tự rollback toàn bộ transaction).
+0 dòng NULL, 0 dòng khớp `^\s*$`, 0 dòng có khoảng trắng đầu/cuối, chỉ 2
+tên sân khác nhau — cả `SET NOT NULL` lẫn CHECK constraint đều áp dụng
+sạch. Nếu câu đầu ra khác 0 khi chạy thật, dừng lại: có booking mới
+thiếu/rỗng tên xuất hiện sau lần đo, phải xử lý dữ liệu đó trước (nếu
+không, `ALTER TABLE`/`ADD CONSTRAINT` sẽ báo lỗi và tự rollback toàn bộ
+transaction).
 
 ### Sau khi chạy
 
@@ -712,10 +731,17 @@ SELECT is_nullable FROM information_schema.columns
 WHERE table_schema = 'public' AND table_name = 'session_court_bookings'
   AND column_name = 'court_name';
 -- kỳ vọng: 'NO'
+
+SELECT conname FROM pg_constraint
+WHERE conname = 'session_court_bookings_court_name_not_blank'
+  AND conrelid = 'public.session_court_bookings'::regclass;
+-- kỳ vọng: 1 dòng
 ```
 
-Idempotent: `SET NOT NULL` trên một cột đã `NOT NULL` là no-op, nên chạy
-script này lần thứ hai không đổi gì — an toàn để chạy lại.
+Idempotent cả hai bước: `SET NOT NULL` trên một cột đã `NOT NULL` là
+no-op; `ADD CONSTRAINT` được bọc trong `DO $$ IF NOT EXISTS (... AND
+conrelid = ...)` nên lần chạy thứ hai không làm gì cả. An toàn để chạy
+lại.
 
 ### Kiểm chứng cục bộ (Docker, không chạm production)
 
@@ -723,19 +749,26 @@ Dựng lại trạng thái "trước migration" (tức export của nhánh này,
 đổi của script này) bằng `git worktree add --detach <path> 822e8c2` — `822e8c2`
 là commit ngay trước script này — rồi chạy `db-tests/up.sh` từ trong
 worktree đó. Áp script này vào bed đó hai lần (lần hai không đổi gì, xác
-nhận bằng snapshot `is_nullable` và thân hàm trước/sau), rồi chạy
-`./db-tests/run.sh` (bộ test hiện tại) từ checkout HEAD. Chi tiết đầy đủ ở
+nhận bằng snapshot `is_nullable`, tên constraint, và `md5(prosrc)` của
+thân hàm trước/sau), rồi chạy `./db-tests/run.sh` (bộ test hiện tại) từ
+checkout HEAD. Chi tiết đầy đủ ở
 `.superpowers/sdd/2026-09-09-pricing-model-and-create-session-ux/task-5b-report.md`.
 
 ### Rollback
 
 ```sql
 BEGIN;
+ALTER TABLE public.session_court_bookings DROP CONSTRAINT IF EXISTS session_court_bookings_court_name_not_blank;
 ALTER TABLE public.session_court_bookings ALTER COLUMN court_name DROP NOT NULL;
 COMMIT;
 ```
 
-Hàm `set_session_court_bookings` không cần nạp lại: guard mới trong thân
-hàm chỉ từ chối các payload vốn dĩ đã vô nghĩa (thiếu/null/rỗng
-`court_name`), không đổi hành vi trên payload hợp lệ, nên không có gì phải
-hoàn tác ở đó.
+**Rollback này chỉ đảo ngược schema, không đảo ngược hành vi của RPC.**
+Guard trong `set_session_court_bookings` vẫn còn nguyên sau khi chạy script
+trên — hàm vẫn tiếp tục từ chối `court_name` thiếu/null/rỗng, bất kể cột
+đã hết `NOT NULL` hay constraint đã bị xóa. Nếu lý do rollback chính là
+guard đang từ chối một payload không lường trước được (chứ không phải một
+sự cố về hiệu năng khóa hay tương tự), thì chỉ chạy script trên là **không
+đủ** — phải nạp lại `set_session_court_bookings` từ `822e8c2` (bản không
+có guard) trong cùng transaction rollback, nếu không hàm vẫn chặn đúng thứ
+mà việc rollback định mở lại.
