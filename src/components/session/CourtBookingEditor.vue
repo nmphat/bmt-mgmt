@@ -110,6 +110,13 @@ function addSlot(courtName: string) {
   emit('update:bookings', [...props.bookings, newBooking])
 }
 
+/**
+ * There is no dedicated "delete court" affordance: a court card exists only
+ * while at least one row has its court_name, so removing a court's last
+ * remaining slot removes the card with it. (Renaming a court's name field
+ * onto an existing court's name merges the two cards the same way, since
+ * grouping is purely by court_name.)
+ */
 function removeSlot(index: number) {
   if (props.bookings.length <= 1) return
   emit(
@@ -137,6 +144,7 @@ function removeSlot(index: number) {
           <input
             :value="group.court_name"
             :disabled="disabled"
+            :data-testid="`court-name-${group.court_name}`"
             type="text"
             class="block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-[20px] font-bold leading-[1.2] text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
             @change="renameCourt(group.court_name, ($event.target as HTMLInputElement).value)"
@@ -165,6 +173,7 @@ function removeSlot(index: number) {
             <select
               :value="row.booking.start_time"
               :disabled="disabled"
+              :data-testid="`start-time-${row.index}`"
               class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, { start_time: ($event.target as HTMLSelectElement).value })
@@ -178,6 +187,7 @@ function removeSlot(index: number) {
             <select
               :value="row.booking.end_time"
               :disabled="disabled"
+              :data-testid="`end-time-${row.index}`"
               class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, { end_time: ($event.target as HTMLSelectElement).value })
@@ -193,6 +203,7 @@ function removeSlot(index: number) {
             <input
               :value="row.booking.price_per_hour"
               :disabled="disabled"
+              :data-testid="`price-${row.index}`"
               type="number"
               min="0"
               step="1000"
