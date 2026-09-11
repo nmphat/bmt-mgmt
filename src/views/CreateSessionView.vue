@@ -60,11 +60,11 @@ const intervalPreview = computed(() => {
 })
 
 const startDateTime = computed(() => {
-  return `${form.value.date}T${form.value.startTime}:00`
+  return `${form.value.date}T${form.value.startTime}:00+07:00`
 })
 
 const endDateTime = computed(() => {
-  return `${form.value.date}T${form.value.endTime}:00`
+  return `${form.value.date}T${form.value.endTime}:00+07:00`
 })
 
 async function createSession() {
@@ -86,8 +86,8 @@ async function createSession() {
     const endTime = new Date(endDateTime.value).toISOString()
     const pBookings = bookings.value.map((b) => ({
       court_name: b.court_name,
-      start_time: new Date(`${form.value.date}T${b.start_time}:00`).toISOString(),
-      end_time: new Date(`${form.value.date}T${b.end_time}:00`).toISOString(),
+      start_time: new Date(`${form.value.date}T${b.start_time}:00+07:00`).toISOString(),
+      end_time: new Date(`${form.value.date}T${b.end_time}:00+07:00`).toISOString(),
       price_per_hour: b.price_per_hour,
     }))
 

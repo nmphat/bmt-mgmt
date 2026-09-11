@@ -160,7 +160,6 @@ const sessionForm = ref({
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
   price_per_hour: 0,
   court_fee_addon: 0,
-  shuttle_fee_total: 0,
   session_start: '',
   session_end: '',
 })
@@ -237,7 +236,6 @@ async function fetchData(refreshCostsOnly = false) {
         status: normalizedSession.status,
         price_per_hour: normalizedSession.price_per_hour,
         court_fee_addon: normalizedSession.court_fee_addon,
-        shuttle_fee_total: normalizedSession.shuttle_fee_total,
         session_start: '',
         session_end: '',
       }
@@ -473,11 +471,13 @@ async function saveSession() {
     isSavingSession.value = true
     actionError.value = ''
 
-    // Compute UTC start/end from VN HH:mm
-    const sessionDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' })
-      .format(new Date(session.value!.start_time))
-    const newStartUTC = new Date(`${sessionDate}T${sessionForm.value.session_start}:00+07:00`)
-    const newEndUTC = new Date(`${sessionDate}T${sessionForm.value.session_end}:00+07:00`)
+    // Compute UTC start/end from VN HH:mm — use separate dates so cross-midnight works
+    const vnDate = (iso: string) =>
+      new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(iso))
+    const startDate = vnDate(session.value!.start_time)
+    const endDate = vnDate(session.value!.end_time)
+    const newStartUTC = new Date(`${startDate}T${sessionForm.value.session_start}:00+07:00`)
+    const newEndUTC = new Date(`${endDate}T${sessionForm.value.session_end}:00+07:00`)
 
     if (newEndUTC <= newStartUTC) {
       toast.error(t.value('createSession.endTimeError'))
@@ -515,8 +515,8 @@ async function saveSession() {
       p_session_id: sessionId,
       p_bookings: courtBookingDrafts.value.map((b) => ({
         court_name: b.court_name,
-        start_time: new Date(`${sessionDate}T${b.start_time}:00+07:00`).toISOString(),
-        end_time: new Date(`${sessionDate}T${b.end_time}:00+07:00`).toISOString(),
+        start_time: new Date(`${startDate}T${b.start_time}:00+07:00`).toISOString(),
+        end_time: new Date(`${startDate}T${b.end_time}:00+07:00`).toISOString(),
         price_per_hour: b.price_per_hour,
       })),
     })

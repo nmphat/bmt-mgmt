@@ -358,6 +358,7 @@ export const messages = {
       catalogTitle: 'Danh mục loại cầu',
       catalogEmpty: 'Chưa có loại cầu nào',
       saved: 'Đã lưu tiền cầu',
+      loadError: 'Không tải được danh mục cầu',
     },
     profile: {
       myDebt: 'Công nợ của tôi',
@@ -743,6 +744,7 @@ export const messages = {
       catalogTitle: 'Shuttle catalogue',
       catalogEmpty: 'No shuttle types yet',
       saved: 'Shuttle cost saved',
+      loadError: 'Could not load shuttle catalogue',
     },
     profile: {
       myDebt: 'My debt',

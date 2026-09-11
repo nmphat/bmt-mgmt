@@ -28,9 +28,15 @@ const { activeTypes, fetchTypes } = useShuttleTypes()
 const rows = ref<ShuttleUsageEntry[]>([])
 const saving = ref(false)
 
+const loadError = ref(false)
+
 onMounted(async () => {
-  await fetchTypes()
-  rows.value = props.usage.map((u) => ({ ...u }))
+  try {
+    await fetchTypes()
+    rows.value = props.usage.map((u) => ({ ...u }))
+  } catch {
+    loadError.value = true
+  }
 })
 
 const total = computed(() => shuttleTotal(rows.value))
@@ -95,6 +101,8 @@ async function handleSave() {
     <h3 class="mb-4 text-[20px] font-bold leading-[1.2] text-gray-900">
       {{ t('shuttle.title') }}
     </h3>
+    <p v-if="loadError" class="text-sm text-red-600">{{ t('shuttle.loadError') }}</p>
+    <template v-else>
 
     <div v-if="rows.length === 0" class="py-4 text-center text-sm text-gray-500">
       {{ t('shuttle.empty') }}
@@ -196,5 +204,6 @@ async function handleSave() {
         {{ t('common.save') }}
       </button>
     </div>
+    </template>
   </div>
 </template>

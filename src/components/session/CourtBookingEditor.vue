@@ -210,7 +210,7 @@ function removeSlot(index: number) {
               class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, {
-                  price_per_hour: Number(($event.target as HTMLInputElement).value),
+                  price_per_hour: Math.max(0, Number(($event.target as HTMLInputElement).value) || 0),
                 })
               "
             />
