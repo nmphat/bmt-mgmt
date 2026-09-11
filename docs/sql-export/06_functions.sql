@@ -829,6 +829,7 @@ AS $function$
 DECLARE
     r RECORD;
     v_payment_code TEXT;
+    v_rows INT := 0;
 BEGIN
     -- Function runs as its owner, so it must check the caller itself.
     IF NOT EXISTS (
@@ -846,6 +847,7 @@ BEGIN
     FOR r IN SELECT * FROM calculate_session_costs(p_session_id)
     LOOP
         IF r.final_total > 0 THEN -- Hoặc <> 0 nếu chấp nhận âm? Thường nợ âm thì host trả tiền mặt, ko tạo QR.
+            v_rows := v_rows + 1;
             v_payment_code := 'CL' || substr(md5(random()::text), 1, 6); 
 
             INSERT INTO session_costs_snapshot (
@@ -885,6 +887,16 @@ BEGIN
                 END;
         END IF;
     END LOOP;
+
+    -- 3. Chốt mà không ghi được dòng nợ nào nghĩa là buổi đã sang
+    -- "waiting_for_payment" trong khi không ai nợ đồng nào, không có QR nào
+    -- được tạo và không có gì để đòi -- im lặng hoàn toàn. Hình dạng này gần
+    -- như luôn là quên nhập tiền chứ không phải một buổi miễn phí thật.
+    -- RAISE ở đây hủy cả lời gọi, nên UPDATE trạng thái ở bước 1 cũng bị
+    -- cuộn lại và buổi vẫn ở nguyên trạng thái cũ (được khóa bằng test).
+    IF v_rows = 0 THEN
+        RAISE EXCEPTION 'Buổi này không có khoản nào để chia cho thành viên. Kiểm tra lại giá sân và phụ thu tiền sân (court_fee_addon) trước khi chốt.';
+    END IF;
 END;
 $function$;
 
