@@ -76,6 +76,49 @@ BEGIN
   PERFORM assert_eq(
     (SELECT count(*)::int FROM session_court_bookings WHERE session_id = v_sid),
     2, 'create: two courts at the same time are written');
+
+  -- Giá từng sân phải được ghi đúng như client gửi. Đây là đường tạo buổi
+  -- duy nhất: nếu nó vứt p_bookings[].price_per_hour đi thì MỌI buổi mới
+  -- đều được tạo miễn phí và không có gì báo.
+  PERFORM assert_eq(
+    (SELECT price_per_hour FROM session_court_bookings
+      WHERE session_id = v_sid AND court_name = 'Sân 1'),
+    120000::numeric, 'create: the submitted price_per_hour is stored, not discarded');
+
+  PERFORM assert_eq(
+    (SELECT price_per_hour FROM session_court_bookings
+      WHERE session_id = v_sid AND court_name = 'Sân 2'),
+    100000::numeric, 'create: each booking keeps its own price');
+
+  -- Và phải chảy tiếp vào tiền sân của từng interval: 4 interval 30 phút,
+  -- mỗi interval (120000 + 100000)/2 = 110000 -> tổng 220000.
+  PERFORM assert_eq(
+    (SELECT sum(court_cost) FROM session_intervals WHERE session_id = v_sid),
+    220000::numeric, 'create: prices reach session_intervals.court_cost');
+
+  PERFORM assert_eq(
+    (SELECT count(*)::int FROM session_intervals WHERE session_id = v_sid),
+    2, 'create: a one-hour session gets two 30-minute intervals');
+END $$;
+
+-- court_name NOT NULL phải tự đứng được. CHECK constraint không thay thế
+-- được nó: 'court_name ~ \S' cho ra NULL khi court_name là NULL, và một
+-- CHECK trả NULL thì ĐẠT. Bỏ NOT NULL đi là mở lại đường ghi booking không
+-- tên sân mà không có gì chặn.
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+    VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', NULL,
+            '2026-09-01T11:00:00+00', '2026-09-01T11:30:00+00', 100000);
+    RAISE EXCEPTION 'FAIL a booking with court_name = NULL was written';
+  EXCEPTION
+    WHEN not_null_violation THEN
+      RAISE NOTICE 'ok   court_name = NULL refused by the column NOT NULL (23502)';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL court_name = NULL was refused for the wrong reason (%), not the NOT NULL constraint', SQLERRM;
+  END;
 END $$;
 
 ROLLBACK;
