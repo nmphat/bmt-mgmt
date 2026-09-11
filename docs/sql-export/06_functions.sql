@@ -1144,6 +1144,29 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.prevent_charge_for_unregistered_member()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- calculate_session_costs join session_registrations, nên một dòng
+    -- session_extra_charges của người CHƯA đăng ký buổi không bao giờ tới
+    -- được hóa đơn của ai: không lỗi, không cảnh báo, tiền biến mất.
+    -- Chặn ở tầng bảng chứ không ở RPC vì SessionExtraCharges.vue ghi thẳng
+    -- vào bảng qua PostgREST, không đi qua RPC nào. CHECK constraint không
+    -- làm được việc này (CHECK không được chứa subquery); khóa ngoại ghép
+    -- (session_id, member_id) thì làm được nhưng chỉ ném 23503 tiếng Anh.
+    IF NOT EXISTS (
+        SELECT 1 FROM session_registrations r
+        WHERE r.session_id = NEW.session_id AND r.member_id = NEW.member_id
+    ) THEN
+        RAISE EXCEPTION 'Thành viên này chưa đăng ký buổi, không thể thêm phụ thu';
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
  LANGUAGE plpgsql
