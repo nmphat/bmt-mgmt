@@ -83,6 +83,7 @@ Mỗi mục trả lời ba câu hỏi: chạy thế nào, UI nào đang có, thi
   `SessionDetailView.vue` cài đặt lại toàn bộ các phần đó ngay trong file. Đợt refactor tách component đã viết xong nhưng chưa bao giờ được nối dây.
 
 - **Không sửa được giờ buổi và giờ sân sau khi tạo.** Form sửa inline chỉ có tên, trạng thái, `price_per_hour`, `court_fee_addon`, `shuttle_fee_total`. Phần sửa giờ buổi và sửa court booking chỉ nằm trong `SessionHeader.vue` đang chết. Hệ quả: `recreate_session_intervals` và `refresh_interval_courts` **không được gọi từ bất kỳ code sống nào**. Đặt sai giờ sân lúc tạo thì không có đường sửa trong app.
+  - **[FIXED 2026-09-11]** Giờ sửa được rồi. `SessionDetailView` gọi `recreate_session_intervals` khi giờ thay đổi, và `set_session_court_bookings` khi lưu. `SessionHeader.vue` đã bị xóa.
 - Thêm nhiều member gọi N lần RPC thay vì dùng `batch_add_members_to_session` đã có sẵn.
 - Hủy buổi `update` thẳng `sessions`. Các RPC `get_session_delete_impact`, `soft_delete_cancelled_session`, `soft_delete_cancelled_sessions_bulk` chưa có UI nào gọi.
 - Nhánh dự phòng ở dòng 488 xóa thẳng `session_registrations`, để lại `interval_presence` mồ côi. Production đang có 3 dòng như vậy.
