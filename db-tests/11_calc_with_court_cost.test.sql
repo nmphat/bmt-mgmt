@@ -13,6 +13,16 @@ SELECT assert_eq(
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   140000::numeric, 'legacy session: member B unchanged');
 
+-- Danh sách buổi phải khớp engine ở CẢ BA hình dạng buổi. Hình dạng 1:
+-- buổi thuần addon (price_per_hour = 0, không có booking nào có giá).
+-- So sánh với sum(total_court_fee) chứ không phải sum(final_total):
+-- final_total đã cộng tiền cầu và làm tròn lên bội số 1000 cho từng người,
+-- còn total_court_fee là tiền sân chưa làm tròn -- đúng thứ view đang nói.
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  'addon-only session: list total agrees with the engine');
+
 -- ── Nhánh cũ, price_per_hour khác 0: khóa phép nhân trong ELSE arm ──
 -- 280000/140000 ở trên không đi qua (v_price_per_hour/2.0)*active_court_count vì
 -- price_per_hour = 0 triệt tiêu nó — addon và shuttle gánh hết, không assertion
@@ -112,7 +122,7 @@ SELECT assert_eq(
 SELECT assert_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
-  'session list total_court_cost agrees with the engine');
+  'per-court session: list total agrees with the engine');
 
 -- ── Ghost vẫn chịu tiền sân ──
 INSERT INTO members (id, display_name, role, is_active)
@@ -180,6 +190,26 @@ SELECT assert_eq(
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   190000::numeric, 'production-shaped session: member B still pays exactly 190000');
 
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  'production-shaped session: list total agrees with the engine');
+
+-- Cùng hình dạng đó nhưng price_per_hour = 0: buổi thuần addon có booking
+-- 0 đồng. Cả hai vế chỉ còn lại addon.
+UPDATE sessions SET price_per_hour = 0 WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  300000::numeric, 'addon-only session with zero-priced bookings: list shows just the addon');
+
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  'addon-only session with zero-priced bookings: list total agrees with the engine');
+
+UPDATE sessions SET price_per_hour = 100000 WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
 -- ── Buổi TRỘN: có giá sân thật ở khung này, sân 0 đồng ở khung kia ──
 -- Trước đây nhánh được chọn theo từng interval (court_cost > 0), nên khung
 -- có sân 0 đồng lặng lẽ quay về công thức giờ cũ và bịa thêm 100000/2 đồng
@@ -220,5 +250,18 @@ SELECT assert_eq(
   (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   30000::numeric, 'mixed session: member B pays her share of the one priced slot');
+
+-- view_session_summary mang BẢN SAO của đúng biểu thức đó. Nếu nó vẫn chọn
+-- nhánh theo từng interval trong khi engine đã chốt theo buổi, danh sách sẽ
+-- báo 110000 cho một buổi mà hóa đơn thật là 60000 -- lệch đúng ở những buổi
+-- trộn giá mà D2 sinh ra để sửa.
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  60000::numeric, 'mixed session: list total is the real court spend, not 110000');
+
+SELECT assert_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
+  'mixed session: list total agrees with the engine');
 
 ROLLBACK;
