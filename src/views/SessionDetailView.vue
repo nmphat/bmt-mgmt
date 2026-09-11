@@ -34,6 +34,7 @@ import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
 import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
+import ShuttleUsageEditor from '@/components/session/ShuttleUsageEditor.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -269,6 +270,17 @@ async function fetchData(refreshCostsOnly = false) {
         .order('start_time', { ascending: true })
       if (bookingsError) throw bookingsError
       courtBookings.value = bookingsData || []
+
+      // Fetch shuttle_usage (not in view_session_summary)
+      const { data: sessionRow, error: sessionRowErr } = await supabase
+        .from('sessions')
+        .select('shuttle_usage')
+        .eq('id', sessionId)
+        .single()
+      if (sessionRowErr) throw sessionRowErr
+      if (session.value && sessionRow) {
+        session.value.shuttle_usage = sessionRow.shuttle_usage || []
+      }
     }
 
     // Fetch registrations (with member details)
@@ -1640,6 +1652,13 @@ onUnmounted(() => {
       </section>
 
       <!-- Snapshot View (Waiting/Done mode) -->
+      <ShuttleUsageEditor
+        v-if="session.status === 'open' && authStore.isAdmin"
+        :session-id="sessionId"
+        :usage="session.shuttle_usage || []"
+        @saved="fetchData()"
+      />
+
       <SessionExtraCharges
         v-if="session.status !== 'cancelled'"
         ref="extraChargesRef"

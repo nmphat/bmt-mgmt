@@ -10,8 +10,10 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next'
-import { DEFAULT_BANK_CONFIG, type BankConfig } from '@/types'
+import { DEFAULT_BANK_CONFIG, type BankConfig, type ShuttleType } from '@/types'
 import { useBankConfigStore } from '@/stores/bankConfig'
+import { useShuttleTypes } from '@/composables/useShuttleTypes'
+import { formatCurrency } from '@/utils/formatters'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
 
@@ -106,6 +108,49 @@ async function handleDeleteBank(config: BankConfig) {
     toast.error(t.value('settings.deleteError'))
   } finally {
     activeActionId.value = null
+  }
+}
+
+// Shuttle types
+const { types: shuttleTypes, loading: shuttleLoading, fetchTypes, addType, toggleActive } = useShuttleTypes()
+const showShuttleForm = ref(false)
+const shuttleForm = reactive({
+  name: '',
+  tube_price: 0,
+  per_tube: 12,
+})
+
+onMounted(async () => {
+  try {
+    await fetchTypes()
+  } catch (error) {
+    console.error('Error loading shuttle types:', error)
+  }
+})
+
+async function handleAddShuttleType() {
+  try {
+    await addType({
+      name: shuttleForm.name,
+      tube_price: shuttleForm.tube_price,
+      per_tube: shuttleForm.per_tube,
+      is_active: true,
+    })
+    shuttleForm.name = ''
+    shuttleForm.tube_price = 0
+    shuttleForm.per_tube = 12
+    showShuttleForm.value = false
+    toast.success(t.value('common.save'))
+  } catch (error: any) {
+    toast.error(error.message || 'Error adding shuttle type')
+  }
+}
+
+async function handleToggleShuttleActive(st: ShuttleType) {
+  try {
+    await toggleActive(st)
+  } catch (error: any) {
+    toast.error(error.message || 'Error updating shuttle type')
   }
 }
 </script>
@@ -283,6 +328,104 @@ async function handleDeleteBank(config: BankConfig) {
       <p class="mt-4 text-sm leading-6 text-gray-600">
         {{ t('settings.qrNote') }}
       </p>
+    </section>
+
+    <!-- Shuttle Types Catalogue -->
+    <section class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">
+          {{ t('shuttle.catalogTitle') }}
+        </h2>
+        <button
+          type="button"
+          class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          @click="showShuttleForm = !showShuttleForm"
+        >
+          <X v-if="showShuttleForm" class="h-4 w-4" aria-hidden="true" />
+          <Plus v-else class="h-4 w-4" aria-hidden="true" />
+          {{ t('shuttle.type') }}
+        </button>
+      </div>
+
+      <form
+        v-if="showShuttleForm"
+        class="grid gap-3 border-b border-gray-100 bg-gray-50 px-5 py-4 sm:grid-cols-2"
+        @submit.prevent="handleAddShuttleType"
+      >
+        <label class="block">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {{ t('shuttle.type') }}
+          </span>
+          <input
+            v-model="shuttleForm.name"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </label>
+        <label class="block">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {{ t('shuttle.tubePrice') }}
+          </span>
+          <input
+            v-model.number="shuttleForm.tube_price"
+            type="number"
+            min="0"
+            step="1000"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </label>
+        <label class="block">
+          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {{ t('shuttle.perTube') }}
+          </span>
+          <input
+            v-model.number="shuttleForm.per_tube"
+            type="number"
+            min="1"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </label>
+        <div class="flex items-end">
+          <button
+            type="submit"
+            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 sm:w-auto"
+          >
+            {{ t('common.save') }}
+          </button>
+        </div>
+      </form>
+
+      <div v-if="shuttleLoading" class="px-5 py-6 text-sm text-gray-500">
+        {{ t('common.loading') }}
+      </div>
+      <div v-else-if="shuttleTypes.length === 0" class="px-5 py-6 text-sm text-gray-500">
+        {{ t('shuttle.catalogEmpty') }}
+      </div>
+      <div v-else class="divide-y divide-gray-100">
+        <div v-for="st in shuttleTypes" :key="st.id" class="flex items-center gap-3 px-5 py-4">
+          <button
+            type="button"
+            class="shrink-0 transition hover:scale-110"
+            :title="st.is_active ? 'Active' : 'Inactive'"
+            @click="handleToggleShuttleActive(st)"
+          >
+            <CircleCheck
+              v-if="st.is_active"
+              class="h-5 w-5 text-green-500"
+              aria-hidden="true"
+            />
+            <Circle v-else class="h-5 w-5 text-gray-300" aria-hidden="true" />
+          </button>
+          <div class="min-w-0 flex-1">
+            <span class="text-sm font-bold text-gray-900">{{ st.name }}</span>
+            <p class="text-xs text-gray-500">
+              {{ formatCurrency(st.tube_price) }} / {{ st.per_tube }} {{ t('shuttle.perTube') }}
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 </template>
