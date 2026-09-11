@@ -751,6 +751,60 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.update_session_details(p_session_id uuid, p_title text, p_status session_status, p_court_fee_addon numeric, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_bookings jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+    v_start  TIMESTAMPTZ;
+    v_end    TIMESTAMPTZ;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT s.status::text, s.start_time, s.end_time
+    INTO v_status, v_start, v_end
+    FROM sessions s WHERE s.id = p_session_id;
+
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa buổi khi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    -- Ba bước dưới đây trước kia là ba lời gọi PostgREST rời nhau từ
+    -- SessionDetailView: dựng lại interval, UPDATE sessions, ghi sân. Hỏng ở
+    -- giữa thì điểm danh đã bị xóa còn hai bước sau bị bỏ dở, và buổi ở lại
+    -- trạng thái không ai dựng lại được. Gộp vào một hàm là gộp vào một
+    -- transaction: hỏng bước nào thì cuộn lại hết.
+    --
+    -- Chỉ dựng lại interval khi giờ THẬT SỰ đổi: recreate_session_intervals
+    -- xóa toàn bộ điểm danh, không được chạy khi admin chỉ sửa tiêu đề.
+    IF p_start_time IS DISTINCT FROM v_start OR p_end_time IS DISTINCT FROM v_end THEN
+        PERFORM recreate_session_intervals(p_session_id, p_start_time, p_end_time);
+    END IF;
+
+    -- Ghi sân SAU khi interval đã dời sang khung giờ mới (để
+    -- refresh_interval_courts bên trong nó tính tiền theo đúng khung mới) và
+    -- TRƯỚC khi đổi status (nó từ chối buổi không còn 'open').
+    PERFORM set_session_court_bookings(p_session_id, p_bookings);
+
+    UPDATE sessions
+    SET title           = p_title,
+        status          = p_status,
+        court_fee_addon = p_court_fee_addon,
+        updated_at      = now()
+    WHERE id = p_session_id;
+END;
+$function$;
+
 CREATE OR REPLACE FUNCTION public.set_session_shuttle_usage(p_session_id uuid, p_usage jsonb)
  RETURNS void
  LANGUAGE plpgsql

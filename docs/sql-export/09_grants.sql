@@ -63,3 +63,9 @@ GRANT EXECUTE ON FUNCTION public.set_session_court_bookings(uuid, jsonb) TO auth
 -- the same transaction).
 REVOKE EXECUTE ON FUNCTION public.set_session_shuttle_usage(uuid, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.set_session_shuttle_usage(uuid, jsonb) TO authenticated;
+
+-- update_session_details: SECURITY DEFINER, admin-only. Gộp ba lời gọi rời
+-- nhau của màn hình sửa buổi (dựng lại interval, ghi sân, cập nhật buổi)
+-- vào một transaction duy nhất.
+REVOKE EXECUTE ON FUNCTION public.update_session_details(uuid, text, session_status, numeric, timestamptz, timestamptz, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.update_session_details(uuid, text, session_status, numeric, timestamptz, timestamptz, jsonb) TO authenticated;
