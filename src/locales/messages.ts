@@ -134,6 +134,7 @@ export const messages = {
       live: 'Trực tiếp',
       pricePerHour: 'Giá sân / giờ',
       courtFeeAddon: 'Tiền sân thêm',
+      courtFeeAddonHint: 'Khoản phí sân cố định của cả buổi, cộng thêm ngoài giá theo giờ của từng sân.',
       courtFeeAddonWarning: 'Cả hai khoản sẽ cộng lại: chi phí sân/giờ + tiền sân thêm.',
       intervalsResetWarning:
         'Đổi giờ buổi sẽ xóa toàn bộ dữ liệu điểm danh và tạo lại các khung giờ mới.',
@@ -517,6 +518,7 @@ export const messages = {
       live: 'Live',
       pricePerHour: 'Price per hour',
       courtFeeAddon: 'Court fee add-on',
+      courtFeeAddonHint: 'A flat court charge for the whole session, added on top of each court hourly price.',
       courtFeeAddonWarning:
         'Both sources are combined: hourly booking cost plus court fee add-on.',
       intervalsResetWarning:
