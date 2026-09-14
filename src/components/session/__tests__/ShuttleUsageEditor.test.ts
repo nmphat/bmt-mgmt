@@ -80,4 +80,16 @@ describe('ShuttleUsageEditor', () => {
     await w.get('[data-testid="add-row"]').trigger('click')
     expect(w.findAll('[data-testid^="used-"]')).toHaveLength(1)
   })
+
+  it('picks up usage that arrives after mount, once the parent fetch fills it in', async () => {
+    const w = await mountEditor([])
+    expect(w.text()).toContain('Chưa nhập cầu nào')
+    expect(w.get('[data-testid="shuttle-total"]').text()).toContain('0')
+
+    await w.setProps({ usage })
+    await flushPromises()
+
+    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('3')
+    expect(w.get('[data-testid="shuttle-total"]').text()).toContain('78.750')
+  })
 })

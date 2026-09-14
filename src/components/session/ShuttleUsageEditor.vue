@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useShuttleTypes } from '@/composables/useShuttleTypes'
 import { supabase } from '@/lib/supabase'
 import { useLangStore } from '@/stores/lang'
@@ -30,10 +30,25 @@ const saving = ref(false)
 
 const loadError = ref(false)
 
+// SessionDetailView mounts this editor before its own session fetch has
+// filled in shuttle_usage, then patches the prop in a few round-trips later
+// (and again on every full refetch, e.g. from realtime events). Sync from
+// the prop until the admin edits a row; once dirty, local rows are the
+// source of truth so a refetch can never overwrite an in-progress edit.
+const dirty = ref(false)
+
+watch(
+  () => props.usage,
+  (usage) => {
+    if (dirty.value) return
+    rows.value = usage.map((u) => ({ ...u }))
+  },
+  { immediate: true },
+)
+
 onMounted(async () => {
   try {
     await fetchTypes()
-    rows.value = props.usage.map((u) => ({ ...u }))
   } catch {
     loadError.value = true
   }
@@ -44,6 +59,7 @@ const total = computed(() => shuttleTotal(rows.value))
 function addRow() {
   const first = activeTypes.value[0]
   if (!first) return
+  dirty.value = true
   rows.value.push({
     type_id: first.id,
     name: first.name,
@@ -54,6 +70,7 @@ function addRow() {
 }
 
 function removeRow(index: number) {
+  dirty.value = true
   rows.value.splice(index, 1)
 }
 
@@ -62,6 +79,7 @@ function changeType(index: number, typeId: string) {
   if (!type) return
   const row = rows.value[index]
   if (!row) return
+  dirty.value = true
   row.type_id = type.id
   row.name = type.name
   row.tube_price = type.tube_price
@@ -70,12 +88,25 @@ function changeType(index: number, typeId: string) {
 
 function increment(index: number) {
   const row = rows.value[index]
-  if (row) row.used = (Number(row.used) || 0) + 1
+  if (row) {
+    dirty.value = true
+    row.used = (Number(row.used) || 0) + 1
+  }
 }
 
 function decrement(index: number) {
   const row = rows.value[index]
-  if (row) row.used = Math.max(0, (Number(row.used) || 0) - 1)
+  if (row) {
+    dirty.value = true
+    row.used = Math.max(0, (Number(row.used) || 0) - 1)
+  }
+}
+
+function setUsed(index: number, value: number) {
+  const row = rows.value[index]
+  if (!row) return
+  dirty.value = true
+  row.used = Math.max(0, value || 0)
 }
 
 async function handleSave() {
@@ -144,9 +175,7 @@ async function handleSave() {
             min="0"
             :data-testid="`used-${i}`"
             class="block w-16 min-h-11 rounded-xl border border-gray-300 px-2 text-center text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
-            @change="
-              rows[i]!.used = Math.max(0, Number(($event.target as HTMLInputElement).value) || 0)
-            "
+            @change="setUsed(i, Number(($event.target as HTMLInputElement).value))"
           />
           <button
             type="button"
