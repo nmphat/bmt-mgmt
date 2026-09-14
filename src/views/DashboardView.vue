@@ -24,10 +24,16 @@ async function fetchSessions() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const { data, error } = await supabase
+    let query = supabase
       .from('view_session_summary')
       .select('*')
       .order('session_date', { ascending: false })
+
+    if (!authStore.isAdmin) {
+      query = query.in('status', ['waiting_for_payment', 'done'])
+    }
+
+    const { data, error } = await query
 
     if (error) throw error
     sessions.value = data || []
