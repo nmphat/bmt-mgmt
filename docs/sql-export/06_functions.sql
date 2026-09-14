@@ -215,6 +215,7 @@ DECLARE
     v_total_intervals      INT := 0;  -- fallback denominator when court bookings don't overlap
     v_ghost_count          INT;
     v_has_priced_booking   BOOLEAN;   -- buổi này dùng giá theo sân hay công thức giờ cũ
+    v_registered_count     INT;       -- mẫu số tiền sân của interval không có ai điểm danh
 BEGIN
     -- 1. Load session config
     SELECT s.court_fee_addon, s.price_per_hour, s.shuttle_fee_total
@@ -251,6 +252,15 @@ BEGIN
     SELECT COUNT(*) INTO v_ghost_count
     FROM member_presence_counts
     WHERE presence_count = 0;
+
+    -- 3b. Mẫu số của một interval mà KHÔNG AI điểm danh. Sân đã đặt là tốn
+    -- tiền dù không ai bước vào, và người đặt là người nợ -- nên khung đó
+    -- chia đều cho MỌI người đã đăng ký buổi, đúng lý do đang bắt ghost trả
+    -- tiền sân. Trước đây khung đó trả về 0 và toàn bộ tiền sân của nó không
+    -- vào hóa đơn của ai.
+    SELECT COUNT(*) INTO v_registered_count
+    FROM session_registrations r
+    WHERE r.session_id = p_session_id;
 
     -- 4. Compute costs
     RETURN QUERY
@@ -293,10 +303,18 @@ BEGIN
             m.display_name,
 
             -- A. COURT FEE — Option C additive (booking cost + addon)
+            -- Ai trả khung này: người có mặt + ghost. Nhưng một interval mà
+            -- KHÔNG AI điểm danh thì trước đây cả biểu thức trả 0 và tiền
+            -- sân của khung đó biến mất khỏi mọi hóa đơn -- trong khi danh
+            -- sách buổi vẫn cộng đủ, nên hai con số trên cùng một màn hình
+            -- admin lệch nhau mà không có gì đối chiếu. Nay khung đó chia
+            -- đều cho mọi người đã đăng ký (v_registered_count). Ghost nằm
+            -- trong số đó nên vẫn chỉ chịu ĐÚNG MỘT suất của khung, không
+            -- bị tính hai lần.
             CASE
-                WHEN (ist.real_present_count + v_ghost_count) > 0 THEN
-                    CASE
-                        WHEN gm.member_id IS NOT NULL OR p.is_present = true THEN
+                WHEN gm.member_id IS NOT NULL OR p.is_present = true
+                     OR ist.real_present_count = 0 THEN
+                    (
                             CASE
                                 WHEN v_total_court_units > 0 THEN
                                     -- Normal: both booking cost and addon weighted by court-units.
@@ -316,17 +334,18 @@ BEGIN
                                         END
                                         +
                                         (COALESCE(v_court_fee_addon, 0) * ist.active_court_count::numeric / v_total_court_units)
-                                    ) / (ist.real_present_count + v_ghost_count)
+                                    )
                                 WHEN v_total_intervals > 0 AND COALESCE(v_court_fee_addon, 0) > 0 THEN
                                     -- Fallback: court bookings don't overlap with intervals
                                     -- (e.g. timezone mismatch). Distribute addon equally per interval.
                                     -- price_per_hour booking cost = 0 (no valid court overlap).
                                     (v_court_fee_addon::numeric / v_total_intervals)
-                                    / (ist.real_present_count + v_ghost_count)
                                 ELSE 0
                             END
-                        ELSE 0
-                    END
+                    ) / CASE
+                            WHEN ist.real_present_count = 0 THEN v_registered_count
+                            ELSE ist.real_present_count + v_ghost_count
+                        END
                 ELSE 0
             END AS court_cost,
 

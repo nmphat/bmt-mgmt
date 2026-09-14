@@ -264,4 +264,110 @@ SELECT assert_money_eq(
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'mixed session: list total agrees with the engine');
 
+
+-- ── Interval KHÔNG có ai điểm danh: tiền sân của khung đó vẫn phải có người trả ──
+-- Hình dạng thật và dựng được từ UI: buổi 11:00-13:00, một sân 120000/h, hai
+-- người chỉ ở lại tiếng đầu rồi admin bỏ tick hai ô cuối của lưới điểm danh.
+-- Câu lạc bộ vẫn trả đủ 240000 tiền sân. Trước đây engine chỉ chia 120000:
+-- hai interval cuối không có ai điểm danh nên cả biểu thức tiền sân trả 0 và
+-- 120000 đồng không vào hóa đơn của ai, trong khi danh sách buổi vẫn hiện
+-- 240000 -- hai con số trên cùng một màn hình admin không khớp nhau và không
+-- có gì đối chiếu chúng.
+INSERT INTO sessions (id, title, start_time, end_time, price_per_hour, court_fee_addon, shuttle_fee_total, status)
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Empty interval session',
+        '2026-09-02 11:00:00+00', '2026-09-02 13:00:00+00', 0, 0, 0, 'open');
+
+INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
+SELECT 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+       '2026-09-02 11:00:00+00'::timestamptz + (g * INTERVAL '30 minutes'),
+       '2026-09-02 11:00:00+00'::timestamptz + ((g + 1) * INTERVAL '30 minutes'),
+       g, 0
+FROM generate_series(0, 3) g;
+
+INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Sân 1',
+        '2026-09-02 11:00:00+00', '2026-09-02 13:00:00+00', 120000);
+
+SELECT refresh_interval_courts('cccccccc-cccc-cccc-cccc-cccccccccccc');
+
+INSERT INTO session_registrations (session_id, member_id) VALUES
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '22222222-2222-2222-2222-222222222222'),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '33333333-3333-3333-3333-333333333333');
+
+-- Đúng thứ togglePresence ghi: có mặt ở idx 0,1 và KHÔNG có mặt ở idx 2,3.
+INSERT INTO interval_presence (interval_id, member_id, is_present)
+SELECT i.id, m.member_id, (i.idx < 2)
+FROM session_intervals i
+CROSS JOIN (VALUES ('22222222-2222-2222-2222-222222222222'::uuid),
+                   ('33333333-3333-3333-3333-333333333333'::uuid)) m(member_id)
+WHERE i.session_id = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+
+SELECT assert_eq(
+  (SELECT sum(court_cost) FROM session_intervals
+    WHERE session_id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+  240000::numeric, 'empty interval: the club really paid for all four intervals');
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_intervals i
+    WHERE i.session_id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'
+      AND NOT EXISTS (SELECT 1 FROM interval_presence p
+                      WHERE p.interval_id = i.id AND p.is_present)),
+  2, 'empty interval: two intervals really have nobody present');
+
+-- Mỗi interval 60000, chia đều cho 2 người đã đăng ký ở khung không ai có
+-- mặt và cho 2 người có mặt ở khung có người -> 30000/người/interval.
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')
+    WHERE member_id = '22222222-2222-2222-2222-222222222222'),
+  120000::numeric, 'empty interval: member A pays for the empty intervals too');
+
+SELECT assert_eq(
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')),
+  240000::numeric, 'empty interval: every VND of court money is billed to somebody');
+
+SELECT assert_money_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')),
+  'empty interval: list total agrees with the engine');
+
+-- ── Cùng hình dạng đó nhưng có thêm một ghost ──
+-- Ghost đã trả tiền sân ở MỌI interval theo luật cũ. Khung không ai có mặt
+-- chia cho mọi người đã đăng ký, nên ghost vẫn chỉ chịu ĐÚNG MỘT suất của
+-- khung đó, không bị tính hai lần; tổng vẫn phải đúng bằng tiền sân thật.
+INSERT INTO members (id, display_name, role, is_active)
+VALUES ('55555555-5555-5555-5555-555555555555', 'Ghost 2', 'member', true);
+INSERT INTO session_registrations (session_id, member_id)
+VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc', '55555555-5555-5555-5555-555555555555');
+
+-- 4 interval x 60000, mỗi khung chia 3 suất -> 20000/suất, ai cũng chịu cả 4
+-- khung: 80000/người.
+SELECT assert_eq(
+  (SELECT final_total FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')
+    WHERE member_id = '55555555-5555-5555-5555-555555555555'),
+  80000::numeric, 'empty interval with a ghost: the ghost pays exactly one share per interval');
+
+SELECT assert_eq(
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')),
+  240000::numeric, 'empty interval with a ghost: court money still adds up exactly');
+
+SELECT assert_money_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')),
+  'empty interval with a ghost: list total agrees with the engine');
+
+-- Cùng hình dạng đó trên buổi TÍNH THEO GIỜ CŨ (không booking nào có giá):
+-- danh sách buổi cộng (active_court_count * price_per_hour / 2) trên MỌI
+-- interval, nên engine cũng phải chia đủ trên mọi interval.
+UPDATE session_court_bookings SET price_per_hour = 0
+WHERE session_id = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+UPDATE sessions SET price_per_hour = 100000, court_fee_addon = 90000
+WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+SELECT refresh_interval_courts('cccccccc-cccc-cccc-cccc-cccccccccccc');
+
+SELECT assert_money_eq(
+  (SELECT total_court_cost FROM view_session_summary WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+  (SELECT sum(total_court_fee) FROM calculate_session_costs('cccccccc-cccc-cccc-cccc-cccccccccccc')),
+  'empty interval, legacy hourly session: list total agrees with the engine');
+
+
 ROLLBACK;
