@@ -49,8 +49,8 @@ GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_session(uuid) TO authenti
 GRANT EXECUTE ON FUNCTION public.soft_delete_cancelled_sessions_bulk(uuid[]) TO authenticated;
 
 -- refresh_interval_courts: SECURITY DEFINER (writes court_cost to session_intervals).
--- Called by SECURITY INVOKER functions (create_session_with_bookings, recreate_session_intervals,
--- trigger_refresh_courts) and frontend RPC, so authenticated role must retain EXECUTE.
+-- Called by create_session_with_bookings, recreate_session_intervals and
+-- trigger_refresh_courts, and by frontend RPC, so authenticated role must retain EXECUTE.
 -- anon must be revoked from both PUBLIC and its direct Supabase grant.
 REVOKE EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.refresh_interval_courts(uuid) TO authenticated;
@@ -71,3 +71,13 @@ GRANT EXECUTE ON FUNCTION public.set_session_shuttle_usage(uuid, jsonb) TO authe
 -- vào một transaction duy nhất.
 REVOKE EXECUTE ON FUNCTION public.update_session_details(uuid, text, session_status, numeric, timestamptz, timestamptz, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.update_session_details(uuid, text, session_status, numeric, timestamptz, timestamptz, jsonb) TO authenticated;
+
+-- create_session_with_bookings: SECURITY DEFINER, admin-only. Đường tạo
+-- buổi duy nhất của ứng dụng; route /create-session đã là requiresAdmin.
+REVOKE EXECUTE ON FUNCTION public.create_session_with_bookings(text, timestamptz, timestamptz, numeric, numeric, uuid, jsonb, numeric) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.create_session_with_bookings(text, timestamptz, timestamptz, numeric, numeric, uuid, jsonb, numeric) TO authenticated;
+
+-- recreate_session_intervals: SECURITY DEFINER, admin-only. Câu lệnh đầu
+-- tiên của nó xóa MỌI dòng interval_presence của buổi.
+REVOKE EXECUTE ON FUNCTION public.recreate_session_intervals(uuid, timestamptz, timestamptz) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION public.recreate_session_intervals(uuid, timestamptz, timestamptz) TO authenticated;

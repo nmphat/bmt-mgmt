@@ -75,5 +75,50 @@ BEGIN
   END;
 END $$;
 
+-- Hai RPC ghi buổi còn lại. recreate_session_intervals xóa MỌI dòng
+-- interval_presence của buổi ngay ở câu lệnh đầu tiên, và
+-- create_session_with_bookings là đường tạo buổi duy nhất. Cả hai đều có
+-- admin check trong thân hàm, nên phải khẳng định ĐÚNG SQLSTATE
+-- insufficient_privilege: nếu anon chỉ bị chặn bởi admin check thì REVOKE
+-- đã là no-op và không có gì báo -- đó chính là cách `REVOKE ... FROM anon`
+-- thiếu vế PUBLIC (hoặc ngược lại) đi lọt ba lần trước.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM recreate_session_intervals('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '2026-09-01 11:00:00+00', '2026-09-01 12:00:00+00');
+    RAISE EXCEPTION 'FAIL anon executed recreate_session_intervals (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on recreate_session_intervals';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon reached recreate_session_intervals''s body (%) — the REVOKE is inert', SQLERRM;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    PERFORM create_session_with_bookings(
+      'anon', '2026-09-05 11:00:00+00', '2026-09-05 12:00:00+00',
+      0, 0, '11111111-1111-1111-1111-111111111111', '[]'::jsonb, 0);
+    RAISE EXCEPTION 'FAIL anon executed create_session_with_bookings (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on create_session_with_bookings';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon reached create_session_with_bookings''s body (%) — the REVOKE is inert', SQLERRM;
+  END;
+END $$;
+
 RESET ROLE;
+
+-- Đọc lại bằng superuser: anon có thể không đọc được sessions, và một
+-- assert chạy dưới quyền anon sẽ "đạt" kể cả khi buổi đã được tạo.
+SELECT assert_eq(
+  (SELECT count(*)::int FROM sessions WHERE title = 'anon'), 0,
+  'anon created no session');
+
 ROLLBACK;

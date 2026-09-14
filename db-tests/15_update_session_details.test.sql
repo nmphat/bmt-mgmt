@@ -43,6 +43,30 @@ BEGIN
   END;
 END $$;
 
+-- recreate_session_intervals gọi thẳng: câu lệnh đầu tiên của nó xóa MỌI
+-- dòng điểm danh của buổi, nên nó phải có admin check riêng chứ không được
+-- dựa vào việc "chỉ update_session_details mới gọi nó".
+DO $$
+BEGIN
+  BEGIN
+    PERFORM recreate_session_intervals('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '2026-09-01 20:00:00+00', '2026-09-01 21:00:00+00');
+    RAISE EXCEPTION 'FAIL non-admin could rebuild a session''s intervals';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Chỉ admin%' THEN
+      RAISE EXCEPTION 'FAIL non-admin was blocked by the wrong guard: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-admin blocked from recreate_session_intervals';
+  END;
+END $$;
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM interval_presence p
+    JOIN session_intervals si ON si.id = p.interval_id
+    WHERE si.session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  3, 'the refused rebuild destroyed no attendance');
+
 RESET ROLE;
 
 SET LOCAL ROLE authenticated;
@@ -123,6 +147,13 @@ SELECT assert_eq(
 -- ── Dời giờ VÀ dời sân trong một lời gọi: tiền sân phải sống sót ──
 -- Đây là C1. Ba lời gọi rời nhau đưa sum(court_cost) về 0 mà không báo lỗi,
 -- vì recreate_session_intervals dời khung giờ còn booking thì ở lại chỗ cũ.
+--
+-- Lời gọi này CÓ đổi giờ, nên nó chạy xuyên qua recreate_session_intervals
+-- lồng bên trong -- và đó là chỗ chứng minh admin check lồng nhau hoạt động:
+-- cả hai hàm đều SECURITY DEFINER cùng một owner, auth.uid() đọc GUC
+-- request.jwt.claims chứ không đọc current_user, nên hàm trong vẫn thấy đúng
+-- người gọi thật. Nếu auth.uid() rỗng ở lời gọi lồng, guard mới sẽ nổ
+-- 'Chỉ admin...' ngay đây và cả khối assert bên dưới đỏ.
 SELECT update_session_details(
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Buổi đã dời giờ', 'open'::session_status, 0,
   '2026-09-01 12:00:00+00', '2026-09-01 13:00:00+00',

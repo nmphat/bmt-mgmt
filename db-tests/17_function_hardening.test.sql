@@ -1,6 +1,6 @@
--- Bốn hàm SECURITY DEFINER ghi tiền của nhánh này phải giữ nguyên ba thuộc
--- tính, và cả ba đều vô hình với mọi test khác: nếu bị gỡ, hàm vẫn chạy
--- đúng và toàn bộ bộ test vẫn xanh.
+-- Sáu hàm SECURITY DEFINER ghi tiền / ghi buổi của nhánh này phải giữ
+-- nguyên ba thuộc tính, và cả ba đều vô hình với mọi test khác: nếu bị gỡ,
+-- hàm vẫn chạy đúng và toàn bộ bộ test vẫn xanh.
 --   - prosecdef: SECURITY INVOKER thì hàm chạy bằng quyền người gọi và
 --     toàn bộ phòng thủ tụt xuống còn một lớp RLS.
 --   - proconfig: RESET search_path thì search_path của người gọi quyết định
@@ -19,7 +19,8 @@ DO $$
 DECLARE
   r RECORD;
   v_names text[] := ARRAY['refresh_interval_courts','set_session_court_bookings',
-                          'set_session_shuttle_usage','update_session_details'];
+                          'set_session_shuttle_usage','update_session_details',
+                          'create_session_with_bookings','recreate_session_intervals'];
   v_found int := 0;
 BEGIN
   FOR r IN

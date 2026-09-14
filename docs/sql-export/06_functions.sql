@@ -579,6 +579,8 @@ DROP FUNCTION IF EXISTS public.create_session_with_bookings(text, timestamp with
 CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb, p_court_fee_addon numeric DEFAULT 0)
  RETURNS uuid
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_session_id UUID;
@@ -588,6 +590,16 @@ DECLARE
     v_booking_item JSONB;
     v_court TEXT;
 BEGIN
+    -- Cùng mức bảo vệ với mọi RPC ghi buổi khác của nhánh này. Route
+    -- /create-session đã là requiresAuth + requiresAdmin, nên guard này chỉ
+    -- nói ở tầng database đúng thứ ứng dụng đã có ý định; nó không đóng
+    -- thêm đường nào mà UI đang dùng.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- Hai guard dưới đây kiểm tra cùng thứ mà set_session_court_bookings
     -- kiểm tra, và phải chạy TRƯỚC khi ghi bất cứ dòng nào: đây là đường
     -- tạo buổi duy nhất, và CreateSessionView hiển thị nguyên văn
@@ -1030,12 +1042,26 @@ $function$;
 CREATE OR REPLACE FUNCTION public.recreate_session_intervals(p_session_id uuid, p_start_time timestamp with time zone, p_end_time timestamp with time zone)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
   v_interval_start TIMESTAMPTZ;
   v_interval_end   TIMESTAMPTZ;
   v_idx            INT := 0;
 BEGIN
+  -- Câu lệnh ĐẦU TIÊN của hàm này xóa sạch điểm danh của cả buổi, nên nó
+  -- phải hỏi quyền trước khi làm bất cứ gì. update_session_details gọi hàm
+  -- này lồng bên trong: cả hai đều SECURITY DEFINER cùng một owner, và
+  -- auth.uid() đọc GUC request.jwt.claims của phiên chứ không đọc
+  -- current_user, nên lời gọi lồng vẫn thấy đúng người gọi thật
+  -- (15_update_session_details.test.sql pin điều này).
+  IF NOT EXISTS (
+    SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+  END IF;
+
   -- 1. Delete presence records for old intervals (cascade-safe manual delete)
   DELETE FROM interval_presence
   WHERE interval_id IN (
