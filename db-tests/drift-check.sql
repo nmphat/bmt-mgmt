@@ -1,12 +1,15 @@
 -- Read-only drift check between docs/sql-export/*.sql and production.
 -- SELECT statements only — this is meant to run against production one day.
 --
--- Run order matters: results are concatenated 1->6 into one file with no
--- headers, so the same six queries must run in the same order on both
+-- Run order matters: results are concatenated 1->8 into one file with no
+-- headers, so the same eight queries must run in the same order on both
 -- sides for `diff` to line up.
 
--- 1. tables and columns
-SELECT c.relname || ' | ' || string_agg(a.attname || ':' || format_type(a.atttypid, a.atttypmod), ', ' ORDER BY a.attnum) AS row
+-- 1. tables and columns, WITH nullability. The type alone cannot see a
+-- DROP NOT NULL, so the three money columns made NOT NULL on this branch
+-- were invisible to the drift check until the marker below was added.
+SELECT c.relname || ' | ' || string_agg(a.attname || ':' || format_type(a.atttypid, a.atttypmod)
+       || CASE WHEN a.attnotnull THEN ' NOT NULL' ELSE '' END, ', ' ORDER BY a.attnum) AS row
 FROM pg_class c
 JOIN pg_namespace n ON n.oid = c.relnamespace
 JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
@@ -92,3 +95,28 @@ JOIN pg_namespace n ON n.oid = c.relnamespace
 JOIN pg_proc p ON p.oid = t.tgfoid
 WHERE NOT t.tgisinternal AND n.nspname IN ('public', 'auth')
 ORDER BY 1;
+
+-- 7. views, whitespace-collapsed to one row per view. pg_get_viewdef
+-- pretty-prints with embedded newlines, which would break the
+-- one-row-per-line format. This is the query that was missing entirely:
+-- view_session_summary holds the SECOND copy of the pricing decision (the
+-- first is in calculate_session_costs), and a production still running the
+-- superseded per-interval expression diffed clean before this existed.
+SELECT c.relname || ' | ' || regexp_replace(pg_get_viewdef(c.oid), '\s+', ' ', 'g') AS row
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind = 'v'
+ORDER BY c.relname;
+
+-- 8. constraints (CHECK, PRIMARY KEY, UNIQUE, FOREIGN KEY, EXCLUDE).
+-- session_court_bookings_time_order_check and
+-- session_court_bookings_court_name_not_blank are both new this branch and
+-- neither appeared in any drift query. Joined through pg_class rather than
+-- casting conrelid::regclass, so the output does not depend on the reader's
+-- search_path.
+SELECT cl.relname || ' | ' || con.conname || ' | '
+       || regexp_replace(pg_get_constraintdef(con.oid), '\s+', ' ', 'g') AS row
+FROM pg_constraint con
+JOIN pg_class cl ON cl.oid = con.conrelid
+JOIN pg_namespace n ON n.oid = cl.relnamespace
+WHERE n.nspname = 'public'
+ORDER BY cl.relname, con.conname;
