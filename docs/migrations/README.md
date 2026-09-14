@@ -773,6 +773,62 @@ sự cố về hiệu năng khóa hay tương tự), thì chỉ chạy script tr
 có guard) trong cùng transaction rollback, nếu không hàm vẫn chặn đúng thứ
 mà việc rollback định mở lại.
 
+## 2026-09-11-view-total-court-cost.sql
+
+Chạy sau `2026-09-09-phase1-pricing.sql` và **TRƯỚC**
+`2026-09-11-court-pricing-guards.sql`. Đã áp lên production.
+`view_session_summary.total_court_cost` vẫn tính theo công thức giờ cũ
+(`active_court_count * price_per_hour / 2` + `court_fee_addon`) và bỏ qua
+`session_intervals.court_cost`, nên mọi buổi tính theo giá sân — vốn có
+`price_per_hour = 0` — hiện 0 đồng trong danh sách buổi trong khi thành viên
+vẫn bị tính đủ tiền. Script đưa view về đọc `court_cost`.
+
+### Đã bị thay thế — và tên file làm thứ tự chạy SAI
+
+`2026-09-11-court-pricing-guards.sql` viết lại cùng view đó với biểu thức
+chốt mô hình giá **một lần cho cả buổi**. Sắp theo tên file,
+`court-pricing-guards` đứng **trước** `view-total-court-cost`, nên một người
+chạy lại cả thư mục theo thứ tự tên file áp bản cũ **sau** bản mới và lặng lẽ
+hoàn tác bản sửa tiền. Dựng lại được: container Postgres 17 từ export trước
+nhánh + cả năm migration theo thứ tự tên file →
+`db-tests/11_calc_with_court_cost.test.sql` đỏ với
+`expected 60000, got 110000`.
+
+Cách chữa **không** phải là nhớ thứ tự. Thân file đã được thay bằng đúng định
+nghĩa hiện hành trong `docs/sql-export/05_views.sql`, nên chạy nó ở bất kỳ vị
+trí nào, bao nhiêu lần cũng được, đều cho ra cùng một view đúng — không còn gì
+cũ trong file để hoàn tác. Nội dung gốc nằm trong git history
+(`43674cc:docs/migrations/2026-09-11-view-total-court-cost.sql`).
+
+### Trước khi chạy
+
+```sql
+SELECT CASE WHEN pg_get_viewdef('public.view_session_summary'::regclass)
+              ~ 'si.court_cost > ' THEN 'per-interval (bản đã bị thay thế)'
+            WHEN pg_get_viewdef('public.view_session_summary'::regclass)
+              ~ 'b.price_per_hour > ' THEN 'session-level (đúng, không cần chạy)'
+            ELSE 'legacy (trước phase1-pricing)' END;
+```
+
+### Sau khi chạy
+
+```sql
+SELECT CASE WHEN pg_get_viewdef('public.view_session_summary'::regclass)
+              ~ 'si.court_cost > ' THEN 'per-interval (SAI)'
+            ELSE 'session-level (đúng)' END;
+-- kỳ vọng: session-level (đúng)
+```
+
+`db-tests/drift-check.sql` nay có truy vấn `pg_get_viewdef` (query 7), nên
+một production còn đang chạy bản per-interval hiện ra trong diff thay vì diff
+sạch — trước đây drift check không đọc view nào cả và đây chính là chỗ một
+trong hai bản sao của quyết định giá đang nằm.
+
+### Rollback
+
+Không có. `CREATE OR REPLACE VIEW` là idempotent và định nghĩa trong file
+chính là định nghĩa hiện hành của `docs/sql-export/05_views.sql`.
+
 ## 2026-09-11-court-pricing-guards.sql
 
 Chạy sau `2026-09-11-court-name-not-null.sql`. Chưa áp lên production.
