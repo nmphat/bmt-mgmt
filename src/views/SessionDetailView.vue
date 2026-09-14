@@ -1002,7 +1002,7 @@ onUnmounted(() => {
               <input
                 v-model="sessionForm.title"
                 type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
             <div>
@@ -1011,7 +1011,7 @@ onUnmounted(() => {
               }}</label>
               <select
                 v-model="sessionForm.status"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               >
                 <option value="open">{{ t('common.open') }}</option>
                 <option value="waiting_for_payment">{{ t('common.waiting_for_payment') }}</option>
@@ -1052,7 +1052,7 @@ onUnmounted(() => {
                 v-model.number="sessionForm.court_fee_addon"
                 type="number"
                 step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
             <div>
@@ -1063,7 +1063,7 @@ onUnmounted(() => {
                 v-model.number="defaultCourtPrice"
                 type="number"
                 step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
           </div>
@@ -1084,7 +1084,7 @@ onUnmounted(() => {
             <button
               type="button"
               @click="isEditingSession = false"
-              class="min-h-11 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="min-h-11 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               {{ t('common.cancel') }}
             </button>
@@ -1092,7 +1092,7 @@ onUnmounted(() => {
               type="button"
               @click="saveSession"
               :disabled="isSavingSession || !bookingsValid || sessionTimeInvalid"
-              class="flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+              class="flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
