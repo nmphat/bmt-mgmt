@@ -70,8 +70,21 @@ $function$;
 CREATE OR REPLACE FUNCTION public.add_member_to_session_full_presence(p_session_id uuid, p_member_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    -- Hàm này ghi session_registrations và interval_presence -- số dòng của
+    -- interval_presence chính là mẫu số chia tiền, nên một thành viên đã
+    -- đăng nhập nhưng không phải admin gọi được nó là kéo được hóa đơn của
+    -- mọi người khác xuống.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Đăng ký thành viên vào Session
     -- Cột is_registered_not_attended đã bị loại bỏ, chỉ cần đảm bảo có registration row.
     INSERT INTO session_registrations (session_id, member_id)
@@ -180,8 +193,21 @@ $function$;
 CREATE OR REPLACE FUNCTION public.batch_add_members_to_session(p_session_id uuid, p_member_ids uuid[])
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    -- Hàm này ghi session_registrations và interval_presence -- số dòng của
+    -- interval_presence chính là mẫu số chia tiền, nên một thành viên đã
+    -- đăng nhập nhưng không phải admin gọi được nó là kéo được hóa đơn của
+    -- mọi người khác xuống.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Batch Insert vào bảng Registration
     -- Dùng hàm unnest() để "bung" mảng ra thành các dòng dữ liệu
     INSERT INTO session_registrations (session_id, member_id)

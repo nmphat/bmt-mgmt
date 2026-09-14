@@ -150,6 +150,53 @@ BEGIN
   END;
 END $$;
 
+-- ── Hai RPC ghi buổi còn lại ──
+-- add_member_to_session_full_presence và batch_add_members_to_session ghi
+-- session_registrations và interval_presence -- đúng cái bảng mà số dòng
+-- của nó là mẫu số chia tiền. Một thành viên đã đăng nhập nhưng KHÔNG phải
+-- admin gọi được chúng là kéo được hóa đơn của mọi người khác xuống.
+DO $$
+DECLARE
+  v_a_before numeric;
+BEGIN
+  SELECT final_total INTO v_a_before
+  FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+  WHERE member_id = '22222222-2222-2222-2222-222222222222';
+
+  BEGIN
+    PERFORM add_member_to_session_full_presence(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '11111111-1111-1111-1111-111111111111');
+    RAISE EXCEPTION 'FAIL non-admin could call add_member_to_session_full_presence';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Chỉ admin%' THEN
+      RAISE EXCEPTION 'FAIL non-admin was blocked by the wrong guard: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-admin blocked from add_member_to_session_full_presence';
+  END;
+
+  BEGIN
+    PERFORM batch_add_members_to_session(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ARRAY['11111111-1111-1111-1111-111111111111'::uuid]);
+    RAISE EXCEPTION 'FAIL non-admin could call batch_add_members_to_session';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Chỉ admin%' THEN
+      RAISE EXCEPTION 'FAIL non-admin was blocked by the wrong guard: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   non-admin blocked from batch_add_members_to_session';
+  END;
+
+  -- Đây mới là thiệt hại thật: hai lời gọi trên bị từ chối thì hóa đơn của
+  -- người khác không được nhúc nhích một đồng nào.
+  PERFORM assert_eq(
+    (SELECT final_total FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+      WHERE member_id = '22222222-2222-2222-2222-222222222222'),
+    v_a_before, 'a refused non-admin add left member A''s bill exactly where it was');
+END $$;
+
 RESET ROLE;
 
 -- As admin: all three still work.

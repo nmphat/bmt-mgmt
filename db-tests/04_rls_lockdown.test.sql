@@ -113,7 +113,47 @@ BEGIN
   END;
 END $$;
 
+-- add_member_to_session_full_presence và batch_add_members_to_session ghi
+-- session_registrations và interval_presence. Cả hai cũng có admin check
+-- trong thân hàm nay, nên vẫn phải khẳng định ĐÚNG insufficient_privilege.
+DO $$
+BEGIN
+  BEGIN
+    PERFORM add_member_to_session_full_presence(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      '11111111-1111-1111-1111-111111111111');
+    RAISE EXCEPTION 'FAIL anon executed add_member_to_session_full_presence (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on add_member_to_session_full_presence';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon reached add_member_to_session_full_presence''s body (%) — the REVOKE is inert', SQLERRM;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  BEGIN
+    PERFORM batch_add_members_to_session(
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ARRAY['11111111-1111-1111-1111-111111111111'::uuid]);
+    RAISE EXCEPTION 'FAIL anon executed batch_add_members_to_session (REVOKE did not fire)';
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      RAISE NOTICE 'ok   anon refused by privilege on batch_add_members_to_session';
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      RAISE EXCEPTION 'FAIL anon reached batch_add_members_to_session''s body (%) — the REVOKE is inert', SQLERRM;
+  END;
+END $$;
+
 RESET ROLE;
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_registrations
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  2, 'anon registered nobody to the session');
 
 -- Đọc lại bằng superuser: anon có thể không đọc được sessions, và một
 -- assert chạy dưới quyền anon sẽ "đạt" kể cả khi buổi đã được tạo.

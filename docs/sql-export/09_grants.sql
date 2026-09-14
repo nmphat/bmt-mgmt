@@ -81,3 +81,15 @@ GRANT  EXECUTE ON FUNCTION public.create_session_with_bookings(text, timestamptz
 -- tiên của nó xóa MỌI dòng interval_presence của buổi.
 REVOKE EXECUTE ON FUNCTION public.recreate_session_intervals(uuid, timestamptz, timestamptz) FROM PUBLIC, anon;
 GRANT  EXECUTE ON FUNCTION public.recreate_session_intervals(uuid, timestamptz, timestamptz) TO authenticated;
+
+-- add_member_to_session_full_presence / batch_add_members_to_session:
+-- SECURITY DEFINER, admin-only. Cả hai ghi session_registrations và
+-- interval_presence -- số dòng interval_presence là mẫu số chia tiền, nên
+-- một thành viên đã đăng nhập mà gọi được chúng là kéo được hóa đơn của mọi
+-- người khác xuống. Trước đây anon giữ EXECUTE qua CẢ HAI đường và chỉ bị
+-- RLS chặn, không phải bị chặn ở tầng quyền hàm.
+REVOKE EXECUTE ON FUNCTION public.add_member_to_session_full_presence(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.batch_add_members_to_session(uuid, uuid[]) FROM PUBLIC, anon;
+
+GRANT  EXECUTE ON FUNCTION public.add_member_to_session_full_presence(uuid, uuid) TO authenticated;
+GRANT  EXECUTE ON FUNCTION public.batch_add_members_to_session(uuid, uuid[]) TO authenticated;
