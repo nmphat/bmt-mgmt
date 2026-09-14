@@ -338,7 +338,7 @@ async function handleToggleShuttleActive(st: ShuttleType) {
         </h2>
         <button
           type="button"
-          class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          class="flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           @click="showShuttleForm = !showShuttleForm"
         >
           <X v-if="showShuttleForm" class="h-4 w-4" aria-hidden="true" />
@@ -407,7 +407,7 @@ async function handleToggleShuttleActive(st: ShuttleType) {
         <div v-for="st in shuttleTypes" :key="st.id" class="flex items-center gap-3 px-5 py-4">
           <button
             type="button"
-            class="shrink-0 transition hover:scale-110"
+            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             :title="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
             :aria-label="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
             @click="handleToggleShuttleActive(st)"
