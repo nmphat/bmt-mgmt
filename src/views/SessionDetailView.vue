@@ -1662,7 +1662,7 @@ onUnmounted(() => {
         ref="extraChargesRef"
         :sessionId="sessionId"
         :members="allMembers"
-        :isAdmin="authStore.isAuthenticated"
+        :isAdmin="authStore.isAdmin"
         :isReadOnly="session.status === 'waiting_for_payment' || session.status === 'done'"
         @changed="handleExtraChargesChanged"
       />
@@ -1700,7 +1700,7 @@ onUnmounted(() => {
                 <div class="min-w-0">
                   <div class="flex items-start gap-3">
                     <label
-                      v-if="snapshot.status !== 'paid' && authStore.isAuthenticated"
+                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
                       class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50"
                     >
                       <input
@@ -1810,7 +1810,7 @@ onUnmounted(() => {
             <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th v-if="authStore.isAuthenticated" scope="col" class="px-3 py-3 w-10"></th>
+                <th v-if="authStore.isAdmin" scope="col" class="px-3 py-3 w-10"></th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
@@ -1863,7 +1863,7 @@ onUnmounted(() => {
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="snapshot in snapshots" :key="snapshot.id">
-                <td v-if="authStore.isAuthenticated" class="px-3 py-4 text-center">
+                <td v-if="authStore.isAdmin" class="px-3 py-4 text-center">
                   <input
                     v-if="snapshot.status !== 'paid'"
                     type="checkbox"
@@ -1949,7 +1949,7 @@ onUnmounted(() => {
               <!-- Surplus Row -->
               <tr class="bg-gray-50 border-t-2 border-gray-100">
                 <td
-                  :colspan="authStore.isAuthenticated ? 6 : 5"
+                  :colspan="authStore.isAdmin ? 6 : 5"
                   class="px-6 py-4 text-right text-sm font-bold text-gray-700"
                 >
                   {{ t('session.surplusFund') }}

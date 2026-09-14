@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import type { SessionSummary } from '@/types'
 import { format } from 'date-fns'
@@ -24,10 +24,16 @@ async function fetchSessions() {
   try {
     loading.value = true
     errorMessage.value = ''
-    const { data, error } = await supabase
+    let query = supabase
       .from('view_session_summary')
       .select('*')
       .order('session_date', { ascending: false })
+
+    if (!authStore.isAdmin) {
+      query = query.in('status', ['waiting_for_payment', 'done'])
+    }
+
+    const { data, error } = await query
 
     if (error) throw error
     sessions.value = data || []
@@ -60,6 +66,7 @@ function getStatusLabel(status: string) {
 }
 
 onMounted(fetchSessions)
+watch(() => authStore.isAdmin, () => fetchSessions())
 </script>
 
 <template>
