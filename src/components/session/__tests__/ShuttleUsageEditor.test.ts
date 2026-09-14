@@ -52,6 +52,24 @@ describe('ShuttleUsageEditor', () => {
     expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('0')
   })
 
+  it('falls back to 0 instead of NaN on a non-numeric used input', async () => {
+    const w = await mountEditor()
+    const input = w.get('[data-testid="used-0"]')
+    ;(input.element as HTMLInputElement).value = '12abc'
+    await input.trigger('change')
+    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('0')
+  })
+
+  it('steppers recover from an already-NaN used value instead of propagating it', async () => {
+    const w = await mountEditor([{ ...usage[0]!, used: NaN }])
+    await w.get('[data-testid="inc-0"]').trigger('click')
+    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('1')
+
+    const w2 = await mountEditor([{ ...usage[0]!, used: NaN }])
+    await w2.get('[data-testid="dec-0"]').trigger('click')
+    expect(w2.get('[data-testid="used-0"]').attributes('value')).toBe('0')
+  })
+
   it('shows an empty state when nothing is recorded', async () => {
     const w = await mountEditor([])
     expect(w.text()).toContain('Chưa nhập cầu nào')

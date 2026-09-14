@@ -70,12 +70,12 @@ function changeType(index: number, typeId: string) {
 
 function increment(index: number) {
   const row = rows.value[index]
-  if (row) row.used++
+  if (row) row.used = (Number(row.used) || 0) + 1
 }
 
 function decrement(index: number) {
   const row = rows.value[index]
-  if (row && row.used > 0) row.used--
+  if (row) row.used = Math.max(0, (Number(row.used) || 0) - 1)
 }
 
 async function handleSave() {
@@ -145,7 +145,7 @@ async function handleSave() {
             :data-testid="`used-${i}`"
             class="block w-16 min-h-11 rounded-xl border border-gray-300 px-2 text-center text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
             @change="
-              rows[i]!.used = Math.max(0, Number(($event.target as HTMLInputElement).value))
+              rows[i]!.used = Math.max(0, Number(($event.target as HTMLInputElement).value) || 0)
             "
           />
           <button
