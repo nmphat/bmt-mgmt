@@ -158,11 +158,14 @@ const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary =>
 const sessionForm = ref({
   title: '',
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
-  price_per_hour: 0,
   court_fee_addon: 0,
   session_start: '',
   session_end: '',
 })
+// Default price seeded onto newly added court slots — not written back to
+// sessions.price_per_hour, which the cost engine only uses as a legacy
+// fallback for sessions with no priced bookings.
+const defaultCourtPrice = ref(0)
 const courtBookings = ref<CourtBooking[]>([])
 const courtBookingDrafts = ref<CourtBookingDraft[]>([])
 const bookingsValid = ref(true)
@@ -230,15 +233,17 @@ async function fetchData(refreshCostsOnly = false) {
       lastStatusForActiveSection.value = normalizedSession.status
     }
 
-    if (normalizedSession) {
+    // Leave the open edit form alone: realtime refreshes and the shuttle
+    // editor's @saved both call fetchData() and must not clobber unsaved edits.
+    if (normalizedSession && !isEditingSession.value) {
       sessionForm.value = {
         title: normalizedSession.title,
         status: normalizedSession.status,
-        price_per_hour: normalizedSession.price_per_hour,
         court_fee_addon: normalizedSession.court_fee_addon,
         session_start: '',
         session_end: '',
       }
+      defaultCourtPrice.value = normalizedSession.price_per_hour
     }
 
     if (!refreshCostsOnly) {
@@ -451,10 +456,18 @@ function startEditing() {
       court_name: 'Sân 1',
       start_time: sessionForm.value.session_start,
       end_time: sessionForm.value.session_end,
-      price_per_hour: sessionForm.value.price_per_hour ?? 0,
+      price_per_hour: defaultCourtPrice.value ?? 0,
     }]
   }
 }
+
+const sessionTimeInvalid = computed(() => {
+  return (
+    !!sessionForm.value.session_start &&
+    !!sessionForm.value.session_end &&
+    sessionForm.value.session_start >= sessionForm.value.session_end
+  )
+})
 
 const timesChanged = computed(() => {
   if (!session.value) return false
@@ -484,50 +497,32 @@ async function saveSession() {
       return
     }
 
-    const timeChanged =
-      newStartUTC.getTime() !== new Date(session.value!.start_time).getTime() ||
-      newEndUTC.getTime() !== new Date(session.value!.end_time).getTime()
-
-    if (timeChanged) {
-      const { error: recreateErr } = await supabase.rpc('recreate_session_intervals', {
-        p_session_id: sessionId,
-        p_start_time: newStartUTC.toISOString(),
-        p_end_time: newEndUTC.toISOString(),
-      })
-      if (recreateErr) throw recreateErr
-    }
-
-    const { error } = await supabase
-      .from('sessions')
-      .update({
-        title: sessionForm.value.title,
-        status: sessionForm.value.status,
-        price_per_hour: sessionForm.value.price_per_hour,
-        court_fee_addon: sessionForm.value.court_fee_addon,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId)
-
-    if (error) throw error
-
-    // Save court bookings
-    const { error: bookingsErr } = await supabase.rpc('set_session_court_bookings', {
+    // One transaction: admin check, interval rebuild (only if times changed),
+    // court bookings, and the session row itself. Replaces the old three
+    // sequential calls, which could leave attendance wiped and the rest of
+    // the edit abandoned if a later step failed.
+    const { error } = await supabase.rpc('update_session_details', {
       p_session_id: sessionId,
+      p_title: sessionForm.value.title,
+      p_status: sessionForm.value.status,
+      p_court_fee_addon: sessionForm.value.court_fee_addon,
+      p_start_time: newStartUTC.toISOString(),
+      p_end_time: newEndUTC.toISOString(),
       p_bookings: courtBookingDrafts.value.map((b) => ({
         court_name: b.court_name,
         start_time: new Date(`${startDate}T${b.start_time}:00+07:00`).toISOString(),
-        end_time: new Date(`${startDate}T${b.end_time}:00+07:00`).toISOString(),
+        end_time: new Date(`${endDate}T${b.end_time}:00+07:00`).toISOString(),
         price_per_hour: b.price_per_hour,
       })),
     })
-    if (bookingsErr) throw bookingsErr
+    if (error) throw error
 
     toast.success(t.value('toast.sessionUpdated'))
     isEditingSession.value = false
     await fetchData()
   } catch (error: any) {
     console.error('Error updating session:', error)
-    const message = t.value('session.updateError')
+    const message = error.message || t.value('session.updateError')
     actionError.value = message
     toast.error(message)
   } finally {
@@ -1031,7 +1026,7 @@ onUnmounted(() => {
               <input
                 v-model="sessionForm.session_start"
                 type="time"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
             <div>
@@ -1041,8 +1036,11 @@ onUnmounted(() => {
               <input
                 v-model="sessionForm.session_end"
                 type="time"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
+              <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-red-600">
+                {{ t('createSession.endTimeError') }}
+              </p>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1059,10 +1057,10 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.pricePerHour')
+                t('session.defaultCourtPrice')
               }}</label>
               <input
-                v-model.number="sessionForm.price_per_hour"
+                v-model.number="defaultCourtPrice"
                 type="number"
                 step="1000"
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
@@ -1079,7 +1077,7 @@ onUnmounted(() => {
             v-model:bookings="courtBookingDrafts"
             :session-start="sessionForm.session_start"
             :session-end="sessionForm.session_end"
-            :default-price="sessionForm.price_per_hour"
+            :default-price="defaultCourtPrice"
             @update:valid="bookingsValid = $event"
           />
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
@@ -1093,7 +1091,7 @@ onUnmounted(() => {
             <button
               type="button"
               @click="saveSession"
-              :disabled="isSavingSession || !bookingsValid"
+              :disabled="isSavingSession || !bookingsValid || sessionTimeInvalid"
               class="flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />

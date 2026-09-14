@@ -132,7 +132,7 @@ export const messages = {
       time: 'Thời gian',
       intervalFee: 'Phí mỗi 30p',
       live: 'Trực tiếp',
-      pricePerHour: 'Giá sân / giờ',
+      defaultCourtPrice: 'Giá sân mặc định',
       courtFeeAddon: 'Tiền sân thêm',
       courtFeeAddonHint: 'Khoản phí sân cố định của cả buổi, cộng thêm ngoài giá theo giờ của từng sân.',
       courtFeeAddonWarning: 'Cả hai khoản sẽ cộng lại: chi phí sân/giờ + tiền sân thêm.',
@@ -521,7 +521,7 @@ export const messages = {
       time: 'Time',
       intervalFee: 'Fee per 30m',
       live: 'Live',
-      pricePerHour: 'Price per hour',
+      defaultCourtPrice: 'Default court price',
       courtFeeAddon: 'Court fee add-on',
       courtFeeAddonHint: 'A flat court charge for the whole session, added on top of each court hourly price.',
       courtFeeAddonWarning:
