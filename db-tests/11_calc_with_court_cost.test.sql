@@ -370,4 +370,73 @@ SELECT assert_money_eq(
   'empty interval, legacy hourly session: list total agrees with the engine');
 
 
+
+-- ── Tiền cầu của một interval không ai có mặt ──
+-- Ghost KHÔNG trả tiền cầu (luật đã chốt), nên trọng số của tiền cầu phải
+-- chạy trên RIÊNG những interval CÓ người. Trước đây nó chia cho
+-- v_total_court_units tính trên MỌI interval, nên phần của khung không ai
+-- có mặt không có ai nhận và rơi ra ngoài mọi hóa đơn -- lặng lẽ y như tiền
+-- sân, chỉ khác là danh sách buổi cũng không hiện ra được.
+INSERT INTO sessions (id, title, start_time, end_time, price_per_hour, court_fee_addon, shuttle_fee_total, status)
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Empty interval shuttle',
+        '2026-09-04 11:00:00+00', '2026-09-04 13:00:00+00', 0, 0, 120000, 'open');
+
+INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
+SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+       '2026-09-04 11:00:00+00'::timestamptz + (g * INTERVAL '30 minutes'),
+       '2026-09-04 11:00:00+00'::timestamptz + ((g + 1) * INTERVAL '30 minutes'),
+       g, 0
+FROM generate_series(0, 3) g;
+
+INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'Sân 1',
+        '2026-09-04 11:00:00+00', '2026-09-04 13:00:00+00', 120000);
+
+SELECT refresh_interval_courts('dddddddd-dddd-dddd-dddd-dddddddddddd');
+
+INSERT INTO session_registrations (session_id, member_id) VALUES
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222'),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '33333333-3333-3333-3333-333333333333');
+
+INSERT INTO interval_presence (interval_id, member_id, is_present)
+SELECT i.id, m.member_id, (i.idx < 2)
+FROM session_intervals i
+CROSS JOIN (VALUES ('22222222-2222-2222-2222-222222222222'::uuid),
+                   ('33333333-3333-3333-3333-333333333333'::uuid)) m(member_id)
+WHERE i.session_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+
+-- Hai khung có người gánh toàn bộ 120000: (120000 * 1/2) / 2 = 30000 mỗi
+-- người mỗi khung -> 60000/người.
+SELECT assert_eq(
+  (SELECT sum(total_shuttle_fee) FROM calculate_session_costs('dddddddd-dddd-dddd-dddd-dddddddddddd')),
+  120000::numeric, 'empty interval: the whole shuttle fee is split among the people who were there');
+
+SELECT assert_eq(
+  (SELECT total_shuttle_fee FROM calculate_session_costs('dddddddd-dddd-dddd-dddd-dddddddddddd')
+    WHERE member_id = '22222222-2222-2222-2222-222222222222'),
+  60000::numeric, 'empty interval: member A carries half the shuttle fee');
+
+-- Ghost vẫn không trả một đồng tiền cầu nào.
+INSERT INTO session_registrations (session_id, member_id)
+VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd', '55555555-5555-5555-5555-555555555555');
+
+SELECT assert_eq(
+  (SELECT total_shuttle_fee FROM calculate_session_costs('dddddddd-dddd-dddd-dddd-dddddddddddd')
+    WHERE member_id = '55555555-5555-5555-5555-555555555555'),
+  0::numeric, 'empty interval: the ghost still pays no shuttle fee');
+
+SELECT assert_eq(
+  (SELECT sum(total_shuttle_fee) FROM calculate_session_costs('dddddddd-dddd-dddd-dddd-dddddddddddd')),
+  120000::numeric, 'empty interval with a ghost: the shuttle fee is still fully split');
+
+-- Không có overlap sân nào -> nhánh fallback của tiền cầu cũng phải đếm
+-- riêng những interval có người.
+DELETE FROM session_court_bookings WHERE session_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+SELECT refresh_interval_courts('dddddddd-dddd-dddd-dddd-dddddddddddd');
+
+SELECT assert_eq(
+  (SELECT sum(total_shuttle_fee) FROM calculate_session_costs('dddddddd-dddd-dddd-dddd-dddddddddddd')),
+  120000::numeric, 'no court overlap: the shuttle fallback still splits the whole fee');
+
+
 ROLLBACK;

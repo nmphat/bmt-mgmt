@@ -216,6 +216,8 @@ DECLARE
     v_ghost_count          INT;
     v_has_priced_booking   BOOLEAN;   -- buổi này dùng giá theo sân hay công thức giờ cũ
     v_registered_count     INT;       -- mẫu số tiền sân của interval không có ai điểm danh
+    v_present_court_units  INT := 0;  -- đơn vị sân của RIÊNG những interval có người
+    v_present_intervals    INT := 0;  -- số interval có người (fallback của tiền cầu)
 BEGIN
     -- 1. Load session config
     SELECT s.court_fee_addon, s.price_per_hour, s.shuttle_fee_total
@@ -261,6 +263,25 @@ BEGIN
     SELECT COUNT(*) INTO v_registered_count
     FROM session_registrations r
     WHERE r.session_id = p_session_id;
+
+    -- 3c. Mẫu số của tiền cầu. Tiền cầu chỉ chia cho người CÓ MẶT -- ghost
+    -- không trả tiền cầu, luật này đã chốt -- nên trọng số của nó phải chạy
+    -- trên RIÊNG những interval có người. Chia cho v_total_court_units
+    -- (tính trên MỌI interval) khiến phần tiền cầu của một khung không ai
+    -- có mặt không có ai nhận: nó rơi ra ngoài mọi hóa đơn, không lỗi,
+    -- không cảnh báo, và danh sách buổi cũng không hiện ra được. Cả buổi
+    -- không ai điểm danh thì cả hai biến này bằng 0 và tiền cầu không có
+    -- chỗ nào hợp lệ để đi -- đó đúng là lúc finalize_session phải từ chối.
+    SELECT COALESCE(SUM(si.active_court_count), 0), COUNT(*)
+    INTO v_present_court_units, v_present_intervals
+    FROM session_intervals si
+    WHERE si.session_id = p_session_id
+      AND EXISTS (
+          SELECT 1 FROM interval_presence p
+          JOIN session_registrations r
+            ON r.member_id = p.member_id AND r.session_id = p_session_id
+          WHERE p.interval_id = si.id AND p.is_present = true
+      );
 
     -- 4. Compute costs
     RETURN QUERY
@@ -350,21 +371,16 @@ BEGIN
             END AS court_cost,
 
             -- B. SHUTTLE FEE — only real attendees
+            -- Mẫu số là v_present_court_units / v_present_intervals (xem 3c),
+            -- không phải tổng trên mọi interval: chỉ những khung có người
+            -- mới có người để nhận phần tiền cầu của mình.
             CASE
-                WHEN ist.real_present_count > 0 AND v_total_court_units > 0 THEN
-                    CASE
-                        WHEN p.is_present = true THEN
-                            (v_total_shuttle_fee * ist.active_court_count::numeric / v_total_court_units)
-                            / ist.real_present_count
-                        ELSE 0
-                    END
-                WHEN ist.real_present_count > 0 AND v_total_intervals > 0 THEN
+                WHEN p.is_present = true AND v_present_court_units > 0 THEN
+                    (v_total_shuttle_fee * ist.active_court_count::numeric / v_present_court_units)
+                    / ist.real_present_count
+                WHEN p.is_present = true AND v_present_intervals > 0 THEN
                     -- Fallback for shuttle when no court overlap either
-                    CASE
-                        WHEN p.is_present = true THEN
-                            (v_total_shuttle_fee / v_total_intervals) / ist.real_present_count
-                        ELSE 0
-                    END
+                    (v_total_shuttle_fee / v_present_intervals) / ist.real_present_count
                 ELSE 0
             END AS shuttle_cost,
 
@@ -943,6 +959,7 @@ DECLARE
     r RECORD;
     v_payment_code TEXT;
     v_rows INT := 0;
+    v_shuttle_split NUMERIC := 0;
 BEGIN
     -- Function runs as its owner, so it must check the caller itself.
     IF NOT EXISTS (
@@ -959,6 +976,8 @@ BEGIN
     -- 2. Loop tính toán
     FOR r IN SELECT * FROM calculate_session_costs(p_session_id)
     LOOP
+        v_shuttle_split := v_shuttle_split + r.total_shuttle_fee;
+
         IF r.final_total > 0 THEN -- Hoặc <> 0 nếu chấp nhận âm? Thường nợ âm thì host trả tiền mặt, ko tạo QR.
             v_rows := v_rows + 1;
             v_payment_code := 'CL' || substr(md5(random()::text), 1, 6); 
@@ -1009,6 +1028,17 @@ BEGIN
     -- cuộn lại và buổi vẫn ở nguyên trạng thái cũ (được khóa bằng test).
     IF v_rows = 0 THEN
         RAISE EXCEPTION 'Buổi này không có khoản nào để chia cho thành viên. Kiểm tra lại giá sân và phụ thu tiền sân (court_fee_addon) trước khi chốt.';
+    END IF;
+
+    -- 4. Tiền cầu chỉ chia cho người CÓ MẶT. Buổi mà không ai được điểm
+    -- danh (mọi người đăng ký đều là ghost) vẫn có tiền sân để chia, nên
+    -- guard ở trên KHÔNG nổ và buổi chốt sạch sẽ với nguyên shuttle_fee_total
+    -- không đòi của ai. Đó gần như luôn là quên điểm danh chứ không phải một
+    -- buổi mua cầu rồi không ai đánh. RAISE cuộn lại cả UPDATE trạng thái ở
+    -- bước 1, y như guard trên.
+    IF v_shuttle_split = 0
+       AND COALESCE((SELECT s.shuttle_fee_total FROM sessions s WHERE s.id = p_session_id), 0) > 0 THEN
+        RAISE EXCEPTION 'Buổi này có tiền cầu nhưng chưa ai được điểm danh, không có ai để chia. Điểm danh trước khi chốt.';
     END IF;
 END;
 $function$;

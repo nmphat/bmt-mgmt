@@ -104,4 +104,71 @@ BEGIN
     'waiting_for_payment', 'a session with money to split still reaches waiting_for_payment');
 END $$;
 
+
+-- ── Buổi mà MỌI người đăng ký đều là ghost: tiền cầu không có chỗ nào để đi ──
+-- Ghost không trả tiền cầu (luật đã chốt) và đây là buổi không còn ai khác,
+-- nên shuttle_fee_total không chia được cho ai. Tiền sân vẫn khác 0 nên
+-- guard "không có khoản nào để chia" cũ KHÔNG nổ: buổi chốt sạch sẽ và
+-- 120000 đồng tiền cầu ở lại trên sessions mà không ai bị đòi. Dựng được từ
+-- UI bằng toggleAbsent trên mọi thành viên.
+DO $$
+DECLARE
+  v_sid uuid;
+BEGIN
+  v_sid := create_session_with_bookings(
+    'Buổi toàn ghost', '2026-09-05 11:00:00+00', '2026-09-05 12:00:00+00',
+    0, 120000, '11111111-1111-1111-1111-111111111111',
+    '[{"court_name":"Sân 1","start_time":"2026-09-05T11:00:00+00","end_time":"2026-09-05T12:00:00+00","price_per_hour":120000}]'::jsonb,
+    0);
+
+  INSERT INTO session_registrations (session_id, member_id) VALUES
+    (v_sid, '22222222-2222-2222-2222-222222222222'),
+    (v_sid, '33333333-3333-3333-3333-333333333333');
+  -- Không một dòng is_present = true nào: cả hai đều là ghost.
+
+  PERFORM assert_eq(
+    (SELECT sum(total_court_fee) FROM calculate_session_costs(v_sid)),
+    120000::numeric, 'all-ghost session: the court money is still fully billed');
+
+  PERFORM assert_eq(
+    (SELECT sum(total_shuttle_fee) FROM calculate_session_costs(v_sid)),
+    0::numeric, 'all-ghost session: no shuttle money reaches anybody');
+
+  BEGIN
+    PERFORM finalize_session(v_sid);
+    RAISE EXCEPTION 'FAIL an all-ghost session finalized with its shuttle fee uncollected';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+    IF SQLERRM NOT LIKE 'Buổi này có tiền cầu%' THEN
+      RAISE EXCEPTION 'FAIL all-ghost finalize was refused for the wrong reason: %', SQLERRM;
+    END IF;
+    RAISE NOTICE 'ok   all-ghost finalize refused in Vietnamese';
+  END;
+
+  PERFORM assert_eq(
+    (SELECT status::text FROM sessions WHERE id = v_sid),
+    'open', 'refused all-ghost finalize left the session status untouched');
+
+  PERFORM assert_eq(
+    (SELECT count(*)::int FROM session_costs_snapshot WHERE session_id = v_sid),
+    0, 'refused all-ghost finalize wrote no snapshot rows');
+
+  -- Điểm danh MỘT người là đã có chỗ cho tiền cầu đi: guard không được chặn
+  -- một buổi chia được.
+  INSERT INTO interval_presence (interval_id, member_id, is_present)
+  SELECT si.id, '22222222-2222-2222-2222-222222222222', true
+  FROM session_intervals si WHERE si.session_id = v_sid;
+
+  PERFORM assert_eq(
+    (SELECT sum(total_shuttle_fee) FROM calculate_session_costs(v_sid)),
+    120000::numeric, 'one attendee carries the whole shuttle fee');
+
+  PERFORM finalize_session(v_sid);
+
+  PERFORM assert_eq(
+    (SELECT status::text FROM sessions WHERE id = v_sid),
+    'waiting_for_payment', 'the same session finalizes once somebody is marked present');
+END $$;
+
+
 ROLLBACK;
