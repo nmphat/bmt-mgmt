@@ -919,3 +919,177 @@ Rồi nạp lại sáu hàm và view từ git tại `41f557e`
 **không** `DROP`. `update_session_details` có thể để lại: sau khi
 `SessionDetailView` quay về ba lời gọi cũ thì không gì gọi nó, và nó đã bị
 `REVOKE` khỏi `anon`.
+
+## 2026-09-14-presence-guard-and-privilege-parity.sql
+
+Chạy sau `2026-09-11-court-pricing-guards.sql`. Chưa áp lên production.
+Bốn hàm `CREATE OR REPLACE` (không `DROP`), một trigger mới trên
+`interval_presence`, và **`ALTER TABLE` đầu tiên kể từ
+`2026-09-11-court-name-not-null.sql`** — chỉ siết constraint, không sửa một
+dòng dữ liệu nào. Không có backfill, không có `DELETE`.
+
+1. **`calculate_session_costs`** — mẫu số chỉ đếm người **đã đăng ký** buổi.
+   `real_present_count` trước đây đếm **mọi** dòng `interval_presence`, trong
+   khi truy vấn ngoài join `session_registrations` nên chỉ người đã đăng ký
+   mới ra hóa đơn. Một dòng điểm danh của người chưa đăng ký vì thế chia nhỏ
+   tiền của cả buổi thêm một suất rồi vứt suất đó đi — không lỗi, không cảnh
+   báo. Đo trên production: **một buổi** mang hình dạng này, trạng thái
+   `cancelled`, 3 dòng điểm danh của một người chưa đăng ký, **0 snapshot và
+   đã thu 0 đồng**; view báo 240000 còn máy tính tiền chỉ thu 180000. Không
+   buổi đã chốt nào bị ảnh hưởng, nên money parity **không đổi**.
+2. **`prevent_presence_for_unregistered_member` (hàm mới)** + trigger
+   `check_presence_member_registered` `BEFORE INSERT OR UPDATE` trên
+   `interval_presence` — cùng hình dạng với `check_charge_member_registered`
+   của migration trước. Dòng `interval_presence` **không** mang `session_id`
+   nên trigger phải lần ngược `interval_id → session_intervals → session_id`.
+   Chặn ở tầng bảng vì `SessionDetailView.vue` upsert **thẳng** vào bảng qua
+   PostgREST, không đi qua RPC nào. Trigger chỉ ràng buộc dòng **ghi mới**.
+   `add_member_to_session_full_presence` và `batch_add_members_to_session`
+   đều ghi registration **trước** rồi mới ghi presence, nên không hàm nào bị
+   kẹt.
+3. **`create_session_with_bookings`** — `SECURITY DEFINER`,
+   `SET search_path = public, pg_temp`, admin check là câu lệnh đầu tiên
+   (`'Chỉ admin được thực hiện thao tác này'`); route `/create-session` vốn đã
+   `requiresAuth + requiresAdmin` và đây là caller duy nhất. Thêm guard tên
+   sân rỗng/toàn khoảng trắng bằng **cùng một câu tiếng Việt** với
+   `set_session_court_bookings` (`'Thiếu tên sân (court_name) trong dữ liệu
+   đặt sân'`) thay vì lặng lẽ mặc định về `'Sân 1'` rồi để CHECK
+   `court_name ~ '\S'` ném 23514 tiếng Anh lên màn hình. `COALESCE` ba tham
+   số tiền về 0 để mục 5 không biến một trường bị thiếu thành 23502.
+4. **`recreate_session_intervals`** — `SECURITY DEFINER`, `SET search_path`,
+   admin check. Câu lệnh **đầu tiên** của hàm này xóa mọi dòng
+   `interval_presence` của buổi. `update_session_details` gọi nó lồng bên
+   trong; cả hai đều `SECURITY DEFINER` cùng một owner và `auth.uid()` đọc
+   GUC `request.jwt.claims` chứ không đọc `current_user`, nên lời gọi lồng
+   vẫn thấy đúng người gọi thật (`15_update_session_details.test.sql` pin
+   điều này chứ không giả định).
+5. **`sessions.price_per_hour` / `court_fee_addon` / `shuttle_fee_total`** —
+   `SET DEFAULT 0` + `SET NOT NULL`. `price_per_hour = NULL` làm
+   `(price_per_hour / 2.0) * active_court_count` ra `NULL`, `NULL` lan qua
+   tổng, và cả buổi thành miễn phí trên nhánh giá cũ. Production: **0/54**
+   buổi có `NULL` ở bất kỳ cột nào trong ba cột, nên không cần backfill.
+
+### Trước khi chạy
+
+```sql
+-- 1) Money parity: bất biến của migration này.
+WITH recomputed AS (
+  SELECT s.id AS session_id, c.member_id, c.final_total
+  FROM sessions s
+  CROSS JOIN LATERAL calculate_session_costs(s.id) c
+  WHERE s.deleted_at IS NULL
+)
+SELECT count(*) FILTER (WHERE r.final_total IS DISTINCT FROM snap.final_amount) AS mismatched_rows,
+       COALESCE(sum(abs(r.final_total - snap.final_amount)), 0)                 AS vnd_drift,
+       count(*)                                                                 AS compared_rows
+FROM session_costs_snapshot snap
+JOIN recomputed r ON r.session_id = snap.session_id AND r.member_id = snap.member_id;
+-- kỳ vọng: 0 | 0 | 277
+
+-- 2) Điểm danh của người chưa đăng ký -- thứ mục 1 sửa.
+SELECT si.session_id, s.status, s.title, count(*) AS ghost_presence_rows,
+       count(*) FILTER (WHERE EXISTS (SELECT 1 FROM session_costs_snapshot cs
+                                      WHERE cs.session_id = si.session_id)) AS rows_on_finalized_session
+FROM interval_presence p
+JOIN session_intervals si ON si.id = p.interval_id
+JOIN sessions s ON s.id = si.session_id
+WHERE NOT EXISTS (SELECT 1 FROM session_registrations r
+                  WHERE r.session_id = si.session_id AND r.member_id = p.member_id)
+GROUP BY si.session_id, s.status, s.title;
+-- kỳ vọng: rows_on_finalized_session = 0 trên MỌI dòng.
+-- Khác 0 thì DỪNG LẠI: mục 1 sẽ làm parity ở (1) lệch.
+
+-- 3) Ba cột tiền có NULL nào không.
+SELECT count(*) FILTER (WHERE price_per_hour IS NULL)    AS null_price,
+       count(*) FILTER (WHERE court_fee_addon IS NULL)   AS null_addon,
+       count(*) FILTER (WHERE shuttle_fee_total IS NULL) AS null_shuttle,
+       count(*)                                          AS total_sessions
+FROM sessions;
+-- kỳ vọng: 0 | 0 | 0 | 54
+
+-- 4) Quyền HIỆN TẠI của hai hàm sắp siết -- proacl THÔ.
+SELECT p.proname, p.prosecdef, p.proconfig, p.proacl
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('create_session_with_bookings','recreate_session_intervals');
+-- kỳ vọng TRƯỚC: prosecdef = f, proconfig = NULL, proacl còn '=X/postgres'
+--                (PUBLIC) và/hoặc 'anon=X/postgres'
+```
+
+### Sau khi chạy
+
+```sql
+-- 1) Chạy lại đúng câu money parity ở trên. Kỳ vọng KHÔNG ĐỔI: 0 | 0 | 277.
+
+-- 2) Quyền của hai hàm vừa siết -- đọc proacl THÔ.
+SELECT p.proname, p.prosecdef, p.proconfig, p.proacl
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('create_session_with_bookings','recreate_session_intervals');
+-- kỳ vọng cả hai: prosecdef = t, proconfig = {"search_path=public, pg_temp"},
+--                 proacl = {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+--                 -- KHÔNG có '=X/' (PUBLIC), KHÔNG có 'anon='
+
+-- 3) Trigger điểm danh.
+SELECT tgname FROM pg_trigger
+WHERE tgrelid = 'public.interval_presence'::regclass AND NOT tgisinternal
+ORDER BY tgname;
+-- kỳ vọng: check_presence_member_registered, check_session_closed
+
+-- 4) Ba cột tiền.
+SELECT column_name, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'sessions'
+  AND column_name IN ('price_per_hour','court_fee_addon','shuttle_fee_total')
+ORDER BY column_name;
+-- kỳ vọng cả ba: is_nullable = NO, column_default = 0
+```
+
+`has_function_privilege()` **không** thay được câu (2), đúng như ở migration
+trước: `anon` tới được EXECUTE bằng hai đường độc lập và
+`has_function_privilege` trả `true` ở cả trường hợp hỏng lẫn không hỏng.
+Khác với `update_session_details`, hai hàm ở đây **đã tồn tại**, nên
+`CREATE OR REPLACE` giữ nguyên ACL cũ của chúng — mà ACL cũ chính là cái phải
+sửa. `REVOKE ... FROM PUBLIC, anon` ở cuối script là bắt buộc, và thiếu một
+trong hai vế là no-op hoàn toàn.
+
+### Idempotent
+
+Bốn hàm là `CREATE OR REPLACE`, trigger là `DROP TRIGGER IF EXISTS` rồi
+`CREATE TRIGGER`, `REVOKE`/`GRANT` vốn đã idempotent, và `SET DEFAULT` /
+`SET NOT NULL` trên cột đã ở đúng trạng thái là no-op. An toàn để chạy lại.
+
+### Kiểm chứng cục bộ (Docker, không chạm production)
+
+Dựng container thứ hai từ `db-tests/helpers.sql` + export tại `59a5cef`
+(commit ngay trước loạt thay đổi này) + `db-tests/seed.sql`. Trạng thái trước
+khi chạy tái hiện đúng production: cả hai hàm `prosecdef = f`,
+`proacl = {=X/postgres,postgres=X/postgres,anon=X/postgres,...}` — **cả hai**
+đường vào của `anon` đều còn. Áp script **hai lần**:
+
+- Lần hai chạy sạch, không đổi gì (idempotent).
+- `db-tests/drift-check.sql` trên container đã migrate và trên container dựng
+  thẳng từ export của nhánh cho ra **225 dòng giống hệt nhau**, `diff` 0 dòng.
+- Thêm một lượt quét `is_nullable` trên toàn bộ `information_schema.columns`
+  (query 1 của `drift-check.sql` **không** mang nullability): 0 dòng lệch.
+- Cả 15 file trong `db-tests/` xanh trên container đã migrate.
+
+### Rollback
+
+```sql
+BEGIN;
+DROP TRIGGER IF EXISTS check_presence_member_registered ON public.interval_presence;
+ALTER TABLE public.sessions ALTER COLUMN price_per_hour    DROP NOT NULL;
+ALTER TABLE public.sessions ALTER COLUMN court_fee_addon   DROP NOT NULL;
+ALTER TABLE public.sessions ALTER COLUMN shuttle_fee_total DROP NOT NULL;
+COMMIT;
+```
+
+Rồi nạp lại ba hàm từ git tại `59a5cef` (`docs/sql-export/06_functions.sql`),
+bằng `CREATE OR REPLACE`, **không** `DROP`. Quyền **không** tự quay lại khi
+nạp lại thân hàm: muốn trả `create_session_with_bookings` /
+`recreate_session_intervals` về trạng thái cũ thì phải
+`GRANT EXECUTE ... TO PUBLIC, anon` một cách có chủ đích — nhưng đừng, đó
+chính là lỗ hổng script này vá. `prevent_presence_for_unregistered_member`
+có thể để lại: không trigger nào gọi nó sau khi `DROP TRIGGER`, và nó đã bị
+`REVOKE` khỏi mọi role.
