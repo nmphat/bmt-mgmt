@@ -46,7 +46,11 @@ async function fetchMyDebt() {
       return
     }
 
-    if (token === debtFetchToken && authStore.profile?.id === profileId && authStore.isAuthenticated) {
+    if (
+      token === debtFetchToken &&
+      authStore.profile?.id === profileId &&
+      authStore.isAuthenticated
+    ) {
       myDebt.value = data?.[0]?.total_debt || 0
     }
   } catch (e) {
@@ -95,11 +99,15 @@ watch(
 </script>
 
 <template>
-  <header class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-50">
+  <header
+    class="sticky top-0 z-50 border-b border-divider bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90"
+  >
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
       <!-- Logo / Title -->
       <router-link to="/" class="flex items-center gap-2 group">
-        <div class="bg-indigo-600 text-white p-1.5 rounded-lg group-hover:bg-indigo-700 transition">
+        <div
+          class="shadow-brand bg-brand-600 text-white p-1.5 rounded-xl transition-colors duration-200 group-hover:bg-brand-700"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -115,31 +123,32 @@ watch(
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
         </div>
-        <span class="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition"
+        <span
+          class="text-lg font-semibold tracking-tight text-fg-primary transition-colors duration-200 group-hover:text-brand-600"
           >Badminton Mgmt</span
         >
       </router-link>
 
       <!-- Desktop public navigation mirrors the three mobile tabs without exposing login/admin. -->
-      <nav class="hidden md:flex items-center gap-6 mx-6">
+      <nav class="hidden md:flex h-14 items-stretch gap-6 mx-6">
         <router-link
           to="/"
-          active-class="text-indigo-600"
-          class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
+          active-class="text-brand-600 border-brand-600"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
         >
           {{ t('nav.home') }}
         </router-link>
         <router-link
           to="/sessions"
-          active-class="text-indigo-600"
-          class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
+          active-class="text-brand-600 border-brand-600"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
         >
           {{ t('nav.sessions') }}
         </router-link>
         <router-link
           to="/members"
-          active-class="text-indigo-600"
-          class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition"
+          active-class="text-brand-600 border-brand-600"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
         >
           {{ t('nav.members') }}
         </router-link>
@@ -150,7 +159,7 @@ watch(
         <!-- 1. Language Switcher -->
         <button
           @click="selectLang(langStore.currentLang === 'vi' ? 'en' : 'vi')"
-          class="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 py-1 text-sm transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          class="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 py-1 text-sm transition-colors duration-200 hover:bg-gray-100 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           :title="langStore.currentLang === 'vi' ? t('nav.switchEn') : t('nav.switchVi')"
           :aria-label="t('shell.languageSwitcher')"
         >
@@ -165,8 +174,8 @@ watch(
           class="hidden sm:flex min-h-11 items-center px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors cursor-default"
           :class="
             myDebt > 0
-              ? 'bg-red-50 text-red-700 border-red-200'
-              : 'bg-green-50 text-green-700 border-green-200'
+              ? 'bg-status-danger-subtle text-status-danger-strong border-status-danger-border'
+              : 'bg-status-success-subtle text-status-success-strong border-status-success-border'
           "
         >
           <Wallet class="w-3.5 h-3.5 mr-1.5" />
@@ -179,13 +188,13 @@ watch(
           <div class="relative">
             <button
               @click="userMenuOpen = !userMenuOpen"
-              class="flex min-h-11 min-w-11 items-center justify-center gap-2 text-sm text-gray-700 transition-colors hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="flex min-h-11 min-w-11 items-center justify-center gap-2 text-sm text-fg-secondary transition-colors duration-200 hover:text-brand-600 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               :aria-label="t('shell.openUserMenu')"
               :aria-expanded="userMenuOpen"
               aria-haspopup="menu"
             >
               <div
-                class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200 text-indigo-700 font-bold"
+                class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center border border-brand-200 text-brand-700 font-bold"
               >
                 {{ displayName.charAt(0).toUpperCase() }}
               </div>
@@ -195,18 +204,18 @@ watch(
             <!-- Dropdown Menu -->
             <div
               v-if="userMenuOpen"
-              class="absolute right-0 z-[60] mt-2 w-56 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
+              class="absolute right-0 z-[60] mt-2 w-56 rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5"
               role="menu"
             >
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ displayName }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ authStore.user?.email }}</p>
+              <div class="px-4 py-2 border-b border-divider">
+                <p class="text-sm font-medium text-fg-primary truncate">{{ displayName }}</p>
+                <p class="text-xs text-fg-muted truncate">{{ authStore.user?.email }}</p>
               </div>
 
               <router-link
                 v-if="authStore.profile?.id"
                 :to="'/member/' + authStore.profile.id"
-                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-gray-50"
                 role="menuitem"
                 @click="userMenuOpen = false"
               >
@@ -217,7 +226,7 @@ watch(
               <router-link
                 v-if="authStore.isAdmin"
                 to="/settings"
-                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-gray-50"
                 role="menuitem"
                 @click="userMenuOpen = false"
               >
@@ -227,7 +236,7 @@ watch(
 
               <button
                 @click="handleLogout"
-                class="flex min-h-11 w-full items-center px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                class="flex min-h-11 w-full items-center px-4 py-2 text-left text-sm text-status-danger-action transition-colors duration-150 hover:bg-status-danger-subtle"
                 role="menuitem"
               >
                 <LogOut class="w-4 h-4 mr-2" />

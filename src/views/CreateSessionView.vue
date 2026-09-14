@@ -130,21 +130,21 @@ async function createSession() {
     <div class="mb-6">
       <router-link
         to="/sessions"
-        class="inline-flex min-h-11 items-center text-sm font-bold text-indigo-600 transition hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        class="inline-flex min-h-11 items-center text-sm font-bold text-brand-600 transition hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
       >
         <ChevronLeft class="mr-1 h-5 w-5" />
         {{ t('common.backToSessions') }}
       </router-link>
     </div>
 
-    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-      <h1 class="mb-6 text-[20px] font-bold leading-tight text-gray-900">
+    <div class="rounded-xl border border-divider bg-white p-4 shadow-sm sm:p-6">
+      <h1 class="mb-6 text-[20px] font-bold leading-tight tracking-tight text-fg-primary">
         {{ t('createSession.title') }}
       </h1>
 
       <form @submit.prevent="createSession" class="space-y-6">
         <div>
-          <label for="title" class="block text-sm font-bold text-gray-700">{{
+          <label for="title" class="block text-sm font-bold text-fg-secondary">{{
             t('session.title')
           }}</label>
           <input
@@ -152,13 +152,13 @@ async function createSession() {
             type="text"
             id="title"
             required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             :placeholder="t('createSession.titlePlaceholder')"
           />
         </div>
 
         <div>
-          <label for="date" class="block text-sm font-bold text-gray-700">{{
+          <label for="date" class="block text-sm font-bold text-fg-secondary">{{
             t('createSession.date')
           }}</label>
           <input
@@ -166,13 +166,13 @@ async function createSession() {
             type="date"
             id="date"
             required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
           />
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label for="startTime" class="block text-sm font-bold text-gray-700">{{
+            <label for="startTime" class="block text-sm font-bold text-fg-secondary">{{
               t('createSession.startTime')
             }}</label>
             <input
@@ -180,11 +180,11 @@ async function createSession() {
               type="time"
               id="startTime"
               required
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             />
           </div>
           <div>
-            <label for="endTime" class="block text-sm font-bold text-gray-700">{{
+            <label for="endTime" class="block text-sm font-bold text-fg-secondary">{{
               t('createSession.endTime')
             }}</label>
             <input
@@ -192,22 +192,22 @@ async function createSession() {
               type="time"
               id="endTime"
               required
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             />
-            <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-red-600">
+            <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-status-danger-action">
               {{ t('createSession.endTimeError') }}
             </p>
           </div>
         </div>
 
-        <p class="text-sm text-gray-500">
+        <p class="text-sm text-fg-muted">
           {{ t('courtBooking.intervalPreview', { count: intervalPreview }) }}
         </p>
 
         <div>
-          <label for="courtFee" class="block text-sm font-bold text-gray-700"
-            >{{ t('session.courtFeeAddon') }}</label
-          >
+          <label for="courtFee" class="block text-sm font-bold text-fg-secondary">{{
+            t('session.courtFeeAddon')
+          }}</label>
           <input
             v-model.number="form.courtFee"
             type="number"
@@ -215,13 +215,13 @@ async function createSession() {
             min="0"
             step="1000"
             required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
           />
-          <p class="mt-1 text-sm text-gray-500">{{ t('session.courtFeeAddonHint') }}</p>
+          <p class="mt-1 text-sm text-fg-muted">{{ t('session.courtFeeAddonHint') }}</p>
         </div>
 
         <div>
-          <label for="defaultCourtPrice" class="block text-sm font-bold text-gray-700">{{
+          <label for="defaultCourtPrice" class="block text-sm font-bold text-fg-secondary">{{
             t('session.defaultCourtPrice')
           }}</label>
           <input
@@ -230,7 +230,7 @@ async function createSession() {
             id="defaultCourtPrice"
             min="0"
             step="1000"
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
           />
         </div>
 
@@ -247,7 +247,7 @@ async function createSession() {
           <button
             type="submit"
             :disabled="loading || !bookingsValid || sessionTimeInvalid"
-            class="flex min-h-11 w-full justify-center rounded-xl bg-indigo-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex min-h-11 w-full justify-center rounded-xl bg-brand-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {{ loading ? t('createSession.creating') : t('createSession.createButton') }}
           </button>

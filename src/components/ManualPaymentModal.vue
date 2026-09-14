@@ -119,7 +119,9 @@ async function handleConfirm() {
     role="dialog"
     aria-modal="true"
   >
-    <div class="flex min-h-screen items-end justify-center px-0 text-center sm:items-center sm:px-4 sm:py-8">
+    <div
+      class="flex min-h-screen items-end justify-center px-0 text-center sm:items-center sm:px-4 sm:py-8"
+    >
       <!-- Background overlay -->
       <div
         class="fixed inset-0 bg-gray-500/75 transition-opacity"
@@ -129,12 +131,12 @@ async function handleConfirm() {
 
       <!-- Modal panel -->
       <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-2xl"
+        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-xl"
       >
-        <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
+        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
           <div class="flex items-start justify-between gap-3">
             <h3
-              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-gray-900"
+              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-fg-primary"
               id="manual-payment-title"
             >
               <DollarSign class="h-6 w-6 text-green-600" />
@@ -146,7 +148,7 @@ async function handleConfirm() {
               type="button"
               @click="handleClose"
               :disabled="isSubmitting"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
               :aria-label="t('common.cancel')"
             >
               <X class="h-6 w-6" />
@@ -157,7 +159,7 @@ async function handleConfirm() {
         <div class="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6">
           <div v-if="snapshot" class="space-y-4">
             <template v-if="currentStep === 'entry'">
-              <div class="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-3">
+              <div class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3">
                 <Info class="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                 <div
                   class="text-sm text-blue-800"
@@ -167,17 +169,17 @@ async function handleConfirm() {
 
               <div class="space-y-4 pt-2">
                 <div>
-                  <label class="mb-1 block text-sm font-bold text-gray-700">{{
+                  <label class="mb-1 block text-sm font-bold text-fg-secondary">{{
                     t('payment.reviewMember')
                   }}</label>
                   <div
-                    class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 font-bold uppercase text-gray-900"
+                    class="rounded-xl border border-divider bg-gray-50 px-3 py-3 font-bold uppercase text-fg-primary"
                   >
                     {{ memberName }}
                   </div>
                 </div>
 
-                <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
                   <p class="text-sm font-bold text-amber-800">{{ t('payment.debtLabel') }}</p>
                   <p class="mt-1 text-[32px] font-bold leading-[1.05] text-amber-900 tabular-nums">
                     {{ formatCurrency(remainingDebt) }}
@@ -185,7 +187,7 @@ async function handleConfirm() {
                 </div>
 
                 <div>
-                  <label for="amount" class="mb-1 block text-sm font-bold text-gray-700">{{
+                  <label for="amount" class="mb-1 block text-sm font-bold text-fg-secondary">{{
                     t('payment.amountCollected')
                   }}</label>
                   <div class="relative rounded-xl shadow-sm">
@@ -195,25 +197,27 @@ async function handleConfirm() {
                       type="number"
                       step="1000"
                       min="0"
-                      class="block min-h-11 w-full rounded-xl border border-gray-300 py-2 pl-3 pr-12 text-[16px] font-bold leading-[1.5] text-indigo-700 focus:border-indigo-500 focus:ring-indigo-500"
+                      class="block min-h-11 w-full rounded-xl border border-input py-2 pl-3 pr-12 text-[16px] font-bold leading-[1.5] text-brand-700 focus:border-brand-500 focus:ring-brand-500"
                       :placeholder="t('payment.amountToPay') + '...'"
                       @keyup.enter="proceedToReview"
                     />
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                      <span class="text-gray-500 sm:text-sm">₫</span>
+                    <div
+                      class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
+                    >
+                      <span class="text-fg-muted sm:text-sm">₫</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label for="note" class="mb-1 block text-sm font-bold text-gray-700">{{
+                  <label for="note" class="mb-1 block text-sm font-bold text-fg-secondary">{{
                     t('payment.note')
                   }}</label>
                   <input
                     id="note"
                     v-model="note"
                     type="text"
-                    class="block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    class="block min-h-11 w-full rounded-xl border border-input px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                     :placeholder="t('payment.note') + '...'"
                   />
                 </div>
@@ -221,32 +225,34 @@ async function handleConfirm() {
             </template>
 
             <template v-else>
-              <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div
+                class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+              >
                 {{ t('payment.cashReviewTitle') }}
               </div>
 
-              <dl class="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white">
+              <dl class="divide-y divide-gray-100 rounded-xl border border-divider bg-white">
                 <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-gray-500">{{ t('payment.reviewMember') }}</dt>
-                  <dd class="text-right text-sm font-bold text-gray-900">{{ memberName }}</dd>
+                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewMember') }}</dt>
+                  <dd class="text-right text-sm font-bold text-fg-primary">{{ memberName }}</dd>
                 </div>
                 <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-gray-500">{{ t('payment.reviewAmount') }}</dt>
-                  <dd class="text-right text-sm font-bold text-indigo-700">
+                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewAmount') }}</dt>
+                  <dd class="text-right text-sm font-bold text-brand-700">
                     {{ formatCurrency(amount) }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-gray-500">
+                  <dt class="text-sm font-bold text-fg-muted">
                     {{ t('payment.reviewRemainingDebt') }}
                   </dt>
-                  <dd class="text-right text-sm font-bold text-gray-900">
+                  <dd class="text-right text-sm font-bold text-fg-primary">
                     {{ formatCurrency(remainingDebt) }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-gray-500">{{ t('payment.reviewNote') }}</dt>
-                  <dd class="text-right text-sm text-gray-900">{{ note || '—' }}</dd>
+                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewNote') }}</dt>
+                  <dd class="text-right text-sm text-fg-primary">{{ note || '—' }}</dd>
                 </div>
               </dl>
             </template>
@@ -254,13 +260,13 @@ async function handleConfirm() {
         </div>
 
         <div
-          class="manual-payment-footer-safe sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+          class="manual-payment-footer-safe sticky bottom-0 shrink-0 border-t border-divider bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
         >
           <template v-if="currentStep === 'entry'">
             <button
               @click="proceedToReview"
               type="button"
-              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm"
             >
               <CheckCircle class="mr-2 h-4 w-4" />
               {{ t('payment.confirmCash') }}
@@ -268,7 +274,7 @@ async function handleConfirm() {
             <button
               @click="handleClose"
               type="button"
-              class="mt-3 inline-flex min-h-11 w-full justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-base font-bold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              class="mt-3 inline-flex min-h-11 w-full justify-center rounded-xl border border-input bg-white px-4 py-2 text-base font-bold text-fg-secondary shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               {{ t('common.cancel') }}
             </button>
@@ -279,7 +285,7 @@ async function handleConfirm() {
               @click="handleConfirm"
               :disabled="isSubmitting"
               type="button"
-              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
             >
               <Loader2 v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin" />
               <CheckCircle v-else class="mr-2 h-4 w-4" />
@@ -289,7 +295,7 @@ async function handleConfirm() {
               @click="currentStep = 'entry'"
               :disabled="isSubmitting"
               type="button"
-              class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-base font-bold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-input bg-white px-4 py-2 text-base font-bold text-fg-secondary shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               <ArrowLeft class="mr-2 h-4 w-4" />
               {{ t('payment.backToEdit') }}

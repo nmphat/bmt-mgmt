@@ -191,13 +191,13 @@ function handleClose() {
 
       <!-- Modal -->
       <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-2xl"
+        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-xl"
       >
         <!-- Header -->
-        <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
+        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
           <div class="flex items-start justify-between gap-3">
             <h3
-              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-gray-900"
+              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-fg-primary"
               id="cash-payment-title"
             >
               <DollarSign class="h-6 w-6 text-green-600" />
@@ -207,7 +207,7 @@ function handleClose() {
               type="button"
               @click="handleClose"
               :disabled="isSubmitting"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
             >
               <X class="h-5 w-5" />
             </button>
@@ -224,7 +224,7 @@ function handleClose() {
           <!-- No debt -->
           <div
             v-else-if="snapshots.length === 0"
-            class="py-8 text-center text-gray-500"
+            class="py-8 text-center text-fg-muted"
           >
             {{ t('debt.noDebt') }}
           </div>
@@ -238,7 +238,7 @@ function handleClose() {
 
             <!-- Amount input -->
             <div class="mb-4">
-              <label class="mb-1 block text-sm font-bold text-gray-700">
+              <label class="mb-1 block text-sm font-bold text-fg-secondary">
                 {{ t('payment.amount') }}
               </label>
               <input
@@ -247,29 +247,29 @@ function handleClose() {
                 :min="0"
                 :max="totalDebt"
                 @blur="amount = Math.min(Math.max(0, amount || 0), totalDebt)"
-                class="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg font-bold text-gray-900 focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
+                class="w-full rounded-lg border border-input px-4 py-3 text-lg font-bold text-fg-primary focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
               />
             </div>
 
             <!-- Allocation preview -->
-            <div class="mb-2 text-sm font-bold text-gray-700">
+            <div class="mb-2 text-sm font-bold text-fg-secondary">
               {{ t('payment.cashAllocationSummary', { amount: formatCurrency(totalAllocated), count: snapshots.length }) }}
             </div>
             <div class="space-y-2">
               <div
                 v-for="s in allocationPreview"
                 :key="s.snapshot_id"
-                class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                class="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
               >
                 <div class="min-w-0 flex-1">
-                  <div class="truncate font-medium text-gray-900">{{ s.session_title }}</div>
-                  <div class="text-xs text-gray-500">
+                  <div class="truncate font-medium text-fg-primary">{{ s.session_title }}</div>
+                  <div class="text-xs text-fg-muted">
                     {{ new Date(s.start_time).toLocaleDateString() }}
                   </div>
                 </div>
                 <div class="ml-3 text-right">
-                  <div class="font-bold text-gray-900">{{ formatCurrency(s.allocated) }}</div>
-                  <div class="text-xs text-gray-500">/ {{ formatCurrency(s.remaining_amount) }}</div>
+                  <div class="font-bold text-fg-primary">{{ formatCurrency(s.allocated) }}</div>
+                  <div class="text-xs text-fg-muted">/ {{ formatCurrency(s.remaining_amount) }}</div>
                 </div>
               </div>
             </div>
@@ -279,10 +279,10 @@ function handleClose() {
           <template v-else-if="currentStep === 'confirm'">
             <div class="space-y-4 py-4 text-center">
               <CheckCircle class="mx-auto h-12 w-12 text-green-500" />
-              <p class="text-lg font-bold text-gray-900">
+              <p class="text-lg font-bold text-fg-primary">
                 {{ t('payment.cashAllocationSummary', { amount: formatCurrency(totalAllocated), count: snapshots.length }) }}
               </p>
-              <p class="text-sm text-gray-500">
+              <p class="text-sm text-fg-muted">
                 {{ t('payment.cashAllocationTitle') }}
               </p>
             </div>
@@ -290,7 +290,7 @@ function handleClose() {
         </div>
 
         <!-- Footer -->
-        <div class="shrink-0 border-t border-gray-100 bg-white px-4 py-4 sm:px-6">
+        <div class="shrink-0 border-t border-divider bg-white px-4 py-4 sm:px-6">
           <template v-if="currentStep === 'preview'">
             <button
               @click="proceedToConfirm"
@@ -305,7 +305,7 @@ function handleClose() {
               <button
                 @click="currentStep = 'preview'"
                 :disabled="isSubmitting"
-                class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-base font-bold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                class="flex-1 rounded-xl border border-input bg-white px-4 py-3 text-base font-bold text-fg-secondary transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
               >
                 <AlertTriangle class="mr-1 inline h-4 w-4" />
                 {{ t('common.back') }}

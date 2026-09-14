@@ -114,4 +114,15 @@ describe('SessionDetailView payment table admin gating', () => {
     expect(w.text()).toContain('Nguyễn Văn A')
     expect(w.text()).toContain('120.000')
   })
+
+  it('shows the pending payment status badge with the danger token, not neutral gray', async () => {
+    const w = await mountDetail('member')
+    const pendingBadges = w.findAll('span').filter((span) => span.text() === 'Chưa đóng')
+    expect(pendingBadges.length).toBeGreaterThan(0)
+    for (const badge of pendingBadges) {
+      expect(badge.classes()).toContain('bg-status-danger')
+      expect(badge.classes()).toContain('text-status-danger-strong')
+      expect(badge.classes()).not.toContain('bg-gray-100')
+    }
+  })
 })

@@ -132,18 +132,18 @@ defineExpose({ fetchCharges })
 </script>
 
 <template>
-  <div class="rounded-2xl border border-gray-100 bg-white shadow-sm">
+  <div class="rounded-xl border border-divider bg-white shadow-sm">
     <!-- ── Header ── -->
     <div
-      class="px-4 md:px-6 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center"
+      class="px-4 md:px-6 py-4 border-b border-divider bg-gray-50 flex justify-between items-center"
     >
-      <h2 class="text-lg md:text-xl font-semibold text-gray-900">
+      <h2 class="text-lg md:text-xl font-semibold text-fg-primary">
         {{ t('extraCharge.title') }}
       </h2>
       <button
         v-if="isAdmin && !isReadOnly"
         @click="showForm = !showForm"
-        class="flex items-center text-sm text-indigo-600 hover:text-indigo-800 font-medium transition"
+        class="flex items-center text-sm text-brand-600 hover:text-brand-800 font-medium transition"
       >
         <Plus class="w-4 h-4 mr-1" />
         {{ showForm ? t('common.close') : t('extraCharge.addCharge') }}
@@ -153,18 +153,18 @@ defineExpose({ fetchCharges })
     <!-- ── Add Charge Form ── -->
     <div
       v-if="showForm && isAdmin"
-      class="px-4 md:px-6 py-4 border-b border-gray-100 bg-indigo-50/50"
+      class="px-4 md:px-6 py-4 border-b border-divider bg-brand-50/50"
     >
       <!-- Mobile: stacked layout -->
       <form @submit.prevent="addCharge" class="space-y-3 md:hidden">
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">
+          <label class="block text-xs font-medium text-fg-secondary mb-1">
             {{ t('extraCharge.member') }}
           </label>
           <select
             v-model="chargeForm.memberId"
             required
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm border px-3 py-2"
+            class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
           >
             <option value="" disabled>{{ t('session.selectMembers') }}</option>
             <option v-for="m in members" :key="m.id" :value="m.id">
@@ -174,7 +174,7 @@ defineExpose({ fetchCharges })
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">
+            <label class="block text-xs font-medium text-fg-secondary mb-1">
               {{ t('extraCharge.amount') }}
             </label>
             <input
@@ -182,25 +182,25 @@ defineExpose({ fetchCharges })
               type="number"
               required
               step="1000"
-              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm border px-3 py-2"
+              class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">
+            <label class="block text-xs font-medium text-fg-secondary mb-1">
               {{ t('extraCharge.note') }}
             </label>
             <input
               v-model="chargeForm.note"
               type="text"
               :placeholder="t('extraCharge.note')"
-              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm border px-3 py-2"
+              class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
             />
           </div>
         </div>
         <button
           type="submit"
           :disabled="submitting || !chargeForm.memberId || chargeForm.amount === 0"
-          class="w-full flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
+          class="w-full flex items-center justify-center px-4 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
         >
           <Loader2 v-if="submitting" class="w-4 h-4 mr-1.5 animate-spin" />
           <Plus v-else class="w-4 h-4 mr-1.5" />
@@ -211,13 +211,13 @@ defineExpose({ fetchCharges })
       <!-- Desktop: horizontal layout -->
       <form @submit.prevent="addCharge" class="hidden md:flex md:items-end md:gap-3">
         <div class="flex-1 min-w-[150px]">
-          <label class="block text-xs font-medium text-gray-600 mb-1">
+          <label class="block text-xs font-medium text-fg-secondary mb-1">
             {{ t('extraCharge.member') }}
           </label>
           <select
             v-model="chargeForm.memberId"
             required
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
           >
             <option value="" disabled>{{ t('session.selectMembers') }}</option>
             <option v-for="m in members" :key="m.id" :value="m.id">
@@ -226,7 +226,7 @@ defineExpose({ fetchCharges })
           </select>
         </div>
         <div class="w-32">
-          <label class="block text-xs font-medium text-gray-600 mb-1">
+          <label class="block text-xs font-medium text-fg-secondary mb-1">
             {{ t('extraCharge.amount') }}
           </label>
           <input
@@ -234,23 +234,23 @@ defineExpose({ fetchCharges })
             type="number"
             required
             step="1000"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
           />
         </div>
         <div class="flex-1 min-w-[120px]">
-          <label class="block text-xs font-medium text-gray-600 mb-1">
+          <label class="block text-xs font-medium text-fg-secondary mb-1">
             {{ t('extraCharge.note') }}
           </label>
           <input
             v-model="chargeForm.note"
             type="text"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-1.5"
+            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
           />
         </div>
         <button
           type="submit"
           :disabled="submitting || !chargeForm.memberId || chargeForm.amount === 0"
-          class="flex items-center px-4 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
+          class="flex items-center px-4 py-1.5 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
         >
           <Loader2 v-if="submitting" class="w-4 h-4 mr-1 animate-spin" />
           {{ t('extraCharge.addCharge') }}
@@ -260,7 +260,7 @@ defineExpose({ fetchCharges })
 
     <!-- ── Loading ── -->
     <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
     </div>
 
     <!-- ── Empty State ── -->
@@ -278,19 +278,15 @@ defineExpose({ fetchCharges })
           d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
         />
       </svg>
-      <p class="text-sm text-gray-400">{{ t('extraCharge.noCharges') }}</p>
+      <p class="text-sm text-fg-disabled">{{ t('extraCharge.noCharges') }}</p>
     </div>
 
     <!-- ── Mobile Cards (< md) ── -->
     <div v-else class="divide-y divide-gray-100 md:hidden">
-      <div
-        v-for="charge in charges"
-        :key="charge.id"
-        class="p-4 flex items-center justify-between"
-      >
+      <div v-for="charge in charges" :key="charge.id" class="p-4 flex items-center justify-between">
         <div class="flex flex-col min-w-0 mr-3">
-          <span class="font-semibold text-gray-900 truncate">{{ charge.display_name }}</span>
-          <span v-if="charge.note" class="text-xs text-gray-500 truncate">{{ charge.note }}</span>
+          <span class="font-semibold text-fg-primary truncate">{{ charge.display_name }}</span>
+          <span v-if="charge.note" class="text-xs text-fg-muted truncate">{{ charge.note }}</span>
         </div>
         <div class="flex items-center gap-2 shrink-0">
           <span
@@ -302,7 +298,7 @@ defineExpose({ fetchCharges })
           <button
             v-if="isAdmin && !isReadOnly"
             @click="deleteCharge(charge.id)"
-            class="text-gray-300 hover:text-red-500 transition p-1"
+            class="text-fg-disabled hover:text-status-danger-action transition p-1"
           >
             <Trash2 class="w-4 h-4" />
           </button>
@@ -317,19 +313,19 @@ defineExpose({ fetchCharges })
           <tr>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
             >
               {{ t('extraCharge.member') }}
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-right text-sm font-bold text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
             >
               {{ t('extraCharge.amount') }}
             </th>
             <th
               scope="col"
-              class="px-6 py-3 text-left text-sm font-bold text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
             >
               {{ t('extraCharge.note') }}
             </th>
@@ -340,7 +336,7 @@ defineExpose({ fetchCharges })
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-for="charge in charges" :key="charge.id">
-            <td class="px-6 py-4 whitespace-nowrap text-base font-bold text-gray-900">
+            <td class="px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary">
               {{ charge.display_name }}
             </td>
             <td
@@ -349,13 +345,13 @@ defineExpose({ fetchCharges })
             >
               {{ charge.amount >= 0 ? '+' : '' }}{{ formatCurrency(charge.amount) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-base text-gray-500">
+            <td class="px-6 py-4 whitespace-nowrap text-base text-fg-muted">
               {{ charge.note || '—' }}
             </td>
             <td v-if="isAdmin && !isReadOnly" class="px-4 py-4 whitespace-nowrap text-center">
               <button
                 @click="deleteCharge(charge.id)"
-                class="text-gray-300 hover:text-red-500 transition focus:outline-none"
+                class="text-fg-disabled hover:text-status-danger-action transition focus:outline-none"
               >
                 <Trash2 class="w-4 h-4" />
               </button>
