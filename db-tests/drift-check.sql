@@ -41,8 +41,9 @@ ORDER BY tablename, policyname;
 
 -- 4. functions: name, args, security mode, search_path, and a body hash
 -- Excludes objects that are pg_trgm-installed (not project code) and the
--- three test-bed-only helpers from db-tests/helpers.sql (assert_eq,
--- assert_denied, login_as), which exist only in the local test bed.
+-- four test-bed-only helpers from db-tests/helpers.sql (assert_eq,
+-- assert_money_eq, assert_denied, login_as), which exist only in the local
+-- test bed.
 SELECT p.proname || ' | ' || pg_get_function_identity_arguments(p.oid)
        || ' | secdef=' || p.prosecdef
        || ' | cfg=' || coalesce(array_to_string(p.proconfig, ','), '-')
@@ -56,7 +57,7 @@ WHERE n.nspname = 'public'
                         'strict_word_similarity_dist_commutator_op','word_similarity',
                         'word_similarity_op','word_similarity_dist_op',
                         'word_similarity_commutator_op','word_similarity_dist_commutator_op')
-  AND p.proname NOT IN ('assert_eq','assert_denied','login_as')
+  AND p.proname NOT IN ('assert_eq','assert_denied','login_as','assert_money_eq')
 ORDER BY p.proname, pg_get_function_identity_arguments(p.oid);
 
 -- 5. function grants: name, args, anon/authenticated has_function_privilege,
@@ -79,7 +80,7 @@ WHERE n.nspname = 'public'
                         'strict_word_similarity_dist_commutator_op','word_similarity',
                         'word_similarity_op','word_similarity_dist_op',
                         'word_similarity_commutator_op','word_similarity_dist_commutator_op')
-  AND p.proname NOT IN ('assert_eq','assert_denied','login_as')
+  AND p.proname NOT IN ('assert_eq','assert_denied','login_as','assert_money_eq')
 ORDER BY p.proname, pg_get_function_identity_arguments(p.oid);
 
 -- 6. triggers, non-internal, including the auth schema — on_auth_user_created

@@ -18,7 +18,7 @@ SELECT assert_eq(
 -- So sánh với sum(total_court_fee) chứ không phải sum(final_total):
 -- final_total đã cộng tiền cầu và làm tròn lên bội số 1000 cho từng người,
 -- còn total_court_fee là tiền sân chưa làm tròn -- đúng thứ view đang nói.
-SELECT assert_eq(
+SELECT assert_money_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'addon-only session: list total agrees with the engine');
@@ -119,7 +119,7 @@ SELECT assert_eq(
 -- (active_court_count * price_per_hour / 2) thì mọi buổi tính theo giá sân
 -- -- vốn có price_per_hour = 0 -- sẽ hiện 0 đồng trong danh sách trong khi
 -- thành viên vẫn bị tính đủ tiền.
-SELECT assert_eq(
+SELECT assert_money_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'per-court session: list total agrees with the engine');
@@ -190,7 +190,7 @@ SELECT assert_eq(
     WHERE member_id = '33333333-3333-3333-3333-333333333333'),
   190000::numeric, 'production-shaped session: member B still pays exactly 190000');
 
-SELECT assert_eq(
+SELECT assert_money_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'production-shaped session: list total agrees with the engine');
@@ -203,7 +203,7 @@ SELECT assert_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   300000::numeric, 'addon-only session with zero-priced bookings: list shows just the addon');
 
-SELECT assert_eq(
+SELECT assert_money_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'addon-only session with zero-priced bookings: list total agrees with the engine');
@@ -259,7 +259,7 @@ SELECT assert_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   60000::numeric, 'mixed session: list total is the real court spend, not 110000');
 
-SELECT assert_eq(
+SELECT assert_money_eq(
   (SELECT total_court_cost FROM view_session_summary WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   (SELECT sum(total_court_fee) FROM calculate_session_costs('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')),
   'mixed session: list total agrees with the engine');

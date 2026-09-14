@@ -100,3 +100,22 @@ BEGIN
   RAISE NOTICE 'ok   %', p_label;
 END;
 $$;
+
+-- Money assertion with a tolerance. The engine-vs-view reconciliation
+-- compares two numeric expressions that add the same VND in a different
+-- order, so an addon that does not divide evenly comes back as
+-- 99999.999999999999 against 100000.000000000000 — a 1e-12 drift that is
+-- not money. Tiền là số nguyên VND và final_total còn được CEIL lên bội
+-- số 1000, nên sai lệch THẬT nhỏ nhất có thể xảy ra là 1 đồng: epsilon
+-- 0.01 đồng nằm giữa hai thang đó, cao hơn nhiễu numeric hàng tỉ lần và
+-- vẫn thấp hơn 1 đồng 100 lần.
+CREATE OR REPLACE FUNCTION assert_money_eq(actual numeric, expected numeric, label text)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  IF actual IS NULL OR expected IS NULL OR abs(actual - expected) >= 0.01 THEN
+    RAISE EXCEPTION 'FAIL % — expected %, got % (drift %)',
+      label, expected, actual, coalesce((actual - expected)::text, 'NULL');
+  END IF;
+  RAISE NOTICE 'ok   %', label;
+END;
+$$;
