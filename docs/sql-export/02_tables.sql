@@ -32,15 +32,16 @@ CREATE TABLE IF NOT EXISTS public.sessions (
   title text NOT NULL,
   start_time timestamp with time zone NOT NULL,
   end_time timestamp with time zone NOT NULL,
-  court_fee_addon numeric DEFAULT 0,
-  shuttle_fee_total numeric DEFAULT 0,
+  court_fee_addon numeric NOT NULL DEFAULT 0,
+  shuttle_fee_total numeric NOT NULL DEFAULT 0,
   status session_status DEFAULT 'open'::session_status,
   created_by uuid,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  price_per_hour numeric DEFAULT 0,
+  price_per_hour numeric NOT NULL DEFAULT 0,
   default_court_count integer DEFAULT 1,
-  deleted_at timestamp with time zone
+  deleted_at timestamp with time zone,
+  shuttle_usage jsonb NOT NULL DEFAULT '[]'::jsonb
 );
 
 CREATE TABLE IF NOT EXISTS public.session_intervals (
@@ -50,7 +51,8 @@ CREATE TABLE IF NOT EXISTS public.session_intervals (
   end_time timestamp with time zone NOT NULL,
   idx integer NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
-  active_court_count integer DEFAULT 1
+  active_court_count integer DEFAULT 1,
+  court_cost numeric NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.session_registrations (
@@ -96,10 +98,16 @@ CREATE TABLE IF NOT EXISTS public.session_payments (
 CREATE TABLE IF NOT EXISTS public.session_court_bookings (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   session_id uuid,
-  court_name text,
+  court_name text NOT NULL,
   start_time timestamp with time zone NOT NULL,
   end_time timestamp with time zone NOT NULL,
-  created_at timestamp with time zone DEFAULT now()
+  created_at timestamp with time zone DEFAULT now(),
+  -- Sau created_at, không phải trước: production nhận cột này bằng
+  -- ALTER TABLE ... ADD COLUMN (2026-09-09-phase1-pricing.sql) nên nó nằm ở
+  -- cuối bảng. Đặt sai chỗ ở đây thì drift check báo lệch một dòng vĩnh viễn
+  -- trên một khác biệt không có thật. Vô hại với ứng dụng -- mọi INSERT trong
+  -- repo đều liệt kê tên cột.
+  price_per_hour numeric NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.session_extra_charges (
@@ -109,4 +117,13 @@ CREATE TABLE IF NOT EXISTS public.session_extra_charges (
   amount numeric NOT NULL,
   note text,
   created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.shuttle_types (
+  id         uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name       text NOT NULL,
+  tube_price numeric NOT NULL,
+  per_tube   integer NOT NULL DEFAULT 12,
+  is_active  boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
 );

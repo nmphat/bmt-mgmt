@@ -47,12 +47,15 @@ src/
 │   ├── HomeDebtTable.vue       # Bảng tổng hợp nợ tất cả member
 │   ├── PaymentQRModal.vue      # Modal QR + polling (single & group)
 │   ├── ManualPaymentModal.vue  # Modal confirm manual payment
-│   ├── MemberUnpaidSessionsModal.vue  # Modal danh sách buổi chưa trả của member
+│   ├── session/
+│   │   ├── CourtBookingEditor.vue    # Shared per-court booking editor (presentation-only)
+│   │   └── ShuttleUsageEditor.vue    # Shuttle usage editor with type catalogue
 │   └── SessionExtraCharges.vue  # Component quản lý phụ phí trong session
 │
 ├── composables/
 │   ├── usePaymentPolling.ts   # Polling logic cho QR status
-│   └── useBankConfig.ts       # Bank config từ DB + fallback
+│   ├── useBankConfig.ts       # Bank config từ DB + fallback
+│   └── useShuttleTypes.ts     # Shuttle type catalogue (shared state)
 │
 ├── stores/
 │   ├── auth.ts                # user, profile, isAdmin — xem 03-auth-and-roles.md

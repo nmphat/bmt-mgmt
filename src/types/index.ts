@@ -14,6 +14,7 @@ export interface SessionSummary {
   total_intervals: number
   total_registrations: number
   total_collected: number
+  shuttle_usage: ShuttleUsageEntry[]
 }
 
 export interface MemberCost {
@@ -55,6 +56,7 @@ export interface Interval {
   end_time: string
   idx: number
   active_court_count: number
+  court_cost: number
 }
 
 export interface Member {
@@ -94,6 +96,31 @@ export interface CostSnapshot {
   member?: { display_name: string }
 }
 
+export interface ShuttleType {
+  id: string
+  name: string
+  tube_price: number
+  per_tube: number
+  is_active: boolean
+}
+
+export interface ShuttleUsageEntry {
+  type_id: string
+  name: string
+  tube_price: number
+  per_tube: number
+  used: number
+}
+
+/** Draft row inside CourtBookingEditor: times are "HH:mm" in VN local time. */
+export interface CourtBookingDraft {
+  id?: string
+  court_name: string
+  start_time: string
+  end_time: string
+  price_per_hour: number
+}
+
 // Table: session_court_bookings
 export interface CourtBooking {
   id: string
@@ -101,6 +128,7 @@ export interface CourtBooking {
   court_name: string
   start_time: string
   end_time: string
+  price_per_hour: number
   created_at: string
 }
 

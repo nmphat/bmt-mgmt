@@ -31,9 +31,11 @@ Cho mỗi interval:
   denominator = real_present_count_in_interval + total_ghost_count
 
   Nếu member là Ghost HOẶC có mặt (is_present = true):
-    booking_cost = (price_per_hour / 2) × active_court_count / denominator
+    booking_cost_per_interval:
+      nếu court_cost > 0:   court_cost / denominator        ← per-court pricing (mới)
+      nếu court_cost = 0:   (price_per_hour / 2) × active_court_count / denominator  ← legacy
     addon_cost   = (court_fee_addon × active_court_count / total_court_units) / denominator
-    court_cost_per_interval = booking_cost + addon_cost   ← luôn cộng cả 2
+    court_cost_per_interval = booking_cost_per_interval + addon_cost
 
   Nếu không có mặt (và không phải ghost):
     court_cost_per_interval = 0
@@ -41,7 +43,7 @@ Cho mỗi interval:
 
 | Sessions cũ  | `price_per_hour=0`, `court_fee_addon=300k`   | booking_cost=0, addon=300k → **300k** ✅       |
 | ------------ | -------------------------------------------- | --------------------------------------------- |
-| Sessions mới | `price_per_hour=120k/h`, `court_fee_addon=0` | booking_cost=đủ, addon=0 → **booking_cost** ✅ |
+| Sessions mới | per-court bookings với `price_per_hour` riêng | `court_cost` > 0 → dùng trực tiếp             |
 | Mixed        | `price_per_hour>0`, `court_fee_addon>0`      | **cả hai cộng lại** (admin tự quản)           |
 
 > **`court_fee_addon`** (`sessions.court_fee_addon`): khoản phí sân cố định, chia đều theo weighted intervals.

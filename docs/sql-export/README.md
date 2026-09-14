@@ -19,6 +19,7 @@ This folder contains SQL files generated from your current Supabase database (`p
 7. `06_functions.sql`
 8. `07_triggers.sql`
 9. `08_rls.sql`
+10. `09_grants.sql`
 
 ## Important
 

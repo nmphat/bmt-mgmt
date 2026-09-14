@@ -24,7 +24,7 @@ sessions
    ├─ session_extra_charges  (session_id FK)
    ├─ session_costs_snapshot (session_id FK)
    │     └─ session_payments  (snapshot_id FK)
-   └─ session_court_bookings (session_id FK) [ít dùng]
+   └─ session_court_bookings (session_id FK) — per-court pricing
 
 group_payment_requests
    └─ snapshot_ids: uuid[]  ← array ref tới session_costs_snapshot (KHÔNG có FK)
@@ -69,6 +69,7 @@ Mỗi row là 1 buổi đánh cầu lông.
 | `created_at`          | timestamptz    | YES      | now()              |                                 |
 | `updated_at`          | timestamptz    | YES      | now()              |                                 |
 | `deleted_at`          | timestamptz    | YES      |                    | Soft-delete timestamp cho session đã hủy |
+| `shuttle_usage`       | jsonb          | NO       | '[]'               | Snapshot loại cầu đã dùng [{type_id, name, tube_price, per_tube, used}] |
 
 ---
 
@@ -84,6 +85,7 @@ Mỗi row là 1 khung thời gian (~30 phút) trong buổi. Được tạo tự 
 | `end_time`           | timestamptz | NO       |                    |                                      |
 | `idx`                | integer     | NO       |                    | Thứ tự interval trong buổi (0-based) |
 | `active_court_count` | integer     | YES      | 1                  | Số sân đang dùng trong khung này     |
+| `court_cost`         | numeric     | NO       | 0                  | Tổng tiền sân trong khung này (per-booking pricing) |
 | `created_at`         | timestamptz | YES      | now()              |                                      |
 
 ---
@@ -206,15 +208,28 @@ Config ngân hàng cho VietQR. FE đọc từ bảng này qua composable `useBan
 
 ### `session_court_bookings`
 
-Lịch thuê sân cụ thể. **Ít dùng** (chỉ có 1 row trong DB).
+Lịch thuê sân cụ thể, mỗi row là một khung giờ của một sân. Lưu giá theo giờ (`price_per_hour`) để tính tiền sân theo từng sân thay vì một giá chung.
 
-| Column       | Type        | Ghi chú          |
-| ------------ | ----------- | ---------------- |
-| `id`         | uuid        | PK               |
-| `session_id` | uuid        | FK → sessions.id |
-| `court_name` | text        | Tên sân          |
-| `start_time` | timestamptz |                  |
-| `end_time`   | timestamptz |                  |
+| Column            | Type        | Ghi chú                              |
+| ----------------- | ----------- | ------------------------------------ |
+| `id`              | uuid        | PK                                   |
+| `session_id`      | uuid        | FK → sessions.id                     |
+| `court_name`      | text NOT NULL | Tên sân, CHECK `court_name ~ '\S'` |
+| `start_time`      | timestamptz | CHECK `end_time > start_time`        |
+| `end_time`        | timestamptz |                                      |
+| `price_per_hour`  | numeric     | NOT NULL DEFAULT 0                   |
+
+### `shuttle_types`
+
+Danh mục loại cầu. Admin quản lý ở Settings.
+
+| Column        | Type    | Ghi chú                |
+| ------------- | ------- | ---------------------- |
+| `id`          | uuid    | PK                     |
+| `name`        | text    | Tên loại cầu           |
+| `tube_price`  | numeric | Giá một ống (VND)     |
+| `per_tube`    | integer | Số quả mỗi ống         |
+| `is_active`   | boolean | DEFAULT true           |
 
 ---
 
@@ -241,7 +256,7 @@ Tổng hợp số liệu cho từng session (dùng ở Dashboard).
 
 **Computed columns:**
 
-- `total_court_cost` — tính từ booking cost (`active_court_count × price_per_hour/2`) + `court_fee_addon`
+- `total_court_cost` — tính từ booking cost (ưu tiên `court_cost` per-interval nếu > 0, else `active_court_count × price_per_hour/2`) + `court_fee_addon`
 - `total_extra_cost` — SUM từ `session_extra_charges`
 - `total_registrations` — COUNT từ `session_registrations`
 - `total_collected` — SUM paid_amount từ `session_costs_snapshot`

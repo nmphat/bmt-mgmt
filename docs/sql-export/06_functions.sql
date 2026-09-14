@@ -1,12 +1,21 @@
 CREATE OR REPLACE FUNCTION public.add_manual_payment(p_snapshot_id uuid, p_amount numeric, p_note text DEFAULT 'Tiền mặt'::text)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_final_amount NUMERIC;
     v_current_paid NUMERIC;
     v_new_paid NUMERIC;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     IF p_snapshot_id IS NULL THEN
         RAISE EXCEPTION 'p_snapshot_id is required';
     END IF;
@@ -61,8 +70,21 @@ $function$;
 CREATE OR REPLACE FUNCTION public.add_member_to_session_full_presence(p_session_id uuid, p_member_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    -- Hàm này ghi session_registrations và interval_presence -- số dòng của
+    -- interval_presence chính là mẫu số chia tiền, nên một thành viên đã
+    -- đăng nhập nhưng không phải admin gọi được nó là kéo được hóa đơn của
+    -- mọi người khác xuống.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Đăng ký thành viên vào Session
     -- Cột is_registered_not_attended đã bị loại bỏ, chỉ cần đảm bảo có registration row.
     INSERT INTO session_registrations (session_id, member_id)
@@ -79,7 +101,7 @@ BEGIN
     DO UPDATE SET is_present = true;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.search_sessions_list(
     p_query text DEFAULT NULL,
@@ -171,8 +193,21 @@ $function$;
 CREATE OR REPLACE FUNCTION public.batch_add_members_to_session(p_session_id uuid, p_member_ids uuid[])
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    -- Hàm này ghi session_registrations và interval_presence -- số dòng của
+    -- interval_presence chính là mẫu số chia tiền, nên một thành viên đã
+    -- đăng nhập nhưng không phải admin gọi được nó là kéo được hóa đơn của
+    -- mọi người khác xuống.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Batch Insert vào bảng Registration
     -- Dùng hàm unnest() để "bung" mảng ra thành các dòng dữ liệu
     INSERT INTO session_registrations (session_id, member_id)
@@ -192,7 +227,7 @@ BEGIN
     DO UPDATE SET is_present = true;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.calculate_session_costs(p_session_id uuid)
  RETURNS TABLE(member_id uuid, display_name text, final_total numeric, total_court_fee numeric, total_shuttle_fee numeric, total_extra_fee numeric, intervals_count integer)
@@ -205,12 +240,26 @@ DECLARE
     v_total_court_units    INT := 0;
     v_total_intervals      INT := 0;  -- fallback denominator when court bookings don't overlap
     v_ghost_count          INT;
+    v_has_priced_booking   BOOLEAN;   -- buổi này dùng giá theo sân hay công thức giờ cũ
+    v_registered_count     INT;       -- mẫu số tiền sân của interval không có ai điểm danh
+    v_present_court_units  INT := 0;  -- đơn vị sân của RIÊNG những interval có người
+    v_present_intervals    INT := 0;  -- số interval có người (fallback của tiền cầu)
 BEGIN
     -- 1. Load session config
     SELECT s.court_fee_addon, s.price_per_hour, s.shuttle_fee_total
     INTO v_court_fee_addon, v_price_per_hour, v_total_shuttle_fee
     FROM sessions s
     WHERE s.id = p_session_id;
+
+    -- 1b. Mô hình giá được chốt MỘT LẦN cho cả buổi, không chọn lại theo
+    -- từng interval. Chỉ cần một booking có giá là buổi này tính theo giá
+    -- sân thật; những khung không có giá (price_per_hour = 0) khi đó đóng
+    -- góp đúng 0 đồng, chứ không âm thầm rơi về công thức giờ cũ và bịa ra
+    -- tiền cho một khung mà thực tế không tốn gì.
+    SELECT EXISTS (
+        SELECT 1 FROM session_court_bookings b
+        WHERE b.session_id = p_session_id AND b.price_per_hour > 0
+    ) INTO v_has_priced_booking;
 
     -- 2. Total court-units (SUM of active_court_count across all intervals)
     SELECT COALESCE(SUM(si.active_court_count), 0),
@@ -232,6 +281,34 @@ BEGIN
     FROM member_presence_counts
     WHERE presence_count = 0;
 
+    -- 3b. Mẫu số của một interval mà KHÔNG AI điểm danh. Sân đã đặt là tốn
+    -- tiền dù không ai bước vào, và người đặt là người nợ -- nên khung đó
+    -- chia đều cho MỌI người đã đăng ký buổi, đúng lý do đang bắt ghost trả
+    -- tiền sân. Trước đây khung đó trả về 0 và toàn bộ tiền sân của nó không
+    -- vào hóa đơn của ai.
+    SELECT COUNT(*) INTO v_registered_count
+    FROM session_registrations r
+    WHERE r.session_id = p_session_id;
+
+    -- 3c. Mẫu số của tiền cầu. Tiền cầu chỉ chia cho người CÓ MẶT -- ghost
+    -- không trả tiền cầu, luật này đã chốt -- nên trọng số của nó phải chạy
+    -- trên RIÊNG những interval có người. Chia cho v_total_court_units
+    -- (tính trên MỌI interval) khiến phần tiền cầu của một khung không ai
+    -- có mặt không có ai nhận: nó rơi ra ngoài mọi hóa đơn, không lỗi,
+    -- không cảnh báo, và danh sách buổi cũng không hiện ra được. Cả buổi
+    -- không ai điểm danh thì cả hai biến này bằng 0 và tiền cầu không có
+    -- chỗ nào hợp lệ để đi -- đó đúng là lúc finalize_session phải từ chối.
+    SELECT COALESCE(SUM(si.active_court_count), 0), COUNT(*)
+    INTO v_present_court_units, v_present_intervals
+    FROM session_intervals si
+    WHERE si.session_id = p_session_id
+      AND EXISTS (
+          SELECT 1 FROM interval_presence p
+          JOIN session_registrations r
+            ON r.member_id = p.member_id AND r.session_id = p_session_id
+          WHERE p.interval_id = si.id AND p.is_present = true
+      );
+
     -- 4. Compute costs
     RETURN QUERY
     WITH
@@ -245,15 +322,26 @@ BEGIN
         HAVING COUNT(p.id) FILTER (WHERE p.is_present = true) = 0
     ),
 
+    -- Mẫu số phải đếm ĐÚNG nhóm người mà tử số chia tiền cho. Truy vấn ở
+    -- dưới join session_registrations, nên chỉ người ĐÃ đăng ký mới có mặt
+    -- trong hóa đơn; nhưng real_present_count trước đây đếm MỌI dòng
+    -- interval_presence. Một dòng điểm danh của người chưa đăng ký vì thế
+    -- làm phình mẫu số mà không thêm ai vào tử số: suất tiền sân và tiền
+    -- cầu của người đó không tới hóa đơn nào -- không lỗi, không cảnh báo,
+    -- tiền biến mất. Trigger check_presence_member_registered chặn dòng
+    -- MỚI; điều kiện dưới đây là thứ giữ cho các dòng CŨ không ăn tiền.
     interval_stats AS (
         SELECT
             i.id AS interval_id,
             i.active_court_count,
+            i.court_cost,
             COUNT(p.member_id) FILTER (WHERE p.is_present = true) AS real_present_count
         FROM session_intervals i
         LEFT JOIN interval_presence p ON p.interval_id = i.id
+            AND EXISTS (SELECT 1 FROM session_registrations r
+                        WHERE r.session_id = p_session_id AND r.member_id = p.member_id)
         WHERE i.session_id = p_session_id
-        GROUP BY i.id, i.active_court_count
+        GROUP BY i.id, i.active_court_count, i.court_cost
     ),
 
     member_interval_costs AS (
@@ -262,47 +350,63 @@ BEGIN
             m.display_name,
 
             -- A. COURT FEE — Option C additive (booking cost + addon)
+            -- Ai trả khung này: người có mặt + ghost. Nhưng một interval mà
+            -- KHÔNG AI điểm danh thì trước đây cả biểu thức trả 0 và tiền
+            -- sân của khung đó biến mất khỏi mọi hóa đơn -- trong khi danh
+            -- sách buổi vẫn cộng đủ, nên hai con số trên cùng một màn hình
+            -- admin lệch nhau mà không có gì đối chiếu. Nay khung đó chia
+            -- đều cho mọi người đã đăng ký (v_registered_count). Ghost nằm
+            -- trong số đó nên vẫn chỉ chịu ĐÚNG MỘT suất của khung, không
+            -- bị tính hai lần.
             CASE
-                WHEN (ist.real_present_count + v_ghost_count) > 0 THEN
-                    CASE
-                        WHEN gm.member_id IS NOT NULL OR p.is_present = true THEN
+                WHEN gm.member_id IS NOT NULL OR p.is_present = true
+                     OR ist.real_present_count = 0 THEN
+                    (
                             CASE
                                 WHEN v_total_court_units > 0 THEN
-                                    -- Normal: both booking cost and addon weighted by court-units
+                                    -- Normal: both booking cost and addon weighted by court-units.
+                                    -- booking_cost prefers the real per-booking price when the
+                                    -- session has one; sessions created before per-court pricing
+                                    -- have court_cost = 0 and fall back to the old formula.
+                                    -- Nhánh được chọn theo cờ của cả buổi (v_has_priced_booking),
+                                    -- không theo từng interval: buổi có giá sân thì MỌI interval
+                                    -- dùng court_cost (kể cả interval bằng 0 -- đúng là không tốn
+                                    -- tiền); buổi không có giá sân nào thì MỌI interval dùng công
+                                    -- thức giờ cũ. Trộn hai mô hình trong cùng một buổi là cách
+                                    -- tiền sân bị bịa thêm cho khung sân miễn phí.
                                     (
-                                        ((v_price_per_hour / 2.0) * ist.active_court_count)
+                                        CASE
+                                            WHEN v_has_priced_booking THEN ist.court_cost
+                                            ELSE (v_price_per_hour / 2.0) * ist.active_court_count
+                                        END
                                         +
                                         (COALESCE(v_court_fee_addon, 0) * ist.active_court_count::numeric / v_total_court_units)
-                                    ) / (ist.real_present_count + v_ghost_count)
+                                    )
                                 WHEN v_total_intervals > 0 AND COALESCE(v_court_fee_addon, 0) > 0 THEN
                                     -- Fallback: court bookings don't overlap with intervals
                                     -- (e.g. timezone mismatch). Distribute addon equally per interval.
                                     -- price_per_hour booking cost = 0 (no valid court overlap).
                                     (v_court_fee_addon::numeric / v_total_intervals)
-                                    / (ist.real_present_count + v_ghost_count)
                                 ELSE 0
                             END
-                        ELSE 0
-                    END
+                    ) / CASE
+                            WHEN ist.real_present_count = 0 THEN v_registered_count
+                            ELSE ist.real_present_count + v_ghost_count
+                        END
                 ELSE 0
             END AS court_cost,
 
             -- B. SHUTTLE FEE — only real attendees
+            -- Mẫu số là v_present_court_units / v_present_intervals (xem 3c),
+            -- không phải tổng trên mọi interval: chỉ những khung có người
+            -- mới có người để nhận phần tiền cầu của mình.
             CASE
-                WHEN ist.real_present_count > 0 AND v_total_court_units > 0 THEN
-                    CASE
-                        WHEN p.is_present = true THEN
-                            (v_total_shuttle_fee * ist.active_court_count::numeric / v_total_court_units)
-                            / ist.real_present_count
-                        ELSE 0
-                    END
-                WHEN ist.real_present_count > 0 AND v_total_intervals > 0 THEN
+                WHEN p.is_present = true AND v_present_court_units > 0 THEN
+                    (v_total_shuttle_fee * ist.active_court_count::numeric / v_present_court_units)
+                    / ist.real_present_count
+                WHEN p.is_present = true AND v_present_intervals > 0 THEN
                     -- Fallback for shuttle when no court overlap either
-                    CASE
-                        WHEN p.is_present = true THEN
-                            (v_total_shuttle_fee / v_total_intervals) / ist.real_present_count
-                        ELSE 0
-                    END
+                    (v_total_shuttle_fee / v_present_intervals) / ist.real_present_count
                 ELSE 0
             END AS shuttle_cost,
 
@@ -337,7 +441,7 @@ BEGIN
     GROUP BY mic.mem_id, mic.display_name, ef.total_extra
     ORDER BY mic.display_name ASC;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.check_qr_status(p_code text)
  RETURNS jsonb
@@ -421,7 +525,7 @@ BEGIN
         'details', v_details
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.check_session_completion()
  RETURNS trigger
@@ -449,11 +553,13 @@ BEGIN
     
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.create_group_payment(p_snapshot_ids uuid[])
  RETURNS jsonb
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_total NUMERIC := 0;
@@ -521,68 +627,21 @@ BEGIN
         'total_amount', v_total
     );
 END;
-$function$
+$function$;
 
-CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb)
- RETURNS uuid
- LANGUAGE plpgsql
-AS $function$
-DECLARE
-    v_session_id UUID;
-    v_interval_start TIMESTAMPTZ;
-    v_interval_end TIMESTAMPTZ;
-    v_idx INT := 0;
-    v_booking_item JSONB;
-BEGIN
-    INSERT INTO sessions (
-        title, start_time, end_time, price_per_hour, shuttle_fee_total, created_by, status
-    )
-    VALUES (
-        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee, p_created_by, 'open'
-    )
-    RETURNING id INTO v_session_id;
-
-    v_interval_start := p_start_time;
-
-    WHILE v_interval_start < p_end_time LOOP
-        v_interval_end := v_interval_start + INTERVAL '30 minutes';
-
-        IF v_interval_end > p_end_time THEN
-            v_interval_end := p_end_time;
-        END IF;
-
-        INSERT INTO session_intervals (session_id, start_time, end_time, idx, active_court_count)
-        VALUES (v_session_id, v_interval_start, v_interval_end, v_idx, 0);
-
-        v_interval_start := v_interval_end;
-        v_idx := v_idx + 1;
-    END LOOP;
-
-    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
-        FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
-        LOOP
-            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
-            VALUES (
-                v_session_id,
-                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
-                (v_booking_item->>'start_time')::TIMESTAMPTZ,
-                (v_booking_item->>'end_time')::TIMESTAMPTZ
-            );
-        END LOOP;
-    ELSE
-        INSERT INTO session_court_bookings (session_id, start_time, end_time, court_name)
-        VALUES (v_session_id, p_start_time, p_end_time, 'Sân 1 (Mặc định)');
-    END IF;
-
-    PERFORM refresh_interval_courts(v_session_id);
-
-    RETURN v_session_id;
-END;
-$function$
+-- The 7-argument overload (no p_court_fee_addon) is dropped: it was dead
+-- code once CreateSessionView.vue moved to the 8-argument call, and having
+-- both left PostgREST to disambiguate overloads by argument count, which
+-- is fragile. IF EXISTS makes this a no-op on a fresh rebuild (the
+-- function was never created in this run) and a real drop against a
+-- database where it still exists from an earlier export.
+DROP FUNCTION IF EXISTS public.create_session_with_bookings(text, timestamp with time zone, timestamp with time zone, numeric, numeric, uuid, jsonb);
 
 CREATE OR REPLACE FUNCTION public.create_session_with_bookings(p_title text, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_price_per_hour numeric, p_shuttle_fee numeric, p_created_by uuid, p_bookings jsonb, p_court_fee_addon numeric DEFAULT 0)
  RETURNS uuid
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_session_id UUID;
@@ -590,14 +649,97 @@ DECLARE
     v_interval_end TIMESTAMPTZ;
     v_idx INT := 0;
     v_booking_item JSONB;
+    v_court TEXT;
 BEGIN
+    -- Cùng mức bảo vệ với mọi RPC ghi buổi khác của nhánh này. Route
+    -- /create-session đã là requiresAuth + requiresAdmin, nên guard này chỉ
+    -- nói ở tầng database đúng thứ ứng dụng đã có ý định; nó không đóng
+    -- thêm đường nào mà UI đang dùng.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    -- Hai guard dưới đây kiểm tra cùng thứ mà set_session_court_bookings
+    -- kiểm tra, và phải chạy TRƯỚC khi ghi bất cứ dòng nào: đây là đường
+    -- tạo buổi duy nhất, và CreateSessionView hiển thị nguyên văn
+    -- error.message cho người dùng -- để CHECK constraint tự chặn thì
+    -- người dùng nhận một chuỗi 23514 tiếng Anh.
+    IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
+        -- Một sân không tên là vô nghĩa, và mặc định lặng lẽ về 'Sân 1' còn
+        -- tệ hơn im lặng: nó đặt cho người dùng một cái tên họ không gõ, và
+        -- hai khung đều không tên sẽ cùng thành 'Sân 1' rồi báo "trùng giờ"
+        -- -- một lỗi nói về thứ admin không hề làm. Nhận cùng một luật với
+        -- set_session_court_bookings, hàm sửa chính những dòng này: buổi nào
+        -- tạo được thì phải sửa lại được.
+        IF EXISTS (
+            SELECT 1 FROM jsonb_array_elements(p_bookings) e
+            WHERE e->>'court_name' IS NULL OR e->>'court_name' ~ '^\s*$'
+        ) THEN
+            RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
+        END IF;
+
+        -- Giờ kết thúc phải sau giờ bắt đầu.
+        SELECT e->>'court_name' INTO v_court
+        FROM jsonb_array_elements(p_bookings) e
+        WHERE (e->>'end_time')::timestamptz <= (e->>'start_time')::timestamptz
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
+        END IF;
+
+        -- Khung sân phải nằm TRONG giờ của buổi. refresh_interval_courts cắt
+        -- overlap bằng LEAST/GREATEST, nên phần thò ra ngoài biến mất TRƯỚC khi
+        -- tới interval nào: một sân 10:00-14:00 giá 120000/h trên buổi
+        -- 11:00-12:00 ghi đủ 480000 vào session_court_bookings nhưng chỉ 120000
+        -- được chia. Ở đây view ĐỒNG Ý với engine -- cả hai đọc court_cost đã bị
+        -- cắt -- nên không màn hình nào hiện ra con số thật; chỗ duy nhất còn
+        -- giữ sự thật là start_time/end_time của chính dòng booking.
+        -- Trường hợp cực đoan tệ hơn: khung không chạm interval nào đẩy
+        -- v_total_court_units về 0 và calculate_session_costs rơi vào nhánh
+        -- fallback -- nhánh bỏ qua cả court_cost lẫn price_per_hour cũ.
+        -- CourtBookingEditor đã chặn (isOutOfBounds), nhưng đó là máy người dùng.
+        SELECT e->>'court_name' INTO v_court
+        FROM jsonb_array_elements(p_bookings) e
+        WHERE (e->>'start_time')::timestamptz < p_start_time
+           OR (e->>'end_time')::timestamptz   > p_end_time
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Khung giờ của sân "%" nằm ngoài giờ của buổi', v_court;
+        END IF;
+
+        -- Hai khung cùng một sân mà chồng giờ nhau thì tiền sân bị tính hai
+        -- lần: một giờ sân 120000 thành 240000.
+        WITH b AS (
+            SELECT e->>'court_name' AS court,
+                   (e->>'start_time')::timestamptz AS st,
+                   (e->>'end_time')::timestamptz   AS et,
+                   ord
+            FROM jsonb_array_elements(p_bookings) WITH ORDINALITY t(e, ord)
+        )
+        SELECT x.court INTO v_court
+        FROM b x JOIN b y ON y.ord > x.ord
+        WHERE x.court = y.court AND x.st < y.et AND x.et > y.st
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Sân "%" bị đặt trùng giờ', v_court;
+        END IF;
+    END IF;
+
     INSERT INTO sessions (
         title, start_time, end_time, price_per_hour, shuttle_fee_total,
         court_fee_addon, created_by, status
     )
+    -- Ba cột tiền này là NOT NULL DEFAULT 0. NULL từ client là một trường bị
+    -- thiếu chứ không phải một ý định, và 0 đúng là mặc định mà chính cột đã
+    -- khai báo -- nên COALESCE về 0 ở đây thay vì để cột ném 23502 tiếng Anh
+    -- lên thẳng CreateSessionView. Buổi 0 đồng không âm thầm trôi được nữa:
+    -- finalize_session từ chối chốt một buổi không có gì để chia.
     VALUES (
-        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee,
-        p_court_fee_addon, p_created_by, 'open'
+        p_title, p_start_time, p_end_time,
+        COALESCE(p_price_per_hour, 0), COALESCE(p_shuttle_fee, 0),
+        COALESCE(p_court_fee_addon, 0), p_created_by, 'open'
     )
     RETURNING id INTO v_session_id;
 
@@ -620,12 +762,13 @@ BEGIN
     IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
         FOR v_booking_item IN SELECT * FROM jsonb_array_elements(p_bookings)
         LOOP
-            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time)
+            INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
             VALUES (
                 v_session_id,
-                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
+                v_booking_item->>'court_name',
                 (v_booking_item->>'start_time')::TIMESTAMPTZ,
-                (v_booking_item->>'end_time')::TIMESTAMPTZ
+                (v_booking_item->>'end_time')::TIMESTAMPTZ,
+                COALESCE((v_booking_item->>'price_per_hour')::numeric, 0)
             );
         END LOOP;
     ELSE
@@ -637,16 +780,270 @@ BEGIN
 
     RETURN v_session_id;
 END;
-$function$
+$function$;
+
+CREATE OR REPLACE FUNCTION public.set_session_court_bookings(p_session_id uuid, p_bookings jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+    v_court  TEXT;
+    v_start  TIMESTAMPTZ;
+    v_end    TIMESTAMPTZ;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT s.status::text, s.start_time, s.end_time
+    INTO v_status, v_start, v_end
+    FROM sessions s WHERE s.id = p_session_id;
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa sân khi buổi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    -- Payload NULL là dữ liệu hỏng, không phải một ý định. jsonb_array_elements(NULL)
+    -- trả về 0 dòng, nên mọi guard bên dưới đều "đạt" một cách vô nghĩa, DELETE
+    -- vẫn chạy và cả buổi mất sạch tiền sân mà không có lỗi nào.
+    -- '[]' thì NGƯỢC LẠI là hợp lệ và phải giữ nguyên như vậy: admin bỏ hết sân
+    -- để quay về tính tiền bằng court_fee_addon là một thao tác có thật.
+    IF p_bookings IS NULL THEN
+        RAISE EXCEPTION 'Thiếu dữ liệu đặt sân (bookings)';
+    END IF;
+
+    -- Một sân không tên là vô nghĩa. Thiếu key, JSON null, hoặc chỉ có
+    -- khoảng trắng (kể cả tab, xuống dòng -- trim() một tham số chỉ cắt
+    -- ký tự space 0x20, không cắt các khoảng trắng khác) đều phải bị chặn
+    -- ở đây, trước khi ghi -- không lặng lẽ mặc định về 'Sân 1' như
+    -- create_session_with_bookings vẫn làm. IS NULL vẫn cần giữ riêng vì
+    -- '~' so với NULL cho ra NULL chứ không phải true, nên regex một mình
+    -- sẽ để lọt key bị thiếu.
+    IF EXISTS (
+        SELECT 1 FROM jsonb_array_elements(p_bookings) e
+        WHERE e->>'court_name' IS NULL OR e->>'court_name' ~ '^\s*$'
+    ) THEN
+        RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
+    END IF;
+
+    -- Giờ kết thúc phải sau giờ bắt đầu. session_court_bookings_time_order_check
+    -- cũng chặn, nhưng nó ném 23514 kèm chuỗi tiếng Anh thẳng lên màn hình.
+    SELECT e->>'court_name' INTO v_court
+    FROM jsonb_array_elements(p_bookings) e
+    WHERE (e->>'end_time')::timestamptz <= (e->>'start_time')::timestamptz
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
+    END IF;
+
+    -- Khung sân phải nằm TRONG giờ của buổi. refresh_interval_courts cắt
+    -- overlap bằng LEAST/GREATEST, nên phần thò ra ngoài biến mất TRƯỚC khi
+    -- tới interval nào: một sân 10:00-14:00 giá 120000/h trên buổi
+    -- 11:00-12:00 ghi đủ 480000 vào session_court_bookings nhưng chỉ 120000
+    -- được chia. Ở đây view ĐỒNG Ý với engine -- cả hai đọc court_cost đã bị
+    -- cắt -- nên không màn hình nào hiện ra con số thật; chỗ duy nhất còn
+    -- giữ sự thật là start_time/end_time của chính dòng booking.
+    -- Trường hợp cực đoan tệ hơn: khung không chạm interval nào đẩy
+    -- v_total_court_units về 0 và calculate_session_costs rơi vào nhánh
+    -- fallback -- nhánh bỏ qua cả court_cost lẫn price_per_hour cũ.
+    -- CourtBookingEditor đã chặn (isOutOfBounds), nhưng đó là máy người dùng.
+    SELECT e->>'court_name' INTO v_court
+    FROM jsonb_array_elements(p_bookings) e
+    WHERE (e->>'start_time')::timestamptz < v_start
+       OR (e->>'end_time')::timestamptz   > v_end
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Khung giờ của sân "%" nằm ngoài giờ của buổi', v_court;
+    END IF;
+
+    -- Hai khung cùng một sân mà chồng giờ nhau thì refresh_interval_courts
+    -- cộng cả hai vào cùng một interval: một giờ sân 120000 bị tính thành
+    -- 240000. src/utils/courtCost.ts đã chặn, nhưng đó là máy người dùng.
+    WITH b AS (
+        SELECT e->>'court_name' AS court,
+               (e->>'start_time')::timestamptz AS st,
+               (e->>'end_time')::timestamptz   AS et,
+               ord
+        FROM jsonb_array_elements(p_bookings) WITH ORDINALITY t(e, ord)
+    )
+    SELECT x.court INTO v_court
+    FROM b x JOIN b y ON y.ord > x.ord
+    WHERE x.court = y.court AND x.st < y.et AND x.et > y.st
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Sân "%" bị đặt trùng giờ', v_court;
+    END IF;
+
+    DELETE FROM session_court_bookings WHERE session_id = p_session_id;
+
+    INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
+    SELECT
+        p_session_id,
+        e->>'court_name',
+        (e->>'start_time')::timestamptz,
+        (e->>'end_time')::timestamptz,
+        COALESCE((e->>'price_per_hour')::numeric, 0)
+    FROM jsonb_array_elements(p_bookings) e;
+
+    PERFORM refresh_interval_courts(p_session_id);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_session_details(p_session_id uuid, p_title text, p_status session_status, p_court_fee_addon numeric, p_start_time timestamp with time zone, p_end_time timestamp with time zone, p_bookings jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+    v_start  TIMESTAMPTZ;
+    v_end    TIMESTAMPTZ;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT s.status::text, s.start_time, s.end_time
+    INTO v_status, v_start, v_end
+    FROM sessions s WHERE s.id = p_session_id;
+
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa buổi khi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    -- Ba bước dưới đây trước kia là ba lời gọi PostgREST rời nhau từ
+    -- SessionDetailView: dựng lại interval, UPDATE sessions, ghi sân. Hỏng ở
+    -- giữa thì điểm danh đã bị xóa còn hai bước sau bị bỏ dở, và buổi ở lại
+    -- trạng thái không ai dựng lại được. Gộp vào một hàm là gộp vào một
+    -- transaction: hỏng bước nào thì cuộn lại hết.
+    --
+    -- Chỉ dựng lại interval khi giờ THẬT SỰ đổi: recreate_session_intervals
+    -- xóa toàn bộ điểm danh, không được chạy khi admin chỉ sửa tiêu đề.
+    IF p_start_time IS DISTINCT FROM v_start OR p_end_time IS DISTINCT FROM v_end THEN
+        PERFORM recreate_session_intervals(p_session_id, p_start_time, p_end_time);
+    END IF;
+
+    -- Ghi sân SAU khi interval đã dời sang khung giờ mới (để
+    -- refresh_interval_courts bên trong nó tính tiền theo đúng khung mới) và
+    -- TRƯỚC khi đổi status (nó từ chối buổi không còn 'open').
+    PERFORM set_session_court_bookings(p_session_id, p_bookings);
+
+    -- court_fee_addon là NOT NULL DEFAULT 0. SessionDetailView bind nó bằng
+    -- v-model.number trên một input type="number", nên xóa trắng ô đó gửi
+    -- lên NULL -- và saveSession in nguyên văn error.message, tức là người
+    -- dùng nhận một chuỗi 23502 tiếng Anh. COALESCE về đúng DEFAULT mà cột
+    -- đã khai báo, y như create_session_with_bookings vẫn làm; NOT NULL vẫn
+    -- là chốt chặn cho mọi writer khác.
+    UPDATE sessions
+    SET title           = p_title,
+        status          = p_status,
+        court_fee_addon = COALESCE(p_court_fee_addon, 0),
+        updated_at      = now()
+    WHERE id = p_session_id;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.set_session_shuttle_usage(p_session_id uuid, p_usage jsonb)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
+AS $function$
+DECLARE
+    v_status TEXT;
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
+    SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
+    IF v_status IS NULL THEN
+        RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
+    END IF;
+    IF v_status <> 'open' THEN
+        RAISE EXCEPTION 'Không thể sửa tiền cầu khi buổi đang ở trạng thái "%".', v_status;
+    END IF;
+
+    -- Mỗi phần tử phải có đủ used/tube_price/per_tube và hợp lệ -- thiếu
+    -- (NULL) thì SUM() bên dưới sẽ lặng lẽ bỏ qua phần tử đó (đóng góp 0)
+    -- trong khi nó vẫn được lưu trong shuttle_usage, làm breakdown và tổng
+    -- lệch nhau mà không có tín hiệu gì; used âm thì lặng lẽ trừ tiền;
+    -- per_tube = 0 thì NULLIF bên dưới cũng lặng lẽ biến phần tử thành 0.
+    -- Từ chối cả ba trước khi ghi.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'used' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu số lượng ống cầu (used) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'tube_price' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu giá ống cầu (tube_price) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE e->>'per_tube' IS NULL) THEN
+        RAISE EXCEPTION 'Thiếu số cầu mỗi ống (per_tube) trong dữ liệu tiền cầu';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'used')::numeric < 0) THEN
+        RAISE EXCEPTION 'Số lượng ống cầu (used) không được âm';
+    END IF;
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'per_tube')::numeric <= 0) THEN
+        RAISE EXCEPTION 'Số cầu mỗi ống (per_tube) phải lớn hơn 0';
+    END IF;
+    -- tube_price âm thuộc đúng nhóm "lặng lẽ trừ tiền" mà các guard trên
+    -- sinh ra để chặn: shuttle_fee_total ra số âm và tiền cầu của từng
+    -- thành viên cũng âm theo.
+    IF EXISTS (SELECT 1 FROM jsonb_array_elements(p_usage) e WHERE (e->>'tube_price')::numeric < 0) THEN
+        RAISE EXCEPTION 'Giá ống cầu (tube_price) không được âm';
+    END IF;
+
+    -- Breakdown và tổng tiền được ghi trong cùng một lệnh, nên không có
+    -- đường nào để hai giá trị lệch nhau. Tổng được làm tròn một lần, về
+    -- nguyên đồng, sau khi cộng hết -- không làm tròn từng phần tử.
+    UPDATE sessions
+    SET shuttle_usage = p_usage,
+        shuttle_fee_total = ROUND(COALESCE((
+            SELECT SUM(
+                (e->>'tube_price')::numeric
+                / NULLIF((e->>'per_tube')::numeric, 0)
+                * (e->>'used')::numeric
+            )
+            FROM jsonb_array_elements(p_usage) e
+        ), 0)),
+        updated_at = now()
+    WHERE id = p_session_id;
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.finalize_session(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     r RECORD;
     v_payment_code TEXT;
+    v_rows INT := 0;
+    v_shuttle_split NUMERIC := 0;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Update Session Status
     UPDATE sessions 
     SET status = 'waiting_for_payment', updated_at = NOW()
@@ -655,7 +1052,10 @@ BEGIN
     -- 2. Loop tính toán
     FOR r IN SELECT * FROM calculate_session_costs(p_session_id)
     LOOP
+        v_shuttle_split := v_shuttle_split + r.total_shuttle_fee;
+
         IF r.final_total > 0 THEN -- Hoặc <> 0 nếu chấp nhận âm? Thường nợ âm thì host trả tiền mặt, ko tạo QR.
+            v_rows := v_rows + 1;
             v_payment_code := 'CL' || substr(md5(random()::text), 1, 6); 
 
             INSERT INTO session_costs_snapshot (
@@ -679,15 +1079,45 @@ BEGIN
                 r.total_extra_fee -- [MỚI]
             )
             ON CONFLICT (session_id, member_id) DO UPDATE
-            SET 
+            SET
                 final_amount = EXCLUDED.final_amount,
                 court_fee_amount = EXCLUDED.court_fee_amount,
                 shuttle_fee_amount = EXCLUDED.shuttle_fee_amount,
-                extra_fee_amount = EXCLUDED.extra_fee_amount;
+                extra_fee_amount = EXCLUDED.extra_fee_amount,
+                -- Recompute status: re-finalizing after a price change must not
+                -- leave a row marked 'paid' while it owes money again.
+                status = CASE
+                    WHEN session_costs_snapshot.paid_amount >= EXCLUDED.final_amount
+                        THEN 'paid'::public.payment_status
+                    WHEN session_costs_snapshot.paid_amount > 0
+                        THEN 'partial'::public.payment_status
+                    ELSE 'pending'::public.payment_status
+                END;
         END IF;
     END LOOP;
+
+    -- 3. Chốt mà không ghi được dòng nợ nào nghĩa là buổi đã sang
+    -- "waiting_for_payment" trong khi không ai nợ đồng nào, không có QR nào
+    -- được tạo và không có gì để đòi -- im lặng hoàn toàn. Hình dạng này gần
+    -- như luôn là quên nhập tiền chứ không phải một buổi miễn phí thật.
+    -- RAISE ở đây hủy cả lời gọi, nên UPDATE trạng thái ở bước 1 cũng bị
+    -- cuộn lại và buổi vẫn ở nguyên trạng thái cũ (được khóa bằng test).
+    IF v_rows = 0 THEN
+        RAISE EXCEPTION 'Buổi này không có khoản nào để chia cho thành viên. Kiểm tra lại giá sân và phụ thu tiền sân (court_fee_addon) trước khi chốt.';
+    END IF;
+
+    -- 4. Tiền cầu chỉ chia cho người CÓ MẶT. Buổi mà không ai được điểm
+    -- danh (mọi người đăng ký đều là ghost) vẫn có tiền sân để chia, nên
+    -- guard ở trên KHÔNG nổ và buổi chốt sạch sẽ với nguyên shuttle_fee_total
+    -- không đòi của ai. Đó gần như luôn là quên điểm danh chứ không phải một
+    -- buổi mua cầu rồi không ai đánh. RAISE cuộn lại cả UPDATE trạng thái ở
+    -- bước 1, y như guard trên.
+    IF v_shuttle_split = 0
+       AND COALESCE((SELECT s.shuttle_fee_total FROM sessions s WHERE s.id = p_session_id), 0) > 0 THEN
+        RAISE EXCEPTION 'Buổi này có tiền cầu nhưng chưa ai được điểm danh, không có ai để chia. Điểm danh trước khi chốt.';
+    END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
  RETURNS trigger
@@ -704,7 +1134,7 @@ BEGIN
   );
   RETURN new;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.prevent_change_on_locked_session()
  RETURNS trigger
@@ -738,17 +1168,31 @@ BEGIN
     
     RETURN NEW; -- Nếu thêm/sửa, trả về NEW
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.recreate_session_intervals(p_session_id uuid, p_start_time timestamp with time zone, p_end_time timestamp with time zone)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
   v_interval_start TIMESTAMPTZ;
   v_interval_end   TIMESTAMPTZ;
   v_idx            INT := 0;
 BEGIN
+  -- Câu lệnh ĐẦU TIÊN của hàm này xóa sạch điểm danh của cả buổi, nên nó
+  -- phải hỏi quyền trước khi làm bất cứ gì. update_session_details gọi hàm
+  -- này lồng bên trong: cả hai đều SECURITY DEFINER cùng một owner, và
+  -- auth.uid() đọc GUC request.jwt.claims của phiên chứ không đọc
+  -- current_user, nên lời gọi lồng vẫn thấy đúng người gọi thật
+  -- (15_update_session_details.test.sql pin điều này).
+  IF NOT EXISTS (
+    SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+  ) THEN
+    RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+  END IF;
+
   -- 1. Delete presence records for old intervals (cascade-safe manual delete)
   DELETE FROM interval_presence
   WHERE interval_id IN (
@@ -783,35 +1227,62 @@ BEGIN
   -- 5. Recalculate active_court_count from existing court bookings
   PERFORM refresh_interval_courts(p_session_id);
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.refresh_interval_courts(p_session_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 BEGIN
-    -- Update lại active_court_count cho từng interval thuộc session đó
+    -- Update lại active_court_count VÀ court_cost cho từng interval thuộc session đó.
+    -- active_court_count: đếm số sân phủ interval (hành vi cũ, giữ nguyên).
+    -- court_cost: tổng tiền thật của các sân phủ interval, tính theo số giờ overlap.
+    --   Buổi cũ có price_per_hour = 0 nên court_cost = 0, và
+    --   calculate_session_costs sẽ rơi về công thức cũ.
     UPDATE session_intervals si
     SET active_court_count = (
         SELECT COUNT(*)
         FROM session_court_bookings b
         WHERE b.session_id = p_session_id
-          -- Logic Overlap: Booking bắt đầu trước khi Interval kết thúc 
+          -- Logic Overlap: Booking bắt đầu trước khi Interval kết thúc
           -- VÀ Booking kết thúc sau khi Interval bắt đầu
           AND b.start_time < si.end_time
           AND b.end_time > si.start_time
-    )
+    ),
+    court_cost = COALESCE((
+        SELECT SUM(
+            b.price_per_hour
+            * EXTRACT(epoch FROM (
+                LEAST(b.end_time, si.end_time) - GREATEST(b.start_time, si.start_time)
+              )) / 3600.0
+        )
+        FROM session_court_bookings b
+        WHERE b.session_id = p_session_id
+          AND b.start_time < si.end_time
+          AND b.end_time > si.start_time
+    ), 0)
     WHERE si.session_id = p_session_id;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.remove_member_from_session(p_session_id uuid, p_member_id uuid)
  RETURNS void
  LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path = public, pg_temp
 AS $function$
 DECLARE
     v_status TEXT;
 BEGIN
+    -- Function runs as its owner, so it must check the caller itself.
+    IF NOT EXISTS (
+        SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
+    ) THEN
+        RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
+    END IF;
+
     -- 1. Kiểm tra trạng thái Session (Chỉ cho xóa khi OPEN)
     SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
     
@@ -840,7 +1311,7 @@ BEGIN
     WHERE session_id = p_session_id AND member_id = p_member_id;
 
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.trigger_refresh_courts()
  RETURNS trigger
@@ -850,7 +1321,58 @@ BEGIN
     PERFORM refresh_interval_courts(COALESCE(NEW.session_id, OLD.session_id));
     RETURN NULL;
 END;
-$function$
+$function$;
+
+CREATE OR REPLACE FUNCTION public.prevent_charge_for_unregistered_member()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- calculate_session_costs join session_registrations, nên một dòng
+    -- session_extra_charges của người CHƯA đăng ký buổi không bao giờ tới
+    -- được hóa đơn của ai: không lỗi, không cảnh báo, tiền biến mất.
+    -- Chặn ở tầng bảng chứ không ở RPC vì SessionExtraCharges.vue ghi thẳng
+    -- vào bảng qua PostgREST, không đi qua RPC nào. CHECK constraint không
+    -- làm được việc này (CHECK không được chứa subquery); khóa ngoại ghép
+    -- (session_id, member_id) thì làm được nhưng chỉ ném 23503 tiếng Anh.
+    IF NOT EXISTS (
+        SELECT 1 FROM session_registrations r
+        WHERE r.session_id = NEW.session_id AND r.member_id = NEW.member_id
+    ) THEN
+        RAISE EXCEPTION 'Thành viên này chưa đăng ký buổi, không thể thêm phụ thu';
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.prevent_presence_for_unregistered_member()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- Cùng một kiểu hỏng như prevent_charge_for_unregistered_member, nhưng ở
+    -- phía MẪU SỐ: calculate_session_costs join session_registrations nên chỉ
+    -- người đã đăng ký mới ra hóa đơn, còn số người có mặt trong mỗi interval
+    -- lại đếm từ interval_presence. Một dòng điểm danh của người chưa đăng ký
+    -- chia nhỏ tiền của cả buổi thêm một suất rồi vứt suất đó đi -- không lỗi,
+    -- không cảnh báo, tiền biến mất.
+    -- Chặn ở tầng bảng vì SessionDetailView.vue ghi thẳng vào interval_presence
+    -- qua PostgREST (upsert), không đi qua RPC nào. Khác với bảng
+    -- session_extra_charges, dòng ở đây không có session_id: phải lần ngược
+    -- interval_id -> session_intervals -> session_id rồi mới tra đăng ký.
+    IF NOT EXISTS (
+        SELECT 1
+        FROM session_intervals i
+        JOIN session_registrations r ON r.session_id = i.session_id
+        WHERE i.id = NEW.interval_id AND r.member_id = NEW.member_id
+    ) THEN
+        RAISE EXCEPTION 'Thành viên này chưa đăng ký buổi, không thể điểm danh';
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
  RETURNS trigger
@@ -860,7 +1382,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_session_delete_impact(p_session_id uuid)
  RETURNS TABLE(session_id uuid, registrations_count integer, intervals_count integer, presence_count integer, court_bookings_count integer, extra_charges_count integer, snapshots_count integer, payments_count integer)
@@ -915,7 +1437,7 @@ BEGIN
         RAISE EXCEPTION 'Session not found or already deleted';
     END IF;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.soft_delete_cancelled_session(p_session_id uuid)
  RETURNS jsonb
@@ -1004,7 +1526,7 @@ BEGIN
         'payments_count', COALESCE(v_impact.payments_count, 0)
     );
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.soft_delete_cancelled_sessions_bulk(p_session_ids uuid[])
  RETURNS TABLE(session_id uuid, deleted boolean, message text)
@@ -1030,7 +1552,7 @@ BEGIN
         END;
     END LOOP;
 END;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.gc_soft_deleted_sessions(p_older_than interval DEFAULT '30 days'::interval)
  RETURNS integer
@@ -1081,7 +1603,7 @@ BEGIN
 
     RETURN v_deleted_count;
 END;
-$function$
+$function$;
 
 DO $do$
 BEGIN
@@ -1101,3 +1623,12 @@ EXCEPTION WHEN OTHERS THEN
     NULL;
 END;
 $do$;
+
+CREATE OR REPLACE FUNCTION public.health()
+ RETURNS integer
+ LANGUAGE sql
+ STABLE
+ SET search_path = public, pg_temp
+AS $function$
+  select 1;
+$function$;

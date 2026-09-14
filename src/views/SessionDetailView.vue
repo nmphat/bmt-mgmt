@@ -9,6 +9,8 @@ import type {
   MemberCost,
   Member,
   GroupPaymentData,
+  CourtBooking,
+  CourtBookingDraft,
 } from '@/types'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
@@ -31,6 +33,8 @@ import {
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
+import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
+import ShuttleUsageEditor from '@/components/session/ShuttleUsageEditor.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useToast } from 'vue-toastification'
@@ -154,10 +158,17 @@ const normalizeSessionSummary = (row: SessionSummaryResponse): SessionSummary =>
 const sessionForm = ref({
   title: '',
   status: 'open' as 'open' | 'waiting_for_payment' | 'done' | 'cancelled',
-  price_per_hour: 0,
   court_fee_addon: 0,
-  shuttle_fee_total: 0,
+  session_start: '',
+  session_end: '',
 })
+// Default price seeded onto newly added court slots — not written back to
+// sessions.price_per_hour, which the cost engine only uses as a legacy
+// fallback for sessions with no priced bookings.
+const defaultCourtPrice = ref(0)
+const courtBookings = ref<CourtBooking[]>([])
+const courtBookingDrafts = ref<CourtBookingDraft[]>([])
+const bookingsValid = ref(true)
 let realtimeChannel: RealtimeChannel | null = null
 let pollTimer: any = null
 
@@ -222,14 +233,17 @@ async function fetchData(refreshCostsOnly = false) {
       lastStatusForActiveSection.value = normalizedSession.status
     }
 
-    if (normalizedSession) {
+    // Leave the open edit form alone: realtime refreshes and the shuttle
+    // editor's @saved both call fetchData() and must not clobber unsaved edits.
+    if (normalizedSession && !isEditingSession.value) {
       sessionForm.value = {
         title: normalizedSession.title,
         status: normalizedSession.status,
-        price_per_hour: normalizedSession.price_per_hour,
         court_fee_addon: normalizedSession.court_fee_addon,
-        shuttle_fee_total: normalizedSession.shuttle_fee_total,
+        session_start: '',
+        session_end: '',
       }
+      defaultCourtPrice.value = normalizedSession.price_per_hour
     }
 
     if (!refreshCostsOnly) {
@@ -249,6 +263,27 @@ async function fetchData(refreshCostsOnly = false) {
         .order('display_name', { ascending: true })
       if (membersError) throw membersError
       allMembers.value = membersData || []
+
+      // Fetch court bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('session_court_bookings')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('court_name', { ascending: true })
+        .order('start_time', { ascending: true })
+      if (bookingsError) throw bookingsError
+      courtBookings.value = bookingsData || []
+
+      // Fetch shuttle_usage (not in view_session_summary)
+      const { data: sessionRow, error: sessionRowErr } = await supabase
+        .from('sessions')
+        .select('shuttle_usage')
+        .eq('id', sessionId)
+        .single()
+      if (sessionRowErr) throw sessionRowErr
+      if (session.value && sessionRow) {
+        session.value.shuttle_usage = sessionRow.shuttle_usage || []
+      }
     }
 
     // Fetch registrations (with member details)
@@ -397,24 +432,89 @@ function openCashPayment(snapshot: CostSnapshot, name: string) {
   showCashModal.value = true
 }
 
+/** Convert ISO UTC string → "HH:mm" in Vietnam timezone (UTC+7) */
+function toVNHHmm(iso: string): string {
+  const vnMs = new Date(iso).getTime() + 7 * 3600 * 1000
+  return new Date(vnMs).toISOString().slice(11, 16)
+}
+
+function startEditing() {
+  if (!session.value) return
+  isEditingSession.value = true
+  sessionForm.value.session_start = toVNHHmm(session.value.start_time)
+  sessionForm.value.session_end = toVNHHmm(session.value.end_time)
+  courtBookingDrafts.value = courtBookings.value.map((b) => ({
+    id: b.id,
+    court_name: b.court_name,
+    start_time: toVNHHmm(b.start_time),
+    end_time: toVNHHmm(b.end_time),
+    price_per_hour: b.price_per_hour ?? 0,
+  }))
+  // Old sessions with no court bookings: seed one slot covering the whole session.
+  if (courtBookingDrafts.value.length === 0) {
+    courtBookingDrafts.value = [{
+      court_name: 'Sân 1',
+      start_time: sessionForm.value.session_start,
+      end_time: sessionForm.value.session_end,
+      price_per_hour: defaultCourtPrice.value ?? 0,
+    }]
+  }
+}
+
+const sessionTimeInvalid = computed(() => {
+  return (
+    !!sessionForm.value.session_start &&
+    !!sessionForm.value.session_end &&
+    sessionForm.value.session_start >= sessionForm.value.session_end
+  )
+})
+
+const timesChanged = computed(() => {
+  if (!session.value) return false
+  return (
+    sessionForm.value.session_start !== toVNHHmm(session.value.start_time) ||
+    sessionForm.value.session_end !== toVNHHmm(session.value.end_time)
+  )
+})
+
 async function saveSession() {
   if (!isSessionEditable.value) return
 
   try {
     isSavingSession.value = true
     actionError.value = ''
-    const { error } = await supabase
-      .from('sessions')
-      .update({
-        title: sessionForm.value.title,
-        status: sessionForm.value.status,
-        price_per_hour: sessionForm.value.price_per_hour,
-        court_fee_addon: sessionForm.value.court_fee_addon,
-        shuttle_fee_total: sessionForm.value.shuttle_fee_total,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId)
 
+    // Compute UTC start/end from VN HH:mm — use separate dates so cross-midnight works
+    const vnDate = (iso: string) =>
+      new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(iso))
+    const startDate = vnDate(session.value!.start_time)
+    const endDate = vnDate(session.value!.end_time)
+    const newStartUTC = new Date(`${startDate}T${sessionForm.value.session_start}:00+07:00`)
+    const newEndUTC = new Date(`${endDate}T${sessionForm.value.session_end}:00+07:00`)
+
+    if (newEndUTC <= newStartUTC) {
+      toast.error(t.value('createSession.endTimeError'))
+      return
+    }
+
+    // One transaction: admin check, interval rebuild (only if times changed),
+    // court bookings, and the session row itself. Replaces the old three
+    // sequential calls, which could leave attendance wiped and the rest of
+    // the edit abandoned if a later step failed.
+    const { error } = await supabase.rpc('update_session_details', {
+      p_session_id: sessionId,
+      p_title: sessionForm.value.title,
+      p_status: sessionForm.value.status,
+      p_court_fee_addon: sessionForm.value.court_fee_addon,
+      p_start_time: newStartUTC.toISOString(),
+      p_end_time: newEndUTC.toISOString(),
+      p_bookings: courtBookingDrafts.value.map((b) => ({
+        court_name: b.court_name,
+        start_time: new Date(`${startDate}T${b.start_time}:00+07:00`).toISOString(),
+        end_time: new Date(`${endDate}T${b.end_time}:00+07:00`).toISOString(),
+        price_per_hour: b.price_per_hour,
+      })),
+    })
     if (error) throw error
 
     toast.success(t.value('toast.sessionUpdated'))
@@ -422,7 +522,7 @@ async function saveSession() {
     await fetchData()
   } catch (error: any) {
     console.error('Error updating session:', error)
-    const message = t.value('session.updateError')
+    const message = error.message || t.value('session.updateError')
     actionError.value = message
     toast.error(message)
   } finally {
@@ -894,7 +994,7 @@ onUnmounted(() => {
               <X class="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
                 t('session.title')
@@ -902,7 +1002,7 @@ onUnmounted(() => {
               <input
                 v-model="sessionForm.title"
                 type="text"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
             <div>
@@ -911,7 +1011,7 @@ onUnmounted(() => {
               }}</label>
               <select
                 v-model="sessionForm.status"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               >
                 <option value="open">{{ t('common.open') }}</option>
                 <option value="waiting_for_payment">{{ t('common.waiting_for_payment') }}</option>
@@ -921,15 +1021,29 @@ onUnmounted(() => {
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.pricePerHour')
+                t('createSession.startTime')
               }}</label>
               <input
-                v-model.number="sessionForm.price_per_hour"
-                type="number"
-                step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                v-model="sessionForm.session_start"
+                type="time"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700">{{
+                t('createSession.endTime')
+              }}</label>
+              <input
+                v-model="sessionForm.session_end"
+                type="time"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+              />
+              <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-red-600">
+                {{ t('createSession.endTimeError') }}
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
                 t('session.courtFeeAddon')
@@ -938,34 +1052,47 @@ onUnmounted(() => {
                 v-model.number="sessionForm.court_fee_addon"
                 type="number"
                 step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
             <div>
               <label class="block text-sm font-bold text-gray-700">{{
-                t('session.shuttleFee')
+                t('session.defaultCourtPrice')
               }}</label>
               <input
-                v-model.number="sessionForm.shuttle_fee_total"
+                v-model.number="defaultCourtPrice"
                 type="number"
                 step="1000"
-                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
+                class="mt-1 block min-h-11 w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
               />
             </div>
           </div>
+          <div v-if="timesChanged" class="md:col-span-2 lg:col-span-5">
+            <div class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <span class="mt-0.5">&#x26A0;&#xFE0F;</span>
+              <span>{{ t('session.intervalsResetWarning') }}</span>
+            </div>
+          </div>
+          <CourtBookingEditor
+            v-model:bookings="courtBookingDrafts"
+            :session-start="sessionForm.session_start"
+            :session-end="sessionForm.session_end"
+            :default-price="defaultCourtPrice"
+            @update:valid="bookingsValid = $event"
+          />
           <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
             <button
               type="button"
               @click="isEditingSession = false"
-              class="min-h-11 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="min-h-11 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               {{ t('common.cancel') }}
             </button>
             <button
               type="button"
               @click="saveSession"
-              :disabled="isSavingSession"
-              class="flex min-h-11 items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+              :disabled="isSavingSession || !bookingsValid || sessionTimeInvalid"
+              class="flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
               <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
@@ -983,7 +1110,7 @@ onUnmounted(() => {
                   <button
                     v-if="isSessionEditable"
                     type="button"
-                    @click="isEditingSession = true"
+                    @click="startEditing"
                     class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     :title="t('session.editSession')"
                     :aria-label="t('session.editSession')"
@@ -1523,6 +1650,13 @@ onUnmounted(() => {
       </section>
 
       <!-- Snapshot View (Waiting/Done mode) -->
+      <ShuttleUsageEditor
+        v-if="session.status === 'open' && authStore.isAdmin"
+        :session-id="sessionId"
+        :usage="session.shuttle_usage || []"
+        @saved="fetchData()"
+      />
+
       <SessionExtraCharges
         v-if="session.status !== 'cancelled'"
         ref="extraChargesRef"

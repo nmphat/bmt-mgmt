@@ -52,9 +52,18 @@ CREATE OR REPLACE VIEW public.view_session_summary AS  SELECT id,
     price_per_hour,
     default_court_count,
     COALESCE(court_fee_addon, (0)::numeric) AS court_fee_addon,
-    (COALESCE(( SELECT sum(((si.active_court_count)::numeric * (s.price_per_hour / (2)::numeric))) AS sum
-           FROM session_intervals si
-          WHERE (si.session_id = s.id)), (0)::numeric) + COALESCE(court_fee_addon, (0)::numeric)) AS total_court_cost,
+    (COALESCE(
+        CASE
+            WHEN (EXISTS ( SELECT 1
+                   FROM session_court_bookings b
+                  WHERE ((b.session_id = s.id) AND (b.price_per_hour > (0)::numeric))))
+            THEN ( SELECT sum(si.court_cost) AS sum
+                     FROM session_intervals si
+                    WHERE (si.session_id = s.id))
+            ELSE ( SELECT sum(((si.active_court_count)::numeric * (s.price_per_hour / (2)::numeric))) AS sum
+                     FROM session_intervals si
+                    WHERE (si.session_id = s.id))
+        END, (0)::numeric) + COALESCE(court_fee_addon, (0)::numeric)) AS total_court_cost,
     shuttle_fee_total,
     COALESCE(( SELECT sum(ex.amount) AS sum
            FROM session_extra_charges ex
