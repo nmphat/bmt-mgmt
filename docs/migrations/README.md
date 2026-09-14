@@ -1149,3 +1149,151 @@ nạp lại thân hàm: muốn trả `create_session_with_bookings` /
 chính là lỗ hổng script này vá. `prevent_presence_for_unregistered_member`
 có thể để lại: không trigger nào gọi nó sau khi `DROP TRIGGER`, và nó đã bị
 `REVOKE` khỏi mọi role.
+
+## 2026-09-14b-empty-interval-and-privilege-sweep.sql
+
+Chạy sau `2026-09-14-presence-guard-and-privilege-parity.sql`. Chưa áp lên
+production. Bảy hàm, tất cả `CREATE OR REPLACE` (không `DROP`), cộng bốn lệnh
+REVOKE/GRANT. Không có `ALTER TABLE`, không có backfill, không có `DELETE`.
+
+**Chữ `b` trong tên file là cố ý.** `2026-09-14-empty-...` sắp **trước**
+`2026-09-14-presence-...` theo thứ tự tên file (`e` < `p`), nên chạy lại cả
+thư mục sẽ áp presence-guard **sau** file này và hoàn tác
+`calculate_session_costs` cùng `create_session_with_bookings` về bản cũ —
+đúng cái bẫy mà `2026-09-11-view-total-court-cost.sql` đã dính. `14b` > `14-`
+ở cả locale lẫn `LC_ALL=C`, nên thứ tự tên file nay trùng với thứ tự phải
+chạy.
+
+1. **`calculate_session_costs`** — hai lỗ cùng một hình dạng.
+   *Tiền sân:* một interval mà **không ai** điểm danh trước đây làm cả biểu
+   thức trả 0, nên toàn bộ tiền sân của khung đó không vào hóa đơn của ai,
+   trong khi `view_session_summary` vẫn cộng đủ — hai con số trên cùng một
+   màn hình admin lệch nhau và không có gì đối chiếu chúng. Dựng lại được
+   bằng RPC đã ship: buổi 11:00–13:00, một sân 120000/h, hai người bỏ về sau
+   tiếng đầu → danh sách 240000, hóa đơn cộng lại 120000. Nay khung đó chia
+   đều cho **mọi người đã đăng ký buổi**: sân đã đặt là tốn tiền dù không ai
+   bước vào, và người đặt là người nợ — đúng lý do ghost đang phải trả tiền
+   sân. Ghost nằm trong nhóm đó nên chỉ chịu **đúng một suất**, không bị tính
+   hai lần. Phép chia được đưa ra ngoài cả hai nhánh tử số, nên số học tử số
+   không đổi một ký tự: buổi nào cũng có người ở mọi interval thì mẫu số vẫn
+   là `real_present_count + v_ghost_count` và không một đồng nào xê dịch.
+   *Tiền cầu:* cân theo riêng những interval **có người**
+   (`v_present_court_units` / `v_present_intervals`) thay vì theo tổng đơn vị
+   sân của mọi interval. Ghost không trả tiền cầu (luật đã chốt), nên phần
+   của một khung không ai có mặt trước đây không có ai nhận.
+2. **`finalize_session`** — từ chối chốt một buổi có `shuttle_fee_total > 0`
+   mà chưa ai được điểm danh. Buổi toàn ghost vẫn có tiền sân để chia nên
+   guard "không có khoản nào để chia" cũ **không** nổ: buổi chốt sạch sẽ với
+   nguyên tiền cầu không đòi của ai. `RAISE` cuộn lại cả `UPDATE` trạng thái
+   ở bước 1, y như guard cũ.
+3. **`set_session_court_bookings`** — khung sân phải nằm **trong** giờ của
+   buổi. `refresh_interval_courts` cắt overlap bằng `LEAST`/`GREATEST`, nên
+   một sân 10:00–14:00 giá 120000/h trên buổi 11:00–12:00 ghi đủ 480000 vào
+   `session_court_bookings` nhưng chỉ 120000 tới được interval — và ở đây
+   view **đồng ý** với engine (cả hai đọc `court_cost` đã bị cắt), nên không
+   màn hình nào hiện ra con số thật.
+4. **`create_session_with_bookings`** — cùng guard đó ở đường tạo buổi. Buổi
+   tạo được thì phải sửa lại được.
+5. **`update_session_details`** — `COALESCE(p_court_fee_addon, 0)`, đúng như
+   `create_session_with_bookings` đã làm từ vòng trước.
+6. **`add_member_to_session_full_presence`** và
+7. **`batch_add_members_to_session`** — `SECURITY DEFINER`,
+   `SET search_path = public, pg_temp`, admin check là câu lệnh đầu tiên, và
+   `REVOKE EXECUTE ... FROM PUBLIC, anon` + `GRANT ... TO authenticated`. Cả
+   hai ghi `session_registrations` và `interval_presence` — số dòng
+   `interval_presence` chính là mẫu số chia tiền. Trước đây `anon` giữ
+   EXECUTE qua **cả hai** đường và chỉ bị RLS chặn; một thành viên đã đăng
+   nhập mà không phải admin thì không bị chặn gì cả.
+
+**Guard ở bước 3 và 4 chỉ chặn lần ghi SAU, nó không sửa dữ liệu đang có.**
+Câu 3) trong khối "Trước khi chạy" liệt kê những booking hiện đang nằm ngoài
+giờ buổi; sửa tay trên màn hình sửa buổi, script này không đụng vào chúng.
+
+### Trước khi chạy
+
+Năm câu, đầy đủ trong header của script. Bắt buộc:
+
+```sql
+-- 1) Money parity -- kỳ vọng: 0 | 0 | 277
+WITH recomputed AS (
+  SELECT s.id AS session_id, c.member_id, c.final_total
+  FROM sessions s
+  CROSS JOIN LATERAL calculate_session_costs(s.id) c
+  WHERE s.deleted_at IS NULL
+)
+SELECT count(*) FILTER (WHERE r.final_total IS DISTINCT FROM snap.final_amount) AS mismatched_rows,
+       COALESCE(sum(abs(r.final_total - snap.final_amount)), 0)                 AS vnd_drift,
+       count(*)                                                                 AS compared_rows
+FROM session_costs_snapshot snap
+JOIN recomputed r ON r.session_id = snap.session_id AND r.member_id = snap.member_id;
+
+-- 2) DỪNG LẠI NẾU KHÁC 0 -- interval không ai điểm danh trên buổi đã chốt tiền
+SELECT count(*) AS empty_intervals_on_settled_sessions
+FROM session_intervals si
+JOIN sessions s ON s.id = si.session_id AND s.deleted_at IS NULL
+WHERE EXISTS (SELECT 1 FROM session_costs_snapshot snap WHERE snap.session_id = s.id)
+  AND NOT EXISTS (
+    SELECT 1 FROM interval_presence p
+    JOIN session_registrations r ON r.member_id = p.member_id AND r.session_id = s.id
+    WHERE p.interval_id = si.id AND p.is_present = true);
+```
+
+Câu 2) là **điều kiện dừng**: đây là hình dạng duy nhất mà bước 1 làm đổi số
+tiền. Đo trên production hiện tại: 0 buổi.
+
+### Sau khi chạy
+
+Năm câu, đầy đủ trong script. Bắt buộc: money parity lần hai phải giống hệt
+(`0 | 0 | 277`); engine so với danh sách buổi trên mọi buổi chưa xóa phải cho
+0 buổi lệch (phép đo mà parity **không** làm được — parity chỉ chứng minh
+engine không đổi, nó không chứng minh engine thu đúng số tiền câu lạc bộ đã
+trả); và `proacl` **thô** của hai hàm vừa gia cố:
+
+```sql
+SELECT p.proname, p.prosecdef, p.proconfig, p.proacl
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('add_member_to_session_full_presence',
+                    'batch_add_members_to_session');
+-- kỳ vọng cả hai: prosecdef = t
+--                 proconfig = {"search_path=public, pg_temp"}
+--                 proacl    = {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+```
+
+Không dùng `has_function_privilege()` để kiểm tra: nó trả `true` ở **cả** hai
+trường hợp (hỏng và không hỏng) nên không phân biệt được `anon` đi vào bằng
+đường nào.
+
+### Idempotent
+
+Chạy lần hai không đổi gì: `CREATE OR REPLACE` ghi lại cùng một thân hàm,
+`REVOKE`/`GRANT` trên một ACL đã đúng là no-op. Đã chạy hai lần liên tiếp
+trong container, lần hai sạch.
+
+### Kiểm chứng cục bộ (Docker, không chạm production)
+
+Container thứ hai `bmt-mig`, dựng từ `db-tests/helpers.sql` + export tại
+`43674cc` + `db-tests/seed.sql`. **Pre-state dựng lại đúng production**:
+
+```
+add_member_to_session_full_presence secdef=false cfg=- acl={=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+batch_add_members_to_session        secdef=false cfg=- acl={=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+```
+
+- Script chạy hai lần; lần hai là no-op sạch.
+- `db-tests/drift-check.sql` trên container đã migrate so với container dựng
+  thẳng từ export nhánh: **262 dòng mỗi bên, `diff` ra 0 dòng.**
+- Toàn bộ 15 file test xanh trên container đã migrate.
+- **Replay toàn bộ thư mục theo thứ tự tên file** (export tại `3efe1a4` + cả
+  tám migration): drift **0 dòng** so với container dựng thẳng từ export, và
+  15/15 test xanh. Đây là phép đo mà C3 đã đỏ trước khi sửa.
+
+### Rollback
+
+Không có `ALTER TABLE`, không có dữ liệu bị ghi, nên rollback chỉ là nạp lại
+bảy hàm ở bản `43674cc` bằng `CREATE OR REPLACE` (**không** `DROP` — `DROP`
+rồi `CREATE` áp lại `ALTER DEFAULT PRIVILEGES` của Supabase và trả EXECUTE
+cho `anon`), trong một transaction.
+
+Phần quyền ở bước 8 **không** nên rollback: trả EXECUTE cho `anon` trên hai
+hàm ghi bảng đó là mở lại đúng lỗ vừa bịt.
