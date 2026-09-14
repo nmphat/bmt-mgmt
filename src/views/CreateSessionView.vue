@@ -23,6 +23,10 @@ const form = ref({
   courtFee: 0,
 })
 
+// Seeds newly added court slots so an admin isn't typing the same price into
+// every one; does not touch p_price_per_hour, which stays hardcoded to 0.
+const defaultCourtPrice = ref(0)
+
 const bookings = ref<CourtBookingDraft[]>([
   {
     court_name: 'Sân 1',
@@ -66,6 +70,8 @@ const startDateTime = computed(() => {
 const endDateTime = computed(() => {
   return `${form.value.date}T${form.value.endTime}:00+07:00`
 })
+
+const sessionTimeInvalid = computed(() => startDateTime.value >= endDateTime.value)
 
 async function createSession() {
   if (!authStore.user) return
@@ -188,6 +194,9 @@ async function createSession() {
               required
               class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             />
+            <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-red-600">
+              {{ t('createSession.endTimeError') }}
+            </p>
           </div>
         </div>
 
@@ -211,19 +220,33 @@ async function createSession() {
           <p class="mt-1 text-sm text-gray-500">{{ t('session.courtFeeAddonHint') }}</p>
         </div>
 
+        <div>
+          <label for="defaultCourtPrice" class="block text-sm font-bold text-gray-700">{{
+            t('session.defaultCourtPrice')
+          }}</label>
+          <input
+            v-model.number="defaultCourtPrice"
+            type="number"
+            id="defaultCourtPrice"
+            min="0"
+            step="1000"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          />
+        </div>
+
         <!-- Court Bookings -->
         <CourtBookingEditor
           v-model:bookings="bookings"
           :session-start="form.startTime"
           :session-end="form.endTime"
-          :default-price="0"
+          :default-price="defaultCourtPrice"
           @update:valid="bookingsValid = $event"
         />
 
         <div class="pt-4">
           <button
             type="submit"
-            :disabled="loading || !bookingsValid"
+            :disabled="loading || !bookingsValid || sessionTimeInvalid"
             class="flex min-h-11 w-full justify-center rounded-xl bg-indigo-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {{ loading ? t('createSession.creating') : t('createSession.createButton') }}
