@@ -34,6 +34,7 @@ GRANT EXECUTE ON FUNCTION public.check_qr_status(text) TO anon, authenticated;
 -- Trigger function; nothing should call it over the REST API.
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.prevent_charge_for_unregistered_member() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.prevent_presence_for_unregistered_member() FROM PUBLIC, anon, authenticated;
 
 -- Soft-delete/gc family: SECURITY INVOKER, no admin guard in the body, and
 -- not currently exploitable (RLS still blocks anon's DELETEs on

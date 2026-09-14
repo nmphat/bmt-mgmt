@@ -265,6 +265,14 @@ BEGIN
         HAVING COUNT(p.id) FILTER (WHERE p.is_present = true) = 0
     ),
 
+    -- Mẫu số phải đếm ĐÚNG nhóm người mà tử số chia tiền cho. Truy vấn ở
+    -- dưới join session_registrations, nên chỉ người ĐÃ đăng ký mới có mặt
+    -- trong hóa đơn; nhưng real_present_count trước đây đếm MỌI dòng
+    -- interval_presence. Một dòng điểm danh của người chưa đăng ký vì thế
+    -- làm phình mẫu số mà không thêm ai vào tử số: suất tiền sân và tiền
+    -- cầu của người đó không tới hóa đơn nào -- không lỗi, không cảnh báo,
+    -- tiền biến mất. Trigger check_presence_member_registered chặn dòng
+    -- MỚI; điều kiện dưới đây là thứ giữ cho các dòng CŨ không ăn tiền.
     interval_stats AS (
         SELECT
             i.id AS interval_id,
@@ -273,6 +281,8 @@ BEGIN
             COUNT(p.member_id) FILTER (WHERE p.is_present = true) AS real_present_count
         FROM session_intervals i
         LEFT JOIN interval_presence p ON p.interval_id = i.id
+            AND EXISTS (SELECT 1 FROM session_registrations r
+                        WHERE r.session_id = p_session_id AND r.member_id = p.member_id)
         WHERE i.session_id = p_session_id
         GROUP BY i.id, i.active_court_count, i.court_cost
     ),
@@ -1161,6 +1171,34 @@ BEGIN
         WHERE r.session_id = NEW.session_id AND r.member_id = NEW.member_id
     ) THEN
         RAISE EXCEPTION 'Thành viên này chưa đăng ký buổi, không thể thêm phụ thu';
+    END IF;
+
+    RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.prevent_presence_for_unregistered_member()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    -- Cùng một kiểu hỏng như prevent_charge_for_unregistered_member, nhưng ở
+    -- phía MẪU SỐ: calculate_session_costs join session_registrations nên chỉ
+    -- người đã đăng ký mới ra hóa đơn, còn số người có mặt trong mỗi interval
+    -- lại đếm từ interval_presence. Một dòng điểm danh của người chưa đăng ký
+    -- chia nhỏ tiền của cả buổi thêm một suất rồi vứt suất đó đi -- không lỗi,
+    -- không cảnh báo, tiền biến mất.
+    -- Chặn ở tầng bảng vì SessionDetailView.vue ghi thẳng vào interval_presence
+    -- qua PostgREST (upsert), không đi qua RPC nào. Khác với bảng
+    -- session_extra_charges, dòng ở đây không có session_id: phải lần ngược
+    -- interval_id -> session_intervals -> session_id rồi mới tra đăng ký.
+    IF NOT EXISTS (
+        SELECT 1
+        FROM session_intervals i
+        JOIN session_registrations r ON r.session_id = i.session_id
+        WHERE i.id = NEW.interval_id AND r.member_id = NEW.member_id
+    ) THEN
+        RAISE EXCEPTION 'Thành viên này chưa đăng ký buổi, không thể điểm danh';
     END IF;
 
     RETURN NEW;

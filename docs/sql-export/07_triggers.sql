@@ -18,3 +18,6 @@ CREATE TRIGGER update_sessions_modtime BEFORE UPDATE ON sessions FOR EACH ROW EX
 
 DROP TRIGGER IF EXISTS check_charge_member_registered ON public.session_extra_charges;
 CREATE TRIGGER check_charge_member_registered BEFORE INSERT OR UPDATE ON session_extra_charges FOR EACH ROW EXECUTE FUNCTION prevent_charge_for_unregistered_member();
+
+DROP TRIGGER IF EXISTS check_presence_member_registered ON public.interval_presence;
+CREATE TRIGGER check_presence_member_registered BEFORE INSERT OR UPDATE ON interval_presence FOR EACH ROW EXECUTE FUNCTION prevent_presence_for_unregistered_member();
