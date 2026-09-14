@@ -34,11 +34,11 @@
 | Tab             | Icon | Route       | Ai thấy          |
 | --------------- | ---- | ----------- | ---------------- |
 | Home            | 🏠    | `/`         | Tất cả           |
-| Sessions        | 📅    | `/sessions` | Admin only       |
+| Sessions        | 📅    | `/sessions` | Tất cả (nội dung lọc theo quyền) |
 | Members         | 👥    | `/members`  | Tất cả           |
 | (Login/Profile) | 👤    | `/login`    | Top-right corner |
 
-> **Lưu ý:** `/sessions` chỉ hiển thị nếu `isAdmin = true`. Member không thấy tab này.
+> **Cập nhật 2026-09-14:** tab `/sessions` hiện cho mọi người, không ẩn theo `isAdmin`. Guest/member không đăng nhập chỉ thấy buổi đã `waiting_for_payment`/`done` (lọc ở tầng query); admin thấy tất cả kể cả `open`. Xem `10-ui-ux-audit-2026-09.md` mục 1.2/2.8.
 
 ---
 
