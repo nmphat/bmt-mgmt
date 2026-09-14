@@ -663,6 +663,26 @@ BEGIN
             RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
         END IF;
 
+        -- Khung sân phải nằm TRONG giờ của buổi. refresh_interval_courts cắt
+        -- overlap bằng LEAST/GREATEST, nên phần thò ra ngoài biến mất TRƯỚC khi
+        -- tới interval nào: một sân 10:00-14:00 giá 120000/h trên buổi
+        -- 11:00-12:00 ghi đủ 480000 vào session_court_bookings nhưng chỉ 120000
+        -- được chia. Ở đây view ĐỒNG Ý với engine -- cả hai đọc court_cost đã bị
+        -- cắt -- nên không màn hình nào hiện ra con số thật; chỗ duy nhất còn
+        -- giữ sự thật là start_time/end_time của chính dòng booking.
+        -- Trường hợp cực đoan tệ hơn: khung không chạm interval nào đẩy
+        -- v_total_court_units về 0 và calculate_session_costs rơi vào nhánh
+        -- fallback -- nhánh bỏ qua cả court_cost lẫn price_per_hour cũ.
+        -- CourtBookingEditor đã chặn (isOutOfBounds), nhưng đó là máy người dùng.
+        SELECT e->>'court_name' INTO v_court
+        FROM jsonb_array_elements(p_bookings) e
+        WHERE (e->>'start_time')::timestamptz < p_start_time
+           OR (e->>'end_time')::timestamptz   > p_end_time
+        LIMIT 1;
+        IF v_court IS NOT NULL THEN
+            RAISE EXCEPTION 'Khung giờ của sân "%" nằm ngoài giờ của buổi', v_court;
+        END IF;
+
         -- Hai khung cùng một sân mà chồng giờ nhau thì tiền sân bị tính hai
         -- lần: một giờ sân 120000 thành 240000.
         WITH b AS (
@@ -745,6 +765,8 @@ AS $function$
 DECLARE
     v_status TEXT;
     v_court  TEXT;
+    v_start  TIMESTAMPTZ;
+    v_end    TIMESTAMPTZ;
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM members WHERE user_id = auth.uid() AND role = 'admin'
@@ -752,7 +774,9 @@ BEGIN
         RAISE EXCEPTION 'Chỉ admin được thực hiện thao tác này';
     END IF;
 
-    SELECT status::text INTO v_status FROM sessions WHERE id = p_session_id;
+    SELECT s.status::text, s.start_time, s.end_time
+    INTO v_status, v_start, v_end
+    FROM sessions s WHERE s.id = p_session_id;
     IF v_status IS NULL THEN
         RAISE EXCEPTION 'Không tìm thấy buổi: %', p_session_id;
     END IF;
@@ -791,6 +815,26 @@ BEGIN
     LIMIT 1;
     IF v_court IS NOT NULL THEN
         RAISE EXCEPTION 'Giờ kết thúc phải sau giờ bắt đầu (sân "%")', v_court;
+    END IF;
+
+    -- Khung sân phải nằm TRONG giờ của buổi. refresh_interval_courts cắt
+    -- overlap bằng LEAST/GREATEST, nên phần thò ra ngoài biến mất TRƯỚC khi
+    -- tới interval nào: một sân 10:00-14:00 giá 120000/h trên buổi
+    -- 11:00-12:00 ghi đủ 480000 vào session_court_bookings nhưng chỉ 120000
+    -- được chia. Ở đây view ĐỒNG Ý với engine -- cả hai đọc court_cost đã bị
+    -- cắt -- nên không màn hình nào hiện ra con số thật; chỗ duy nhất còn
+    -- giữ sự thật là start_time/end_time của chính dòng booking.
+    -- Trường hợp cực đoan tệ hơn: khung không chạm interval nào đẩy
+    -- v_total_court_units về 0 và calculate_session_costs rơi vào nhánh
+    -- fallback -- nhánh bỏ qua cả court_cost lẫn price_per_hour cũ.
+    -- CourtBookingEditor đã chặn (isOutOfBounds), nhưng đó là máy người dùng.
+    SELECT e->>'court_name' INTO v_court
+    FROM jsonb_array_elements(p_bookings) e
+    WHERE (e->>'start_time')::timestamptz < v_start
+       OR (e->>'end_time')::timestamptz   > v_end
+    LIMIT 1;
+    IF v_court IS NOT NULL THEN
+        RAISE EXCEPTION 'Khung giờ của sân "%" nằm ngoài giờ của buổi', v_court;
     END IF;
 
     -- Hai khung cùng một sân mà chồng giờ nhau thì refresh_interval_courts

@@ -439,4 +439,72 @@ BEGIN
 END $$;
 
 RESET ROLE;
+
+-- Mở lại buổi cho phần còn lại của file.
+UPDATE sessions SET status = 'open'
+WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+SET LOCAL ROLE authenticated;
+
+-- ── Khung sân phải nằm TRONG giờ của buổi ──
+-- CourtBookingEditor chặn bốn luật; ba luật đã lên server, luật thứ tư --
+-- luật duy nhất làm mất tiền -- thì chưa. refresh_interval_courts cắt
+-- overlap bằng LEAST/GREATEST, nên một khung 10:00-14:00 trên buổi
+-- 11:00-12:00 ghi vào session_court_bookings đủ 480000 nhưng chỉ 120000 tới
+-- được interval. Ở đây view ĐỒNG Ý với engine (cả hai đọc court_cost đã bị
+-- cắt), nên không màn hình nào trong ứng dụng hiện ra con số thật.
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'one booking before the out-of-window attempts');
+
+DO $$
+DECLARE
+  v_payloads text[] := ARRAY[
+    -- bắt đầu trước giờ buổi
+    '[{"court_name":"Sân 3","start_time":"2026-09-01T10:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":120000}]',
+    -- kết thúc sau giờ buổi
+    '[{"court_name":"Sân 4","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T14:00:00+00","price_per_hour":120000}]',
+    -- trùm cả hai đầu (dựng đúng như trong review)
+    '[{"court_name":"Sân 5","start_time":"2026-09-01T10:00:00+00","end_time":"2026-09-01T14:00:00+00","price_per_hour":120000}]',
+    -- không chạm một interval nào: đây là trường hợp tệ nhất, nó đẩy
+    -- v_total_court_units về 0 và engine rơi vào nhánh fallback -- nhánh
+    -- bỏ qua cả court_cost lẫn price_per_hour cũ, chỉ chia court_fee_addon.
+    '[{"court_name":"Sân 6","start_time":"2026-09-02T11:00:00+00","end_time":"2026-09-02T12:00:00+00","price_per_hour":120000}]'
+  ];
+  v_p text;
+BEGIN
+  FOREACH v_p IN ARRAY v_payloads LOOP
+    BEGIN
+      PERFORM set_session_court_bookings('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', v_p::jsonb);
+      RAISE EXCEPTION 'FAIL a booking outside the session window was accepted: %', v_p;
+    EXCEPTION WHEN raise_exception THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      IF SQLERRM NOT LIKE 'Khung giờ của sân%' THEN
+        RAISE EXCEPTION 'FAIL out-of-window booking refused for the wrong reason: % (%)', SQLERRM, v_p;
+      END IF;
+      RAISE NOTICE 'ok   out-of-window booking refused in Vietnamese';
+    END;
+  END LOOP;
+END $$;
+
+-- Hàm DELETE trước rồi mới INSERT: một payload bị từ chối không được để lại
+-- buổi trắng sân.
+SELECT assert_eq(
+  (SELECT count(*)::int FROM session_court_bookings
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  1, 'a refused out-of-window payload left the existing booking alone');
+
+-- Đúng khít hai đầu vẫn phải hợp lệ: so sánh là "ra ngoài", không phải
+-- "chạm mép".
+SELECT set_session_court_bookings(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+  '[{"court_name":"Sân 2","start_time":"2026-09-01T11:00:00+00","end_time":"2026-09-01T12:00:00+00","price_per_hour":100000}]'::jsonb);
+
+SELECT assert_eq(
+  (SELECT sum(court_cost) FROM session_intervals
+    WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  100000::numeric, 'a booking flush with both ends of the session is still legal');
+
+
 ROLLBACK;

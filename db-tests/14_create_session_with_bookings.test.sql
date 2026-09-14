@@ -201,4 +201,57 @@ BEGIN
   END;
 END $$;
 
+
+-- ── Khung sân phải nằm TRONG giờ của buổi, ở cả đường TẠO buổi ──
+-- Buổi tạo được thì phải sửa lại được: set_session_court_bookings từ chối
+-- hình dạng này, nên create_session_with_bookings cũng phải từ chối, nếu
+-- không màn hình sửa buổi sẽ không lưu lại được chính buổi vừa tạo.
+DO $$
+DECLARE
+  v_payloads text[] := ARRAY[
+    '[{"court_name":"Sân 1","start_time":"2026-09-06T10:00:00+00","end_time":"2026-09-06T12:00:00+00","price_per_hour":120000}]',
+    '[{"court_name":"Sân 2","start_time":"2026-09-06T11:00:00+00","end_time":"2026-09-06T14:00:00+00","price_per_hour":120000}]',
+    '[{"court_name":"Sân 3","start_time":"2026-09-07T11:00:00+00","end_time":"2026-09-07T12:00:00+00","price_per_hour":120000}]'
+  ];
+  v_p text;
+  v_before int;
+BEGIN
+  SELECT count(*) INTO v_before FROM sessions;
+
+  FOREACH v_p IN ARRAY v_payloads LOOP
+    BEGIN
+      PERFORM create_session_with_bookings(
+        'Buổi sân lệch giờ', '2026-09-06 11:00:00+00', '2026-09-06 12:00:00+00',
+        0, 0, '11111111-1111-1111-1111-111111111111', v_p::jsonb, 0);
+      RAISE EXCEPTION 'FAIL a session was created with a booking outside its window: %', v_p;
+    EXCEPTION WHEN raise_exception THEN
+      IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+      IF SQLERRM NOT LIKE 'Khung giờ của sân%' THEN
+        RAISE EXCEPTION 'FAIL out-of-window booking refused for the wrong reason: % (%)', SQLERRM, v_p;
+      END IF;
+      RAISE NOTICE 'ok   create: out-of-window booking refused in Vietnamese';
+    END;
+  END LOOP;
+
+  -- Guard phải chạy TRƯỚC mọi INSERT: không được để lại buổi tạo dở.
+  PERFORM assert_eq((SELECT count(*)::int FROM sessions), v_before,
+    'create: a refused out-of-window payload left no half-created session');
+END $$;
+
+-- Khít hai đầu vẫn tạo được.
+DO $$
+DECLARE v_sid uuid;
+BEGIN
+  v_sid := create_session_with_bookings(
+    'Buổi sân khít giờ', '2026-09-06 11:00:00+00', '2026-09-06 12:00:00+00',
+    0, 0, '11111111-1111-1111-1111-111111111111',
+    '[{"court_name":"Sân 1","start_time":"2026-09-06T11:00:00+00","end_time":"2026-09-06T12:00:00+00","price_per_hour":120000}]'::jsonb,
+    0);
+
+  PERFORM assert_eq(
+    (SELECT sum(court_cost) FROM session_intervals WHERE session_id = v_sid),
+    120000::numeric, 'create: a booking flush with both ends of the session is still legal');
+END $$;
+
+
 ROLLBACK;
