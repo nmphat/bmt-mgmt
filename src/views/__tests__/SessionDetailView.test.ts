@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import SessionDetailView from '@/views/SessionDetailView.vue'
@@ -69,6 +69,10 @@ const STUBS = {
   ShuttleUsageEditor: true,
 }
 
+let activeWrapper: ReturnType<typeof mount> | undefined
+
+afterEach(() => activeWrapper?.unmount())
+
 async function mountDetail(role: 'admin' | 'member' | 'guest') {
   setActivePinia(createPinia())
   const authStore = useAuthStore()
@@ -81,6 +85,7 @@ async function mountDetail(role: 'admin' | 'member' | 'guest') {
     }
   }
   const w = mount(SessionDetailView, { global: { stubs: STUBS } })
+  activeWrapper = w
   await flushPromises()
   await flushPromises()
   return w

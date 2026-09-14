@@ -26,12 +26,14 @@ vi.mock('@/lib/supabase', () => ({
   },
 }))
 
-async function mountDashboard(isAdmin: boolean) {
+async function mountDashboard(isAdmin: boolean | 'guest') {
   setActivePinia(createPinia())
   const authStore = useAuthStore()
-  authStore.profile = isAdmin
-    ? { id: 'a1', role: 'admin', display_name: 'Admin' }
-    : { id: 'm1', role: 'member', display_name: 'Member' }
+  if (isAdmin !== 'guest') {
+    authStore.profile = isAdmin
+      ? { id: 'a1', role: 'admin', display_name: 'Admin' }
+      : { id: 'm1', role: 'member', display_name: 'Member' }
+  }
   const w = mount(DashboardView)
   await flushPromises()
   await flushPromises()
@@ -45,5 +47,8 @@ describe('DashboardView session list permission filter', () => {
 
     await mountDashboard(true)
     expect(lastBuilder.in).not.toHaveBeenCalled()
+
+    await mountDashboard('guest')
+    expect(lastBuilder.in).toHaveBeenCalledWith('status', ['waiting_for_payment', 'done'])
   })
 })

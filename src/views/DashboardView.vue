@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import type { SessionSummary } from '@/types'
 import { format } from 'date-fns'
@@ -66,6 +66,7 @@ function getStatusLabel(status: string) {
 }
 
 onMounted(fetchSessions)
+watch(() => authStore.isAdmin, () => fetchSessions())
 </script>
 
 <template>
