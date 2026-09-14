@@ -36,6 +36,43 @@ SELECT assert_eq(
   (SELECT count(*)::int FROM sessions WHERE title = 'Buổi giờ đảo'),
   0, 'create: a rejected payload leaves no half-created session behind');
 
+-- Tên sân rỗng / chỉ có khoảng trắng / thiếu hẳn key. COALESCE chỉ rơi khi
+-- NULL nên ba hình dạng này trước đây lọt qua và đập vào CHECK
+-- court_name ~ '\S': người dùng nhận nguyên văn một chuỗi 23514 tiếng Anh.
+-- Luật phải giống hệt set_session_court_bookings -- từ chối, không lặng lẽ
+-- mặc định về 'Sân 1'.
+DO $$
+DECLARE
+  v_payload jsonb;
+BEGIN
+  FOREACH v_payload IN ARRAY ARRAY[
+    '[{"court_name":"","start_time":"2026-09-02T11:00:00+00","end_time":"2026-09-02T12:00:00+00","price_per_hour":120000}]'::jsonb,
+    '[{"court_name":" \t ","start_time":"2026-09-02T11:00:00+00","end_time":"2026-09-02T12:00:00+00","price_per_hour":120000}]'::jsonb,
+    '[{"start_time":"2026-09-02T11:00:00+00","end_time":"2026-09-02T12:00:00+00","price_per_hour":120000}]'::jsonb
+  ]
+  LOOP
+    BEGIN
+      PERFORM create_session_with_bookings(
+        'Buổi sân không tên', '2026-09-02 11:00:00+00', '2026-09-02 12:00:00+00',
+        0, 0, '11111111-1111-1111-1111-111111111111', v_payload, 0);
+      RAISE EXCEPTION 'FAIL a blank court_name was accepted by create_session_with_bookings (payload %)', v_payload;
+    EXCEPTION
+      WHEN raise_exception THEN
+        IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+        IF SQLERRM NOT LIKE 'Thiếu tên sân%' THEN
+          RAISE EXCEPTION 'FAIL blank court_name was rejected for the wrong reason (%): %', v_payload, SQLERRM;
+        END IF;
+        RAISE NOTICE 'ok   create: blank court_name rejected in Vietnamese';
+      WHEN OTHERS THEN
+        RAISE EXCEPTION 'FAIL blank court_name reached the CHECK constraint (%) instead of the RPC guard', SQLERRM;
+    END;
+  END LOOP;
+END $$;
+
+SELECT assert_eq(
+  (SELECT count(*)::int FROM sessions WHERE title = 'Buổi sân không tên'),
+  0, 'create: a blank court name leaves no half-created session behind');
+
 -- Hai khung chồng giờ trên cùng một sân: một giờ sân 120000 sẽ bị tính
 -- thành 240000 nếu lọt.
 DO $$

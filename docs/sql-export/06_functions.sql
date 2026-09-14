@@ -594,8 +594,21 @@ BEGIN
     -- error.message cho người dùng -- để CHECK constraint tự chặn thì
     -- người dùng nhận một chuỗi 23514 tiếng Anh.
     IF p_bookings IS NOT NULL AND jsonb_array_length(p_bookings) > 0 THEN
+        -- Một sân không tên là vô nghĩa, và mặc định lặng lẽ về 'Sân 1' còn
+        -- tệ hơn im lặng: nó đặt cho người dùng một cái tên họ không gõ, và
+        -- hai khung đều không tên sẽ cùng thành 'Sân 1' rồi báo "trùng giờ"
+        -- -- một lỗi nói về thứ admin không hề làm. Nhận cùng một luật với
+        -- set_session_court_bookings, hàm sửa chính những dòng này: buổi nào
+        -- tạo được thì phải sửa lại được.
+        IF EXISTS (
+            SELECT 1 FROM jsonb_array_elements(p_bookings) e
+            WHERE e->>'court_name' IS NULL OR e->>'court_name' ~ '^\s*$'
+        ) THEN
+            RAISE EXCEPTION 'Thiếu tên sân (court_name) trong dữ liệu đặt sân';
+        END IF;
+
         -- Giờ kết thúc phải sau giờ bắt đầu.
-        SELECT COALESCE(e->>'court_name', e->>'name', 'Sân 1') INTO v_court
+        SELECT e->>'court_name' INTO v_court
         FROM jsonb_array_elements(p_bookings) e
         WHERE (e->>'end_time')::timestamptz <= (e->>'start_time')::timestamptz
         LIMIT 1;
@@ -604,10 +617,9 @@ BEGIN
         END IF;
 
         -- Hai khung cùng một sân mà chồng giờ nhau thì tiền sân bị tính hai
-        -- lần: một giờ sân 120000 thành 240000. So sánh theo đúng tên sân sẽ
-        -- được ghi (kể cả khi rơi về mặc định 'Sân 1').
+        -- lần: một giờ sân 120000 thành 240000.
         WITH b AS (
-            SELECT COALESCE(e->>'court_name', e->>'name', 'Sân 1') AS court,
+            SELECT e->>'court_name' AS court,
                    (e->>'start_time')::timestamptz AS st,
                    (e->>'end_time')::timestamptz   AS et,
                    ord
@@ -654,7 +666,7 @@ BEGIN
             INSERT INTO session_court_bookings (session_id, court_name, start_time, end_time, price_per_hour)
             VALUES (
                 v_session_id,
-                COALESCE(v_booking_item->>'court_name', v_booking_item->>'name', 'Sân 1'),
+                v_booking_item->>'court_name',
                 (v_booking_item->>'start_time')::TIMESTAMPTZ,
                 (v_booking_item->>'end_time')::TIMESTAMPTZ,
                 COALESCE((v_booking_item->>'price_per_hour')::numeric, 0)
