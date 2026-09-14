@@ -47,16 +47,31 @@ async function fetchMembers() {
   }
 }
 
+function isDuplicateName(name: string, excludeId?: string) {
+  const normalized = name.trim().toLowerCase()
+  return members.value.some(
+    (m) => m.id !== excludeId && m.display_name.trim().toLowerCase() === normalized,
+  )
+}
+
 async function addMember() {
   if (!authStore.isAdmin) return
-  if (!newMember.value.display_name.trim()) {
+  const trimmedName = newMember.value.display_name.trim()
+  if (!trimmedName) {
     toast.error(t.value('member.nameRequired'))
+    return
+  }
+  if (isDuplicateName(trimmedName)) {
+    toast.error(t.value('member.duplicateName'))
     return
   }
 
   try {
     actionLoading.value = true
-    const { data, error } = await supabase.from('members').insert([newMember.value]).select()
+    const { data, error } = await supabase
+      .from('members')
+      .insert([{ ...newMember.value, display_name: trimmedName }])
+      .select()
 
     if (error) throw error
 
@@ -120,9 +135,18 @@ function cancelEdit() {
 
 async function saveEdit(id: string) {
   if (!authStore.isAdmin) return
+  const trimmedName = (editForm.value.display_name || '').trim()
+  if (!trimmedName) {
+    toast.error(t.value('member.nameRequired'))
+    return
+  }
+  if (isDuplicateName(trimmedName, id)) {
+    toast.error(t.value('member.duplicateName'))
+    return
+  }
   try {
     const updates = {
-      display_name: editForm.value.display_name,
+      display_name: trimmedName,
       role: editForm.value.role,
       is_active: editForm.value.is_active,
       updated_at: new Date().toISOString(),

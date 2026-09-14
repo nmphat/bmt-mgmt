@@ -36,7 +36,9 @@ chỉ dựa vào `price_per_hour` ở một số case dữ liệu cũ.
 
 ---
 
-### 🔴 BUG-002: Mobile layout vỡ trên các bảng
+### ✅ BUG-002: Mobile layout vỡ trên các bảng — RESOLVED (xem `10-ui-ux-audit-2026-09.md`)
+
+**Cập nhật 2026-09-14:** đã sửa từ trước đợt audit này. Mọi bảng dữ liệu (Dashboard, Members, MemberDetail, HomeDebtTable, SessionDetailView) đều có cặp `hidden md:block` (bảng desktop) + `md:hidden` (card mobile), cột sticky, tap target ≥44px. Giữ nguyên mô tả gốc bên dưới để tham khảo lịch sử.
 
 **Mô tả:** Các bảng nhiều cột bị overflow hoặc co lại không đọc được trên mobile.
 
