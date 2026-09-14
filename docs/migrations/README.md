@@ -683,7 +683,7 @@ chưa sửa ở đây — không thuộc phạm vi của Task 5.
 
 ## 2026-09-11-court-name-not-null.sql
 
-Chạy sau `2026-09-09-phase1-pricing.sql`. Chưa áp lên production.
+Chạy sau `2026-09-09-phase1-pricing.sql`. Đã áp lên production.
 `session_court_bookings.court_name` là `text` và nullable, và NULL đọc
 được trong thực tế: `set_session_court_bookings` ghi thẳng
 `e->>'court_name'` không có fallback và không validate — một phần tử
@@ -831,7 +831,7 @@ chính là định nghĩa hiện hành của `docs/sql-export/05_views.sql`.
 
 ## 2026-09-11-court-pricing-guards.sql
 
-Chạy sau `2026-09-11-court-name-not-null.sql`. Chưa áp lên production.
+Chạy sau `2026-09-11-court-name-not-null.sql`. Đã áp lên production.
 Bảy thay đổi, tất cả đều là `CREATE OR REPLACE` (không `DROP`), cộng một
 trigger mới trên `session_extra_charges`. Không có `ALTER TABLE`, không có
 backfill, không có `DELETE`.
@@ -978,7 +978,7 @@ Rồi nạp lại sáu hàm và view từ git tại `41f557e`
 
 ## 2026-09-14-presence-guard-and-privilege-parity.sql
 
-Chạy sau `2026-09-11-court-pricing-guards.sql`. Chưa áp lên production.
+Chạy sau `2026-09-11-court-pricing-guards.sql`. Đã áp lên production.
 Bốn hàm `CREATE OR REPLACE` (không `DROP`), một trigger mới trên
 `interval_presence`, và **`ALTER TABLE` đầu tiên kể từ
 `2026-09-11-court-name-not-null.sql`** — chỉ siết constraint, không sửa một

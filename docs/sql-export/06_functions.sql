@@ -941,10 +941,16 @@ BEGIN
     -- TRƯỚC khi đổi status (nó từ chối buổi không còn 'open').
     PERFORM set_session_court_bookings(p_session_id, p_bookings);
 
+    -- court_fee_addon là NOT NULL DEFAULT 0. SessionDetailView bind nó bằng
+    -- v-model.number trên một input type="number", nên xóa trắng ô đó gửi
+    -- lên NULL -- và saveSession in nguyên văn error.message, tức là người
+    -- dùng nhận một chuỗi 23502 tiếng Anh. COALESCE về đúng DEFAULT mà cột
+    -- đã khai báo, y như create_session_with_bookings vẫn làm; NOT NULL vẫn
+    -- là chốt chặn cho mọi writer khác.
     UPDATE sessions
     SET title           = p_title,
         status          = p_status,
-        court_fee_addon = p_court_fee_addon,
+        court_fee_addon = COALESCE(p_court_fee_addon, 0),
         updated_at      = now()
     WHERE id = p_session_id;
 END;

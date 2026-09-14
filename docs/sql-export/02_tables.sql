@@ -101,8 +101,13 @@ CREATE TABLE IF NOT EXISTS public.session_court_bookings (
   court_name text NOT NULL,
   start_time timestamp with time zone NOT NULL,
   end_time timestamp with time zone NOT NULL,
-  price_per_hour numeric NOT NULL DEFAULT 0,
-  created_at timestamp with time zone DEFAULT now()
+  created_at timestamp with time zone DEFAULT now(),
+  -- Sau created_at, không phải trước: production nhận cột này bằng
+  -- ALTER TABLE ... ADD COLUMN (2026-09-09-phase1-pricing.sql) nên nó nằm ở
+  -- cuối bảng. Đặt sai chỗ ở đây thì drift check báo lệch một dòng vĩnh viễn
+  -- trên một khác biệt không có thật. Vô hại với ứng dụng -- mọi INSERT trong
+  -- repo đều liệt kê tên cột.
+  price_per_hour numeric NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS public.session_extra_charges (

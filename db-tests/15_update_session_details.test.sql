@@ -198,5 +198,20 @@ SELECT assert_eq(
     WHERE session_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   2, 'recreate_session_intervals refreshes active_court_count itself');
 
+-- ── p_court_fee_addon = NULL phải quy về 0, không được ném 23502 ──
+-- court_fee_addon là NOT NULL DEFAULT 0. SessionDetailView bind nó bằng
+-- v-model.number trên input type="number", nên xóa trắng ô đó gửi lên NULL,
+-- và saveSession in nguyên văn error.message: người dùng nhận một chuỗi
+-- 23502 tiếng Anh. create_session_with_bookings đã COALESCE từ vòng trước;
+-- đường SỬA thì chưa.
+SELECT update_session_details(
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Tiêu đề NULL addon', 'open'::session_status,
+  NULL, '2026-09-01 12:00:00+00', '2026-09-01 13:00:00+00',
+  '[{"court_name":"Sân 1","start_time":"2026-09-01T12:00:00+00","end_time":"2026-09-01T13:00:00+00","price_per_hour":120000}]'::jsonb);
+
+SELECT assert_eq(
+  (SELECT court_fee_addon FROM sessions WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  0::numeric, 'update: a NULL court_fee_addon is coalesced to 0, not rejected by the column');
+
 RESET ROLE;
 ROLLBACK;
