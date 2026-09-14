@@ -120,10 +120,10 @@ const isAdmin = computed(() => authStore.isAdmin)
     <template v-if="!authStore.isAuthenticated">
       <div class="flex flex-col items-center justify-center py-20 text-center space-y-4">
         <User class="w-16 h-16 text-gray-300" />
-        <p class="text-gray-500 text-base">{{ t('profile.guestPrompt') }}</p>
+        <p class="text-fg-muted text-base">{{ t('profile.guestPrompt') }}</p>
         <router-link
           to="/login"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-sm hover:bg-indigo-700 transition"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl shadow-sm hover:bg-brand-700 transition"
         >
           <LogIn class="w-4 h-4" />
           {{ t('auth.login') }}
@@ -133,20 +133,20 @@ const isAdmin = computed(() => authStore.isAdmin)
 
     <template v-else>
       <!-- ── User card ──────────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div class="bg-white rounded-xl shadow-sm border border-divider p-6">
         <div class="flex items-center gap-4">
           <!-- Avatar -->
           <div
-            class="w-16 h-16 rounded-full bg-indigo-100 border-2 border-indigo-200 flex items-center justify-center text-2xl font-extrabold text-indigo-700 flex-shrink-0"
+            class="w-16 h-16 rounded-full bg-brand-100 border-2 border-brand-200 flex items-center justify-center text-2xl font-extrabold text-brand-700 flex-shrink-0"
           >
             {{ avatarChar }}
           </div>
           <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-bold text-gray-900 truncate">{{ displayName }}</h2>
-            <p class="text-sm text-gray-500 truncate">{{ authStore.user?.email }}</p>
+            <h2 class="text-xl font-bold text-fg-primary truncate">{{ displayName }}</h2>
+            <p class="text-sm text-fg-muted truncate">{{ authStore.user?.email }}</p>
             <span
               class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-              :class="isAdmin ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'"
+              :class="isAdmin ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-fg-secondary'"
             >
               {{ isAdmin ? t('common.admin') : t('common.member') }}
             </span>
@@ -155,14 +155,14 @@ const isAdmin = computed(() => authStore.isAdmin)
       </div>
 
       <!-- ── Debt overview ──────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100">
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+      <div class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden">
+        <div class="px-5 py-4 border-b border-divider">
+          <h3 class="text-sm font-semibold text-fg-muted uppercase tracking-wider">
             {{ t('profile.myDebt') }}
           </h3>
         </div>
         <div class="p-5">
-          <div v-if="debtLoading" class="flex items-center gap-2 text-gray-400">
+          <div v-if="debtLoading" class="flex items-center gap-2 text-fg-disabled">
             <Loader2 class="w-4 h-4 animate-spin" />
             {{ t('common.loading') }}
           </div>
@@ -174,14 +174,14 @@ const isAdmin = computed(() => authStore.isAdmin)
               >
                 {{ myDebt > 0 ? formatCurrency(myDebt) : t('profile.debtFree') }}
               </div>
-              <div v-if="myDebt > 0" class="text-sm text-gray-500 mt-0.5">
+              <div v-if="myDebt > 0" class="text-sm text-fg-muted mt-0.5">
                 {{ t('profile.unpaidSessions', { count: unpaidCount }) }}
               </div>
             </div>
             <router-link
               v-if="authStore.profile?.id"
               :to="'/member/' + authStore.profile.id"
-              class="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              class="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               {{ t('profile.viewHistory') }}
               <ChevronRight class="w-4 h-4" />
@@ -193,18 +193,18 @@ const isAdmin = computed(() => authStore.isAdmin)
       <!-- ── Bank config (admin only) ───────────────────── -->
       <div
         v-if="isAdmin"
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+        class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden"
       >
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div class="px-5 py-4 border-b border-divider flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <CreditCard class="w-4 h-4 text-gray-400" />
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            <CreditCard class="w-4 h-4 text-fg-disabled" />
+            <h3 class="text-sm font-semibold text-fg-muted uppercase tracking-wider">
               {{ t('profile.bankConfig') }}
             </h3>
           </div>
           <button
             @click="showAddForm = !showAddForm"
-            class="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition"
+            class="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 transition"
           >
             <Plus class="w-4 h-4" />
             {{ t('profile.addBank') }}
@@ -220,63 +220,63 @@ const isAdmin = computed(() => authStore.isAdmin)
           leave-from-class="opacity-100 translate-y-0"
           leave-to-class="opacity-0 -translate-y-1"
         >
-          <div v-if="showAddForm" class="px-5 py-4 bg-gray-50 border-b border-gray-100 space-y-3">
+          <div v-if="showAddForm" class="px-5 py-4 bg-gray-50 border-b border-divider space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
                   t('profile.bankId')
                 }}</label>
                 <input
                   v-model="bankForm.bank_id"
                   placeholder="TPB, MB, VCB..."
-                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 uppercase"
+                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 uppercase"
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
                   t('profile.templateLabel')
                 }}</label>
                 <input
                   v-model="bankForm.template"
                   placeholder="compact2"
-                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
                   t('profile.accountNumber')
                 }}</label>
                 <input
                   v-model="bankForm.account_number"
                   placeholder="10003392871"
-                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
                 />
               </div>
               <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
                   t('profile.accountName')
                 }}</label>
                 <input
                   v-model="bankForm.account_name"
                   placeholder="NGUYEN VAN A"
-                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 uppercase"
+                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 uppercase"
                 />
               </div>
             </div>
-            <p v-if="bankFormError" class="text-xs text-red-600 flex items-center gap-1">
+            <p v-if="bankFormError" class="text-xs text-status-danger-action flex items-center gap-1">
               <AlertTriangle class="w-3.5 h-3.5" />{{ bankFormError }}
             </p>
             <div class="flex gap-2 justify-end">
               <button
                 @click="showAddForm = false"
-                class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg transition"
+                class="px-4 py-2 text-sm text-fg-secondary hover:bg-gray-200 rounded-lg transition"
               >
                 {{ t('common.cancel') }}
               </button>
               <button
                 @click="submitAddBank"
                 :disabled="addLoading"
-                class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 transition"
+                class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg disabled:opacity-50 transition"
               >
                 <Loader2 v-if="addLoading" class="w-3.5 h-3.5 animate-spin" />
                 {{ t('profile.saveBank') }}
@@ -310,21 +310,21 @@ const isAdmin = computed(() => authStore.isAdmin)
               :title="t('profile.activateBank')"
             >
               <CheckCircle2 v-if="config.is_active" class="w-5 h-5 text-green-500" />
-              <Circle v-else class="w-5 h-5 text-gray-300 hover:text-indigo-400" />
+              <Circle v-else class="w-5 h-5 text-gray-300 hover:text-brand-400" />
             </button>
 
             <!-- Bank info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-bold text-gray-900 text-sm">{{ config.bank_id }}</span>
+                <span class="font-bold text-fg-primary text-sm">{{ config.bank_id }}</span>
                 <span
                   v-if="config.is_active"
-                  class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700"
+                  class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-status-success text-status-success-strong"
                 >
                   {{ t('profile.activeLabel') }}
                 </span>
               </div>
-              <p class="text-xs text-gray-500 truncate">
+              <p class="text-xs text-fg-muted truncate">
                 {{ config.account_number }} · {{ config.account_name }}
               </p>
             </div>
@@ -332,24 +332,24 @@ const isAdmin = computed(() => authStore.isAdmin)
             <!-- Delete -->
             <button
               @click="handleDelete(config.id)"
-              class="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+              class="flex-shrink-0 p-1.5 text-fg-disabled hover:text-status-danger-action hover:bg-status-danger-subtle rounded-lg transition"
             >
               <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div v-if="bankLoading" class="px-5 py-3 text-xs text-gray-400 flex items-center gap-2">
+        <div v-if="bankLoading" class="px-5 py-3 text-xs text-fg-disabled flex items-center gap-2">
           <Loader2 class="w-3.5 h-3.5 animate-spin" /> {{ t('common.loading') }}
         </div>
       </div>
 
       <!-- ── Logout ──────────────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden">
         <button
           @click="handleLogout"
           :disabled="loggingOut"
-          class="w-full flex items-center justify-between px-5 py-4 text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+          class="w-full flex items-center justify-between px-5 py-4 text-status-danger-action hover:bg-status-danger-subtle transition disabled:opacity-50"
         >
           <div class="flex items-center gap-3">
             <LogOut class="w-5 h-5" />

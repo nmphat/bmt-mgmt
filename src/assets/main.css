@@ -8,8 +8,64 @@
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
   --text-3xl: 2rem;
+
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Brand ramp: same hue as the former indigo-* usage, chroma trimmed ~18%
+     off the peak shades so the accent reads as considered, not stock-SaaS. */
+  --color-brand-50: oklch(0.965 0.014 272);
+  --color-brand-100: oklch(0.935 0.026 272);
+  --color-brand-200: oklch(0.88 0.05 274);
+  --color-brand-300: oklch(0.8 0.09 275);
+  --color-brand-400: oklch(0.69 0.148 277);
+  --color-brand-500: oklch(0.605 0.19 277);
+  --color-brand-600: oklch(0.53 0.213 277);
+  --color-brand-700: oklch(0.475 0.196 277);
+  --color-brand-800: oklch(0.415 0.16 277);
+  --color-brand-900: oklch(0.375 0.118 278);
+
+  /* Semantic tokens. Reach for these, never a raw gray, red, green, amber
+     or blue shade, so a shared meaning (a divider, a danger badge) cannot
+     drift out of sync across files the way it did before this token layer
+     existed. Radius has no separate token here: rounded-xl is already part
+     of the Tailwind scale, the fix is just using it consistently instead of
+     mixing in rounded-2xl, rounded-lg, rounded-md for the same card/control
+     role. */
+  --color-divider: var(--color-gray-200);
+  --color-input: var(--color-gray-300);
+
+  --color-fg-primary: var(--color-gray-900);
+  --color-fg-secondary: var(--color-gray-700);
+  --color-fg-muted: var(--color-gray-500);
+  --color-fg-disabled: var(--color-gray-400);
+
+  --color-status-info: var(--color-blue-100);
+  --color-status-info-strong: var(--color-blue-800);
+  --color-status-success: var(--color-green-100);
+  --color-status-success-strong: var(--color-green-800);
+  --color-status-success-subtle: var(--color-green-50);
+  --color-status-warning: var(--color-amber-100);
+  --color-status-warning-strong: var(--color-amber-800);
+  --color-status-danger: var(--color-red-100);
+  --color-status-danger-strong: var(--color-red-800);
+  --color-status-danger-subtle: var(--color-red-50);
+  --color-status-danger-border: var(--color-red-200);
+  --color-status-danger-action: var(--color-red-600);
+  --color-status-success-border: var(--color-green-200);
+  --color-status-neutral: var(--color-gray-100);
+  --color-status-neutral-strong: var(--color-gray-700);
 }
 
 html {
   font-size: 16px;
+}
+
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+.shadow-brand {
+  box-shadow:
+    0 8px 20px -6px oklch(0.53 0.213 277 / 0.28),
+    0 2px 6px -2px oklch(0.53 0.213 277 / 0.2);
 }

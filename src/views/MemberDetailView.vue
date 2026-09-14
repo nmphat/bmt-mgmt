@@ -228,11 +228,11 @@ const formatCurrency = (value: number) => {
 function getStatusColor(status: string) {
   switch (status) {
     case 'paid':
-      return 'bg-green-100 text-green-800'
+      return 'bg-status-success text-status-success-strong'
     case 'partial':
-      return 'bg-yellow-100 text-yellow-800'
+      return 'bg-status-warning text-status-warning-strong'
     default:
-      return 'bg-red-100 text-red-800'
+      return 'bg-status-danger text-status-danger-strong'
   }
 }
 
@@ -255,28 +255,30 @@ onMounted(fetchMemberDetails)
       <button
         type="button"
         @click="router.back()"
-        class="mr-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        class="mr-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         :aria-label="t('common.back')"
       >
         <ArrowLeft class="w-6 h-6" aria-hidden="true" />
       </button>
       <div>
-        <h1 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ memberName }}</h1>
-        <p class="text-sm text-gray-500">{{ t('debt.history') }}</p>
+        <h1 class="text-[20px] font-bold leading-[1.2] tracking-tight text-fg-primary">
+          {{ memberName }}
+        </h1>
+        <p class="text-sm text-fg-muted">{{ t('debt.history') }}</p>
       </div>
     </div>
 
     <!-- Debt Summary Card -->
     <div
-      class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 flex justify-between items-center"
+      class="bg-white rounded-xl shadow-sm border border-divider p-6 mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <span class="text-sm font-bold text-gray-500 uppercase tracking-wider">{{
+        <span class="text-sm font-bold text-fg-muted uppercase tracking-wider">{{
           t('debt.totalDebt')
         }}</span>
         <div class="mt-1 flex items-baseline">
           <span
-            class="text-[32px] font-bold leading-[1.05] text-gray-900"
+            class="text-[32px] font-bold leading-[1.05] text-fg-primary"
             :class="{ 'text-red-600': totalDebt > 0 }"
           >
             {{ formatCurrency(totalDebt) }}
@@ -287,7 +289,7 @@ onMounted(fetchMemberDetails)
         v-if="totalDebt > 0"
         type="button"
         @click="handlePayAll"
-        class="flex min-h-11 items-center rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white shadow transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        class="flex min-h-11 items-center rounded-xl bg-brand-600 px-4 py-2 font-bold text-white shadow transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
         :aria-label="`${t('debt.payAll')}: ${memberName}`"
       >
         <CreditCard class="w-5 h-5 mr-2" aria-hidden="true" />
@@ -296,19 +298,19 @@ onMounted(fetchMemberDetails)
     </div>
 
     <!-- Session History -->
-    <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+    <div class="bg-white shadow-sm rounded-xl border border-divider overflow-hidden">
       <div v-if="loading" class="p-8 flex justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
       </div>
       <template v-else>
         <div class="md:hidden divide-y divide-gray-100">
-          <div v-if="sessions.length === 0" class="p-6 text-center text-gray-500">
+          <div v-if="sessions.length === 0" class="p-6 text-center text-fg-muted">
             {{ t('debt.emptyBody') }}
           </div>
           <article
             v-for="session in visibleMobileSessions"
             :key="session.snapshot_id"
-            class="group cursor-pointer space-y-4 p-4 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-indigo-600"
+            class="group cursor-pointer space-y-4 p-4 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
             role="link"
             tabindex="0"
             :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
@@ -318,10 +320,10 @@ onMounted(fetchMemberDetails)
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h2 class="text-base font-bold text-gray-900 transition group-hover:text-indigo-600">
+                <h2 class="text-base font-bold text-fg-primary transition group-hover:text-brand-600">
                   {{ session.session_title }}
                 </h2>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-fg-muted">
                   {{
                     format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', { locale: dateLocale })
                   }}
@@ -337,36 +339,36 @@ onMounted(fetchMemberDetails)
 
             <dl class="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt class="font-bold text-gray-500">{{ t('session.time') }}</dt>
-                <dd class="mt-1 text-gray-900">
+                <dt class="font-bold text-fg-muted">{{ t('session.time') }}</dt>
+                <dd class="mt-1 text-fg-primary">
                   {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
                 </dd>
               </div>
               <div>
-                <dt class="font-bold text-gray-500">{{ t('debt.cost') }}</dt>
-                <dd class="mt-1 text-right font-bold text-gray-900">
+                <dt class="font-bold text-fg-muted">{{ t('debt.cost') }}</dt>
+                <dd class="mt-1 text-right font-bold text-fg-primary">
                   {{ formatCurrency(session.final_amount) }}
                 </dd>
               </div>
               <div>
-                <dt class="font-bold text-gray-500">{{ t('session.courtFee') }}</dt>
-                <dd class="mt-1 text-gray-900">{{ formatCurrency(session.court_fee_amount) }}</dd>
+                <dt class="font-bold text-fg-muted">{{ t('session.courtFee') }}</dt>
+                <dd class="mt-1 text-fg-primary">{{ formatCurrency(session.court_fee_amount) }}</dd>
               </div>
               <div>
-                <dt class="font-bold text-gray-500">{{ t('session.shuttleFee') }}</dt>
-                <dd class="mt-1 text-right text-gray-900">
+                <dt class="font-bold text-fg-muted">{{ t('session.shuttleFee') }}</dt>
+                <dd class="mt-1 text-right text-fg-primary">
                   {{ formatCurrency(session.shuttle_fee_amount) }}
                 </dd>
               </div>
               <div>
-                <dt class="font-bold text-gray-500">{{ t('debt.paid') }}</dt>
-                <dd class="mt-1 text-gray-900">{{ formatCurrency(session.paid_amount) }}</dd>
+                <dt class="font-bold text-fg-muted">{{ t('debt.paid') }}</dt>
+                <dd class="mt-1 text-fg-primary">{{ formatCurrency(session.paid_amount) }}</dd>
               </div>
               <div>
-                <dt class="font-bold text-gray-500">{{ t('debt.remaining') }}</dt>
+                <dt class="font-bold text-fg-muted">{{ t('debt.remaining') }}</dt>
                 <dd
                   class="mt-1 text-right font-bold"
-                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
+                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-fg-primary'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </dd>
@@ -378,7 +380,7 @@ onMounted(fetchMemberDetails)
                 v-if="session.status !== 'paid'"
                 type="button"
                 @click.stop="handleSinglePay(session)"
-                class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 :title="t('payment.scanQR')"
                 :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
               >
@@ -390,7 +392,7 @@ onMounted(fetchMemberDetails)
           <div v-if="sessions.length > mobileSessionLimit" class="p-4">
             <button
               type="button"
-              class="flex min-h-11 w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="flex min-h-11 w-full items-center justify-center rounded-xl border border-divider bg-white px-4 text-sm font-bold text-brand-600 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               @click="showAllMobileSessions = !showAllMobileSessions"
             >
               {{
@@ -407,49 +409,49 @@ onMounted(fetchMemberDetails)
               <tr>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('debt.sessionName') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('debt.cost') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('session.time') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('session.courtFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('session.shuttleFee') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('debt.remaining') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('debt.status') }}
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-gray-500 uppercase tracking-wider"
+                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
                 >
                   {{ t('debt.action') }}
                 </th>
@@ -459,7 +461,7 @@ onMounted(fetchMemberDetails)
               <tr
                 v-for="session in sessions"
                 :key="session.snapshot_id"
-                class="group cursor-pointer hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-indigo-600"
+                class="group cursor-pointer hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
                 role="link"
                 tabindex="0"
                 :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
@@ -468,10 +470,12 @@ onMounted(fetchMemberDetails)
                 @keydown.space.prevent="openSessionDetail(session.session_id)"
               >
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-bold text-gray-900 transition group-hover:text-indigo-600">
+                  <div
+                    class="text-sm font-bold text-fg-primary transition group-hover:text-brand-600"
+                  >
                     {{ session.session_title }}
                   </div>
-                  <div class="text-[14px] leading-[1.35] text-gray-500">
+                  <div class="text-[14px] leading-[1.35] text-fg-muted">
                     {{
                       format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', {
                         locale: dateLocale,
@@ -479,21 +483,21 @@ onMounted(fetchMemberDetails)
                     }}
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
                   {{ formatCurrency(session.final_amount) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-fg-muted">
                   {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
                   {{ formatCurrency(session.court_fee_amount) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
                   {{ formatCurrency(session.shuttle_fee_amount) }}
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold"
-                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-gray-900'"
+                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-fg-primary'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </td>
@@ -510,7 +514,7 @@ onMounted(fetchMemberDetails)
                     v-if="session.status !== 'paid'"
                     type="button"
                     @click.stop="handleSinglePay(session)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-indigo-50 p-2 text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-brand-50 p-2 text-brand-600 transition hover:bg-brand-100 hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
                     :title="t('payment.scanQR')"
                     :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
                   >

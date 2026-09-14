@@ -6,10 +6,12 @@ import { formatCurrency } from '@/utils/formatters'
 import { useLangStore } from '@/stores/lang'
 import { useBankConfig } from '@/composables/useBankConfig'
 import { ref } from 'vue'
+import { useToast } from 'vue-toastification'
 
 const route = useRoute()
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
+const toast = useToast()
 
 const code = computed(() => (route.query.code as string) || '')
 const amount = computed(() => Number(route.query.amount) || 0)
@@ -63,7 +65,7 @@ const sharePayment = async () => {
       await navigator.share(shareData)
     } else {
       await navigator.clipboard.writeText(`${shareTitle}\n${shareText}\n${window.location.href}`)
-      alert(t.value('payment.copied'))
+      toast.success(t.value('payment.copied'))
     }
   } catch (err) {
     console.error('Share failed:', err)
@@ -112,12 +114,12 @@ onMounted(() => {
       class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl overflow-hidden mt-4 sm:mt-10"
     >
       <!-- Header -->
-      <div class="p-6 text-center border-b border-gray-100 dark:border-gray-700">
-        <h1 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">
+      <div class="p-6 text-center border-b border-divider dark:border-gray-700">
+        <h1 class="text-2xl font-black text-fg-primary dark:text-white uppercase tracking-tight">
           {{ t('payment.qrTitle') }}
         </h1>
         <p
-          class="text-gray-500 dark:text-gray-400 mt-1 uppercase text-xs font-bold tracking-widest"
+          class="text-fg-muted dark:text-fg-disabled mt-1 uppercase text-xs font-bold tracking-widest"
         >
           Sân cầu lông
         </p>
@@ -129,11 +131,11 @@ onMounted(() => {
           <img
             :src="qrUrl"
             alt="VietQR"
-            class="w-72 h-72 object-contain border-4 border-white dark:border-gray-700 rounded-2xl shadow-xl transition-all duration-300 transform group-hover:scale-[1.02]"
+            class="w-72 h-72 object-contain border-4 border-white dark:border-gray-700 rounded-xl shadow-xl transition-all duration-300 transform group-hover:scale-[1.02]"
           />
           <div class="absolute -bottom-4 left-1/2 -translate-x-1/2">
             <div
-              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-full text-xs font-black text-indigo-600 shadow-lg whitespace-nowrap"
+              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-brand-500 rounded-full text-xs font-black text-brand-600 shadow-lg whitespace-nowrap"
             >
               <Loader2 class="w-3.5 h-3.5 animate-spin" />
               {{ t('payment.waitingTransfer') }}
@@ -146,11 +148,11 @@ onMounted(() => {
       <div class="p-8 flex flex-col items-center gap-8">
         <div class="text-center">
           <p
-            class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2"
+            class="text-sm font-bold text-fg-disabled dark:text-fg-muted uppercase tracking-widest mb-2"
           >
             {{ t('payment.totalAmount') }}
           </p>
-          <div class="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">
+          <div class="text-4xl font-black text-brand-600 dark:text-brand-400 tracking-tighter">
             {{ formatCurrency(amount) }}
           </div>
         </div>
@@ -158,28 +160,28 @@ onMounted(() => {
         <!-- Transfer Content -->
         <div class="w-full flex flex-col gap-3">
           <p
-            class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-center"
+            class="text-xs font-bold text-fg-disabled dark:text-fg-muted uppercase tracking-widest text-center"
           >
             {{ t('payment.transferContent') }}
           </p>
           <button
             @click="copyCode"
-            class="group w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all duration-200 active:scale-[0.98]"
+            class="group w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.98]"
             :class="
               copied
                 ? 'bg-emerald-50 border-emerald-500'
-                : 'bg-indigo-50/30 border-indigo-100 hover:border-indigo-300 dark:bg-gray-700 dark:border-gray-600'
+                : 'bg-brand-50/30 border-brand-100 hover:border-brand-300 dark:bg-gray-700 dark:border-gray-600'
             "
           >
             <span
               class="text-xl font-black font-mono tracking-widest"
-              :class="copied ? 'text-emerald-700' : 'text-indigo-900 dark:text-white'"
+              :class="copied ? 'text-emerald-700' : 'text-brand-900 dark:text-white'"
             >
               {{ code }}
             </span>
             <div class="p-2 rounded-xl bg-white dark:bg-gray-600 shadow-sm">
               <Check v-if="copied" class="w-5 h-5 text-emerald-600" />
-              <Copy v-else class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <Copy v-else class="w-5 h-5 text-brand-600 dark:text-brand-400" />
             </div>
           </button>
         </div>
@@ -187,7 +189,7 @@ onMounted(() => {
         <button
           @click="sharePayment"
           :disabled="isSharing"
-          class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+          class="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white rounded-xl font-black text-lg shadow-xl shadow-brand-100 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3"
         >
           <Loader2 v-if="isSharing" class="w-6 h-6 animate-spin" />
           <Share2 v-else class="w-6 h-6" />
@@ -197,9 +199,9 @@ onMounted(() => {
 
       <!-- Footer Instructions -->
       <div
-        class="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 text-center"
+        class="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-divider dark:border-gray-700 text-center"
       >
-        <p class="text-sm text-gray-500 dark:text-gray-400 italic">
+        <p class="text-sm text-fg-muted dark:text-fg-disabled italic">
           {{ t('payment.step3') }}
         </p>
       </div>
@@ -208,7 +210,7 @@ onMounted(() => {
     <!-- Back Button -->
     <router-link
       to="/"
-      class="mt-8 flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-bold transition-colors"
+      class="mt-8 flex items-center gap-2 text-fg-muted hover:text-brand-600 font-bold transition-colors"
     >
       <ArrowLeft class="w-4 h-4" />
       {{ t('common.backToHome') }}

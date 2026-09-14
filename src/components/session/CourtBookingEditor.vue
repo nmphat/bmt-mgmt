@@ -128,17 +128,17 @@ function removeSlot(index: number) {
 
 <template>
   <div class="space-y-4">
-    <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('courtBooking.title') }}</h2>
+    <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">{{ t('courtBooking.title') }}</h2>
 
     <div
       v-for="group in groupedByCourt"
       :key="group.court_name"
       data-testid="court-card"
-      class="space-y-3 rounded-xl border border-gray-200 p-4"
+      class="space-y-3 rounded-xl border border-divider p-4"
     >
       <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div class="min-w-0 flex-1">
-          <label class="mb-1 block text-xs font-bold text-gray-500">{{
+          <label class="mb-1 block text-xs font-bold text-fg-muted">{{
             t('courtBooking.courtName')
           }}</label>
           <input
@@ -146,7 +146,7 @@ function removeSlot(index: number) {
             :disabled="disabled"
             :data-testid="`court-name-${group.court_name}`"
             type="text"
-            class="block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-[20px] font-bold leading-[1.2] text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
+            class="block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-[20px] font-bold leading-[1.2] text-fg-primary focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
             @change="renameCourt(group.court_name, ($event.target as HTMLInputElement).value)"
           />
         </div>
@@ -154,7 +154,7 @@ function removeSlot(index: number) {
           type="button"
           :data-testid="`add-slot-${group.court_name}`"
           :disabled="disabled"
-          class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-indigo-200 px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 disabled:opacity-50"
+          class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-brand-200 px-3 text-sm font-bold text-brand-600 transition hover:bg-brand-50 disabled:opacity-50"
           @click="addSlot(group.court_name)"
         >
           <Plus class="h-4 w-4" />
@@ -166,15 +166,15 @@ function removeSlot(index: number) {
         <div
           v-for="row in group.rows"
           :key="row.index"
-          class="flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row sm:items-end"
+          class="flex flex-col gap-2 rounded-xl border border-divider bg-gray-50 p-3 sm:flex-row sm:items-end"
         >
           <div class="w-full sm:w-28">
-            <label class="mb-1 block text-xs text-gray-500">{{ t('createSession.startTime') }}</label>
+            <label class="mb-1 block text-xs text-fg-muted">{{ t('createSession.startTime') }}</label>
             <select
               :value="row.booking.start_time"
               :disabled="disabled"
               :data-testid="`start-time-${row.index}`"
-              class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
+              class="block min-h-11 w-full rounded-xl border border-input px-2 text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, { start_time: ($event.target as HTMLSelectElement).value })
               "
@@ -183,12 +183,12 @@ function removeSlot(index: number) {
             </select>
           </div>
           <div class="w-full sm:w-28">
-            <label class="mb-1 block text-xs text-gray-500">{{ t('createSession.endTime') }}</label>
+            <label class="mb-1 block text-xs text-fg-muted">{{ t('createSession.endTime') }}</label>
             <select
               :value="row.booking.end_time"
               :disabled="disabled"
               :data-testid="`end-time-${row.index}`"
-              class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
+              class="block min-h-11 w-full rounded-xl border border-input px-2 text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, { end_time: ($event.target as HTMLSelectElement).value })
               "
@@ -197,7 +197,7 @@ function removeSlot(index: number) {
             </select>
           </div>
           <div class="w-full sm:w-32">
-            <label class="mb-1 block text-xs text-gray-500">{{
+            <label class="mb-1 block text-xs text-fg-muted">{{
               t('courtBooking.pricePerHour')
             }}</label>
             <input
@@ -207,7 +207,7 @@ function removeSlot(index: number) {
               type="number"
               min="0"
               step="1000"
-              class="block min-h-11 w-full rounded-xl border border-gray-300 px-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:opacity-50"
+              class="block min-h-11 w-full rounded-xl border border-input px-2 text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
               @change="
                 patchBooking(row.index, {
                   price_per_hour: Math.max(0, Number(($event.target as HTMLInputElement).value) || 0),
@@ -220,7 +220,7 @@ function removeSlot(index: number) {
             :data-testid="`remove-slot-${row.index}`"
             :disabled="disabled || bookings.length <= 1"
             :title="t('courtBooking.removeSlot')"
-            class="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-gray-400 transition hover:text-red-600 disabled:opacity-30"
+            class="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled transition hover:text-status-danger-action disabled:opacity-30"
             @click="removeSlot(row.index)"
           >
             <Trash2 class="h-4 w-4" />
@@ -228,13 +228,13 @@ function removeSlot(index: number) {
           </button>
           <div
             v-if="overlapIndices.has(row.index)"
-            class="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700 sm:w-full"
+            class="flex items-center gap-1.5 rounded-xl border border-status-danger-border bg-status-danger-subtle px-2 py-1.5 text-xs text-status-danger-strong sm:w-full"
           >
             {{ t('courtBooking.overlapError') }}
           </div>
           <div
             v-else-if="isEndBeforeStart(row.booking)"
-            class="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-700 sm:w-full"
+            class="flex items-center gap-1.5 rounded-xl border border-status-danger-border bg-status-danger-subtle px-2 py-1.5 text-xs text-status-danger-strong sm:w-full"
           >
             {{ t('courtBooking.endBeforeStartError') }}
           </div>
@@ -253,13 +253,13 @@ function removeSlot(index: number) {
         type="button"
         data-testid="add-court"
         :disabled="disabled"
-        class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-indigo-200 px-4 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 disabled:opacity-50"
+        class="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-brand-200 px-4 text-sm font-bold text-brand-600 transition hover:bg-brand-50 disabled:opacity-50"
         @click="addCourt"
       >
         <Plus class="h-4 w-4" />
         {{ t('courtBooking.addCourt') }}
       </button>
-      <div data-testid="court-total" class="text-right font-bold text-gray-900">
+      <div data-testid="court-total" class="text-right font-bold text-fg-primary">
         {{ t('courtBooking.total') }}: {{ formatCurrency(total) }}
       </div>
     </div>

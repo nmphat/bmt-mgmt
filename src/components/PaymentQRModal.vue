@@ -225,11 +225,11 @@ onUnmounted(() => {
 
       <!-- Modal panel -->
       <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-lg sm:rounded-2xl"
+        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-lg sm:rounded-xl"
       >
-        <div class="shrink-0 border-b border-gray-100 bg-white px-4 py-4 sm:px-6">
+        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
           <div class="flex items-start justify-between gap-3">
-            <h3 class="text-[20px] font-bold leading-[1.2] text-gray-900" id="modal-title">
+            <h3 class="text-[20px] font-bold leading-[1.2] text-fg-primary" id="modal-title">
               {{
                 isPaid || isPaymentComplete
                   ? t('payment.paymentSuccess')
@@ -241,7 +241,7 @@ onUnmounted(() => {
             <button
               type="button"
               @click="handleClose"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500"
               :aria-label="t('common.cancel')"
             >
               <X class="w-6 h-6" />
@@ -258,27 +258,31 @@ onUnmounted(() => {
               aria-live="polite"
             >
               <div
-                class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 animate-bounce"
+                class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-status-success animate-bounce"
               >
                 <Check class="h-12 w-12 text-green-600 stroke-[3px]" />
               </div>
-              <p class="mb-2 text-[20px] font-bold leading-[1.2] text-gray-900">{{ t('payment.thanks') }}</p>
-              <p class="max-w-sm text-gray-600">{{ t('payment.qrSuccess') }}</p>
+              <p class="mb-2 text-[20px] font-bold leading-[1.2] text-fg-primary">
+                {{ t('payment.thanks') }}
+              </p>
+              <p class="max-w-sm text-fg-secondary">{{ t('payment.qrSuccess') }}</p>
             </div>
 
             <!-- Pending State -->
             <template v-else>
-              <div class="mb-5 w-full rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-center">
-                <span class="mb-1 block text-sm font-bold text-indigo-700">{{
+              <div
+                class="mb-5 w-full rounded-xl border border-brand-100 bg-brand-50/70 p-4 text-center"
+              >
+                <span class="mb-1 block text-sm font-bold text-brand-700">{{
                   t('payment.amountToPay')
                 }}</span>
-                <span class="text-[32px] font-bold leading-[1.05] text-indigo-700 tabular-nums">{{
+                <span class="text-[32px] font-bold leading-[1.05] text-brand-700 tabular-nums">{{
                   formatCurrency(remainingAmount)
                 }}</span>
               </div>
 
               <div
-                class="relative mb-5 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-2 shadow-sm"
+                class="relative mb-5 rounded-xl border-2 border-dashed border-divider bg-white p-2 shadow-sm"
               >
                 <img
                   :src="qrUrl"
@@ -292,15 +296,15 @@ onUnmounted(() => {
               </div>
 
               <div class="w-full space-y-4">
-                <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-4">
+                <div class="rounded-xl border border-brand-100 bg-brand-50 p-4">
                   <div class="mb-2 flex items-center justify-between gap-3">
-                    <span class="text-sm font-bold text-indigo-700">{{
+                    <span class="text-sm font-bold text-brand-700">{{
                       t('payment.transferContent')
                     }}</span>
                     <button
                       type="button"
                       @click="copyPaymentCode"
-                      class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xl px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-100 hover:text-indigo-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xl px-3 text-sm font-bold text-brand-600 transition hover:bg-brand-100 hover:text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       :aria-label="t('payment.copyCode')"
                     >
                       <template v-if="!copied">
@@ -311,10 +315,10 @@ onUnmounted(() => {
                       </template>
                     </button>
                   </div>
-                  <p class="break-all font-mono text-[20px] font-bold leading-[1.2] text-indigo-900">
+                  <p class="break-all font-mono text-[20px] font-bold leading-[1.2] text-brand-900">
                     {{ paymentInfo }}
                   </p>
-                  <p class="mt-2 text-sm italic text-indigo-700">
+                  <p class="mt-2 text-sm italic text-brand-700">
                     <template v-if="props.groupData">
                       <span
                         v-html="
@@ -334,11 +338,9 @@ onUnmounted(() => {
                 <!-- Group Members Breakdown -->
                 <div
                   v-if="props.groupData"
-                  class="rounded-2xl border border-gray-100 bg-gray-50 p-3"
+                  class="rounded-xl border border-divider bg-gray-50 p-3"
                 >
-                  <p
-                    class="mb-2 px-1 text-sm font-bold text-gray-500"
-                  >
+                  <p class="mb-2 px-1 text-sm font-bold text-fg-muted">
                     {{ t('session.memberBreakdown') }}
                   </p>
                   <div class="max-h-40 space-y-1 overflow-y-auto">
@@ -347,8 +349,8 @@ onUnmounted(() => {
                       :key="m.name"
                       class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm"
                     >
-                      <span class="min-w-0 font-bold text-gray-600">{{ m.name }}</span>
-                      <span class="shrink-0 font-bold text-gray-900 tabular-nums">{{
+                      <span class="min-w-0 font-bold text-fg-secondary">{{ m.name }}</span>
+                      <span class="shrink-0 font-bold text-fg-primary tabular-nums">{{
                         formatCurrency(m.amount)
                       }}</span>
                     </div>
@@ -356,7 +358,7 @@ onUnmounted(() => {
                 </div>
 
                 <div
-                  class="rounded-xl bg-gray-50 px-4 py-3 text-center text-sm text-gray-600"
+                  class="rounded-xl bg-gray-50 px-4 py-3 text-center text-sm text-fg-secondary"
                   aria-live="polite"
                 >
                   <p>{{ t('payment.qrStatusNote') }}</p>
@@ -367,15 +369,15 @@ onUnmounted(() => {
         </div>
 
         <div
-          class="qr-modal-footer-safe sticky bottom-0 shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+          class="qr-modal-footer-safe sticky bottom-0 shrink-0 border-t border-divider bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
         >
           <button
             type="button"
-            class="inline-flex min-h-11 w-full justify-center rounded-xl px-6 py-2 text-base font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+            class="inline-flex min-h-11 w-full justify-center rounded-xl px-6 py-2 text-base font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm"
             :class="
               isPaid || isPaymentComplete
                 ? 'bg-green-600 hover:bg-green-700 font-bold'
-                : 'bg-indigo-600 hover:bg-indigo-700 font-bold'
+                : 'bg-brand-600 hover:bg-brand-700 font-bold'
             "
             @click="handleClose"
           >

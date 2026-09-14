@@ -112,7 +112,13 @@ async function handleDeleteBank(config: BankConfig) {
 }
 
 // Shuttle types
-const { types: shuttleTypes, loading: shuttleLoading, fetchTypes, addType, toggleActive } = useShuttleTypes()
+const {
+  types: shuttleTypes,
+  loading: shuttleLoading,
+  fetchTypes,
+  addType,
+  toggleActive,
+} = useShuttleTypes()
 const showShuttleForm = ref(false)
 const shuttleForm = reactive({
   name: '',
@@ -160,41 +166,41 @@ async function handleToggleShuttleActive(st: ShuttleType) {
     <div class="mb-6">
       <router-link
         to="/"
-        class="inline-flex min-h-11 items-center text-sm font-bold text-indigo-600 transition hover:text-indigo-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        class="inline-flex min-h-11 items-center text-sm font-bold text-brand-600 transition hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
       >
         <ChevronLeft class="mr-1 h-5 w-5" aria-hidden="true" />
         {{ t('common.backToHome') }}
       </router-link>
     </div>
 
-    <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+    <section class="rounded-xl border border-divider bg-white p-4 shadow-sm sm:p-6">
       <div class="mb-6 flex items-start gap-3">
         <div
-          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"
+          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600"
         >
           <CreditCard class="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h1 class="text-[22px] font-bold leading-tight text-gray-900">
+          <h1 class="text-[22px] font-bold leading-tight tracking-tight text-fg-primary">
             {{ t('settings.title') }}
           </h1>
-          <p class="mt-1 text-sm leading-6 text-gray-600">
+          <p class="mt-1 text-sm leading-6 text-fg-secondary">
             {{ t('settings.subtitle') }}
           </p>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+      <div class="overflow-hidden rounded-xl border border-divider bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-divider px-5 py-4">
           <div class="flex items-center gap-2">
-            <CreditCard class="h-4 w-4 text-gray-400" aria-hidden="true" />
-            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-500">
+            <CreditCard class="h-4 w-4 text-fg-disabled" aria-hidden="true" />
+            <h2 class="text-sm font-bold uppercase tracking-wider text-fg-muted">
               {{ t('settings.paymentTitle') }}
             </h2>
           </div>
           <button
             type="button"
-            class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            class="flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-bold text-brand-600 transition hover:text-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             @click="toggleAddForm"
           >
             <X v-if="showAddForm" class="h-4 w-4" aria-hidden="true" />
@@ -205,52 +211,52 @@ async function handleToggleShuttleActive(st: ShuttleType) {
 
         <form
           v-if="showAddForm"
-          class="grid gap-3 border-b border-gray-100 bg-gray-50 px-5 py-4 sm:grid-cols-2"
+          class="grid gap-3 border-b border-divider bg-gray-50 px-5 py-4 sm:grid-cols-2"
           @submit.prevent="handleAddBank"
         >
           <label class="block">
-            <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
               {{ t('settings.bank') }}
             </span>
             <input
               v-model="form.bank_id"
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base uppercase shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base uppercase shadow-sm focus:border-brand-500 focus:ring-brand-500"
               placeholder="TPB"
               required
             />
           </label>
 
           <label class="block">
-            <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
               {{ t('settings.accountNumber') }}
             </span>
             <input
               v-model="form.account_number"
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
               placeholder="10003392871"
               required
             />
           </label>
 
           <label class="block">
-            <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
               {{ t('settings.accountName') }}
             </span>
             <input
               v-model="form.account_name"
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base uppercase shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base uppercase shadow-sm focus:border-brand-500 focus:ring-brand-500"
               placeholder="CLB CAU LONG BMT"
               required
             />
           </label>
 
           <label class="block">
-            <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
               {{ t('settings.qrTemplate') }}
             </span>
             <input
               v-model="form.template"
-              class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
               placeholder="compact2"
             />
           </label>
@@ -259,7 +265,7 @@ async function handleToggleShuttleActive(st: ShuttleType) {
             <button
               type="submit"
               :disabled="saving"
-              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               <Loader2 v-if="saving" class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               {{ t('settings.saveBank') }}
@@ -267,17 +273,17 @@ async function handleToggleShuttleActive(st: ShuttleType) {
           </div>
         </form>
 
-        <div v-if="bankConfigStore.loading" class="px-5 py-6 text-sm text-gray-500">
+        <div v-if="bankConfigStore.loading" class="px-5 py-6 text-sm text-fg-muted">
           {{ t('common.loading') }}
         </div>
-        <div v-else-if="configs.length === 0" class="px-5 py-6 text-sm text-gray-500">
+        <div v-else-if="configs.length === 0" class="px-5 py-6 text-sm text-fg-muted">
           {{ t('settings.noBanks') }}
         </div>
         <div v-else class="divide-y divide-gray-100">
           <div v-for="config in configs" :key="config.id" class="flex items-center gap-3 px-5 py-4">
             <button
               type="button"
-              class="shrink-0 transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              class="shrink-0 transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               :title="t('settings.setDefault')"
               :aria-label="t('settings.setDefault')"
               :disabled="activeActionId === config.id"
@@ -285,7 +291,7 @@ async function handleToggleShuttleActive(st: ShuttleType) {
             >
               <Loader2
                 v-if="activeActionId === config.id"
-                class="h-5 w-5 animate-spin text-indigo-500"
+                class="h-5 w-5 animate-spin text-brand-500"
                 aria-hidden="true"
               />
               <CircleCheck
@@ -293,27 +299,31 @@ async function handleToggleShuttleActive(st: ShuttleType) {
                 class="h-5 w-5 text-green-500"
                 aria-hidden="true"
               />
-              <Circle v-else class="h-5 w-5 text-gray-300 hover:text-indigo-400" aria-hidden="true" />
+              <Circle
+                v-else
+                class="h-5 w-5 text-gray-300 hover:text-brand-400"
+                aria-hidden="true"
+              />
             </button>
 
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-bold text-gray-900">{{ config.bank_id }}</span>
+                <span class="text-sm font-bold text-fg-primary">{{ config.bank_id }}</span>
                 <span
                   v-if="config.is_active"
-                  class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700"
+                  class="rounded-full bg-status-success px-1.5 py-0.5 text-[10px] font-bold text-status-success-strong"
                 >
                   {{ t('settings.inUse') }}
                 </span>
               </div>
-              <p class="truncate text-xs text-gray-500">
+              <p class="truncate text-xs text-fg-muted">
                 {{ config.account_number }} · {{ config.account_name }}
               </p>
             </div>
 
             <button
               type="button"
-              class="shrink-0 rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+              class="shrink-0 rounded-lg p-1.5 text-fg-disabled transition hover:bg-status-danger-subtle hover:text-status-danger-action focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
               :title="t('settings.deleteBank')"
               :aria-label="t('settings.deleteBank')"
               :disabled="activeActionId === config.id"
@@ -325,20 +335,20 @@ async function handleToggleShuttleActive(st: ShuttleType) {
         </div>
       </div>
 
-      <p class="mt-4 text-sm leading-6 text-gray-600">
+      <p class="mt-4 text-sm leading-6 text-fg-secondary">
         {{ t('settings.qrNote') }}
       </p>
     </section>
 
     <!-- Shuttle Types Catalogue -->
-    <section class="mt-6 rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-        <h2 class="text-[20px] font-bold leading-[1.2] text-gray-900">
+    <section class="mt-6 rounded-xl border border-divider bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-divider px-5 py-4">
+        <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
           {{ t('shuttle.catalogTitle') }}
         </h2>
         <button
           type="button"
-          class="flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          class="flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-brand-600 transition hover:text-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           @click="showShuttleForm = !showShuttleForm"
         >
           <X v-if="showShuttleForm" class="h-4 w-4" aria-hidden="true" />
@@ -349,21 +359,21 @@ async function handleToggleShuttleActive(st: ShuttleType) {
 
       <form
         v-if="showShuttleForm"
-        class="grid gap-3 border-b border-gray-100 bg-gray-50 px-5 py-4 sm:grid-cols-2"
+        class="grid gap-3 border-b border-divider bg-gray-50 px-5 py-4 sm:grid-cols-2"
         @submit.prevent="handleAddShuttleType"
       >
         <label class="block">
-          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
             {{ t('shuttle.type') }}
           </span>
           <input
             v-model="shuttleForm.name"
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             required
           />
         </label>
         <label class="block">
-          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
             {{ t('shuttle.tubePrice') }}
           </span>
           <input
@@ -371,57 +381,53 @@ async function handleToggleShuttleActive(st: ShuttleType) {
             type="number"
             min="0"
             step="1000"
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             required
           />
         </label>
         <label class="block">
-          <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          <span class="text-xs font-bold uppercase tracking-wide text-fg-muted">
             {{ t('shuttle.perTube') }}
           </span>
           <input
             v-model.number="shuttleForm.per_tube"
             type="number"
             min="1"
-            class="mt-1 block min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-base shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             required
           />
         </label>
         <div class="flex items-end">
           <button
             type="submit"
-            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-500 sm:w-auto"
+            class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 sm:w-auto"
           >
             {{ t('common.save') }}
           </button>
         </div>
       </form>
 
-      <div v-if="shuttleLoading" class="px-5 py-6 text-sm text-gray-500">
+      <div v-if="shuttleLoading" class="px-5 py-6 text-sm text-fg-muted">
         {{ t('common.loading') }}
       </div>
-      <div v-else-if="shuttleTypes.length === 0" class="px-5 py-6 text-sm text-gray-500">
+      <div v-else-if="shuttleTypes.length === 0" class="px-5 py-6 text-sm text-fg-muted">
         {{ t('shuttle.catalogEmpty') }}
       </div>
       <div v-else class="divide-y divide-gray-100">
         <div v-for="st in shuttleTypes" :key="st.id" class="flex items-center gap-3 px-5 py-4">
           <button
             type="button"
-            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center transition hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             :title="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
             :aria-label="st.is_active ? t('shuttle.active') : t('shuttle.inactive')"
             @click="handleToggleShuttleActive(st)"
           >
-            <CircleCheck
-              v-if="st.is_active"
-              class="h-5 w-5 text-green-500"
-              aria-hidden="true"
-            />
+            <CircleCheck v-if="st.is_active" class="h-5 w-5 text-green-500" aria-hidden="true" />
             <Circle v-else class="h-5 w-5 text-gray-300" aria-hidden="true" />
           </button>
           <div class="min-w-0 flex-1">
-            <span class="text-sm font-bold text-gray-900">{{ st.name }}</span>
-            <p class="text-xs text-gray-500">
+            <span class="text-sm font-bold text-fg-primary">{{ st.name }}</span>
+            <p class="text-xs text-fg-muted">
               {{ formatCurrency(st.tube_price) }} / {{ st.per_tube }} {{ t('shuttle.perTube') }}
             </p>
           </div>
