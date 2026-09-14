@@ -650,9 +650,15 @@ BEGIN
         title, start_time, end_time, price_per_hour, shuttle_fee_total,
         court_fee_addon, created_by, status
     )
+    -- Ba cột tiền này là NOT NULL DEFAULT 0. NULL từ client là một trường bị
+    -- thiếu chứ không phải một ý định, và 0 đúng là mặc định mà chính cột đã
+    -- khai báo -- nên COALESCE về 0 ở đây thay vì để cột ném 23502 tiếng Anh
+    -- lên thẳng CreateSessionView. Buổi 0 đồng không âm thầm trôi được nữa:
+    -- finalize_session từ chối chốt một buổi không có gì để chia.
     VALUES (
-        p_title, p_start_time, p_end_time, p_price_per_hour, p_shuttle_fee,
-        p_court_fee_addon, p_created_by, 'open'
+        p_title, p_start_time, p_end_time,
+        COALESCE(p_price_per_hour, 0), COALESCE(p_shuttle_fee, 0),
+        COALESCE(p_court_fee_addon, 0), p_created_by, 'open'
     )
     RETURNING id INTO v_session_id;
 

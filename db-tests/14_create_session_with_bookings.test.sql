@@ -138,6 +138,49 @@ BEGIN
     2, 'create: a one-hour session gets two 30-minute intervals');
 END $$;
 
+-- Ba cột tiền của sessions phải là NOT NULL. price_per_hour = NULL làm
+-- (v_price_per_hour / 2.0) * active_court_count ra NULL, NULL lan qua tổng,
+-- và cả buổi thành miễn phí trên nhánh giá cũ mà không có gì báo.
+-- Production: 0/54 buổi có NULL ở bất kỳ cột nào trong ba cột.
+DO $$
+DECLARE
+  c text;
+BEGIN
+  FOREACH c IN ARRAY ARRAY['price_per_hour','court_fee_addon','shuttle_fee_total']
+  LOOP
+    BEGIN
+      EXECUTE format(
+        'INSERT INTO sessions (title, start_time, end_time, %I) VALUES (%L, %L, %L, NULL)',
+        c, 'Buổi NULL tiền', '2026-09-04 11:00:00+00', '2026-09-04 12:00:00+00');
+      RAISE EXCEPTION 'FAIL sessions.% accepted NULL', c;
+    EXCEPTION
+      WHEN not_null_violation THEN
+        RAISE NOTICE 'ok   sessions.% refused NULL by the column NOT NULL (23502)', c;
+      WHEN OTHERS THEN
+        IF SQLERRM LIKE 'FAIL%' THEN RAISE; END IF;
+        RAISE EXCEPTION 'FAIL sessions.% refused NULL for the wrong reason: %', c, SQLERRM;
+    END;
+  END LOOP;
+END $$;
+
+-- create_session_with_bookings truyền thẳng ba tham số đó vào cột, nên một
+-- client gửi NULL sẽ chết ở cột và người dùng nhận nguyên văn 23502 tiếng
+-- Anh. RPC quy về 0 -- đúng bằng DEFAULT mà cột đã khai báo.
+DO $$
+DECLARE v_sid uuid;
+BEGIN
+  v_sid := create_session_with_bookings(
+    'Buổi tiền NULL', '2026-09-04 11:00:00+00', '2026-09-04 12:00:00+00',
+    NULL, NULL, '11111111-1111-1111-1111-111111111111',
+    '[{"court_name":"Sân 1","start_time":"2026-09-04T11:00:00+00","end_time":"2026-09-04T12:00:00+00","price_per_hour":120000}]'::jsonb,
+    NULL);
+
+  PERFORM assert_eq(
+    (SELECT price_per_hour || '/' || court_fee_addon || '/' || shuttle_fee_total
+       FROM sessions WHERE id = v_sid),
+    '0/0/0', 'create: NULL money parameters are coalesced to 0, not rejected by the column');
+END $$;
+
 -- court_name NOT NULL phải tự đứng được. CHECK constraint không thay thế
 -- được nó: 'court_name ~ \S' cho ra NULL khi court_name là NULL, và một
 -- CHECK trả NULL thì ĐẠT. Bỏ NOT NULL đi là mở lại đường ghi booking không
