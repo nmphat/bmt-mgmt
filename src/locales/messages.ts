@@ -205,6 +205,7 @@ export const messages = {
       fetchError:
         'Không tải được danh sách thành viên. Hãy thử lại hoặc báo quản trị viên nếu lỗi tiếp tục.',
       nameRequired: 'Nhập tên hiển thị',
+      duplicateName: 'Đã có thành viên trùng tên này. Kiểm tra lại trước khi tạo thêm.',
       emptyState: 'Chưa có thành viên nào.',
       activeStatus: 'Đang hoạt động',
       inactiveStatus: 'Ngừng hoạt động',
@@ -363,6 +364,8 @@ export const messages = {
       inactive: 'Ngừng hoạt động',
       saveError: 'Không lưu được tiền cầu',
       addError: 'Không thêm được loại cầu',
+      noActiveTypes: 'Chưa có loại cầu nào trong danh mục.',
+      goToSettings: 'Vào Cài đặt để thêm loại cầu',
     },
     profile: {
       myDebt: 'Công nợ của tôi',
@@ -595,6 +598,7 @@ export const messages = {
       adminRole: 'Admin',
       fetchError: 'Could not load members. Try again or contact an admin if it continues.',
       nameRequired: 'Please enter display name',
+      duplicateName: 'A member with this name already exists. Check before adding another.',
       emptyState: 'No members yet.',
       activeStatus: 'Active',
       inactiveStatus: 'Inactive',
@@ -753,6 +757,8 @@ export const messages = {
       inactive: 'Inactive',
       saveError: 'Error saving shuttle usage',
       addError: 'Error adding shuttle type',
+      noActiveTypes: 'No shuttle types in the catalogue yet.',
+      goToSettings: 'Go to Settings to add a shuttle type',
     },
     profile: {
       myDebt: 'My debt',

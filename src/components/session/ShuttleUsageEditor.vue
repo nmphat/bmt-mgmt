@@ -8,6 +8,7 @@ import { shuttleTotal } from '@/utils/courtCost'
 import { formatCurrency } from '@/utils/formatters'
 import type { ShuttleUsageEntry } from '@/types'
 import { Plus, Minus, Save, Loader2 } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 
 const props = defineProps<{
   sessionId: string
@@ -139,6 +140,13 @@ async function handleSave() {
       {{ t('shuttle.empty') }}
     </div>
 
+    <p v-if="!disabled && activeTypes.length === 0" class="mt-2 text-sm text-amber-700">
+      {{ t('shuttle.noActiveTypes') }}
+      <RouterLink to="/settings" class="font-bold underline underline-offset-2 hover:text-amber-900">
+        {{ t('shuttle.goToSettings') }}
+      </RouterLink>
+    </p>
+
     <div v-else class="space-y-3">
       <div
         v-for="(row, i) in rows"
@@ -205,7 +213,9 @@ async function handleSave() {
       <button
         v-if="!disabled"
         type="button"
-        class="inline-flex min-h-11 items-center gap-1 rounded-xl border border-indigo-200 px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50"
+        :disabled="activeTypes.length === 0"
+        :title="activeTypes.length === 0 ? t('shuttle.noActiveTypes') : undefined"
+        class="inline-flex min-h-11 items-center gap-1 rounded-xl border border-indigo-200 px-3 text-sm font-bold text-indigo-600 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         data-testid="add-row"
         @click="addRow"
       >
