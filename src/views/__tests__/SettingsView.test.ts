@@ -68,6 +68,18 @@ const shuttleSection = (w: W) => w.findAll('section')[1]!
 const bankRows = (w: W) => bankSection(w).findAll('div.px-5.py-4.border-b.border-line-subtle')
 const shuttleRows = (w: W) => shuttleSection(w).findAll('div.px-5.py-4.border-b.border-line-subtle')
 
+function expectLinkedFields(form: ReturnType<W['get']>, keys: string[]) {
+  const fields = form.findAll('[data-ds="Form Field"]')
+  expect(fields).toHaveLength(keys.length)
+  fields.forEach((field, i) => {
+    const label = field.get('label')
+    const id = field.get('input').attributes('id')
+    expect(id).toBeTruthy()
+    expect(label.attributes('for')).toBe(id)
+    expect(label.text()).toBe(t(keys[i]!))
+  })
+}
+
 async function openBankForm(w: W) {
   await buttonByText(w, t('settings.addBank')).trigger('click')
   return bankSection(w).get('form')
@@ -132,6 +144,40 @@ describe('SettingsView (I/O matrix)', () => {
     await openBankForm(w)
     const inputs = bankSection(w).get('form').findAll('input')
     expect(inputs.map((i) => i.classes().includes('uppercase'))).toEqual([true, false, true, false])
+  })
+
+  it('bank form: every Form Field label is tied to its input', async () => {
+    const w = await mountSettings()
+    const form = await openBankForm(w)
+    expectLinkedFields(form, [
+      'settings.bank',
+      'settings.accountNumber',
+      'settings.accountName',
+      'settings.qrTemplate',
+    ])
+  })
+
+  it('shuttle form: every Form Field label is tied to its input', async () => {
+    const w = await mountSettings()
+    await buttonByText(w, t('shuttle.addType')).trigger('click')
+    expectLinkedFields(shuttleSection(w).get('form'), [
+      'shuttle.type',
+      'shuttle.tubePrice',
+      'shuttle.perTube',
+    ])
+  })
+
+  it.each([
+    ['bank', 'settings.addBank', 0],
+    ['shuttle', 'shuttle.addType', 1],
+  ] as const)('%s header action: Plus while closed, X while open', async (_, key, i) => {
+    const w = await mountSettings()
+    const action = () => w.findAll('[data-ds="Section Header"]')[i]!.get('[data-ds="Button"]')
+    expect(action().find('svg.lucide-plus').exists()).toBe(true)
+    expect(action().find('svg.lucide-x').exists()).toBe(false)
+    await buttonByText(w, t(key)).trigger('click')
+    expect(action().find('svg.lucide-x').exists()).toBe(true)
+    expect(action().find('svg.lucide-plus').exists()).toBe(false)
   })
 
   it('add bank, blank field: createConfig not called, requiredError toast', async () => {
@@ -233,6 +279,7 @@ describe('SettingsView (I/O matrix)', () => {
     await inputs[0]!.setValue('Yonex AS-30')
     await inputs[1]!.setValue('95000')
     await inputs[2]!.setValue('12')
+    expect(form.find('button[type="submit"][data-ds="Button"]').exists()).toBe(true)
     await form.trigger('submit')
     await flushPromises()
     expect(h.shuttle.addType).toHaveBeenCalledWith({

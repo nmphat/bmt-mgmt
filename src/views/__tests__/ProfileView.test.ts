@@ -97,6 +97,8 @@ describe('ProfileView (I/O matrix)', () => {
     expect(w.find('[data-ds="Avatar"]').exists()).toBe(false)
     expect(w.find('[data-ds="Section Header"]').exists()).toBe(false)
     expect(w.text()).not.toContain(t('auth.logout'))
+    expect(w.text()).not.toContain(t('profile.bankConfig'))
+    expect(w.text()).not.toContain(t('profile.addBank'))
   })
 
   it.each([
@@ -124,6 +126,8 @@ describe('ProfileView (I/O matrix)', () => {
     expect(header.get('h3').text()).toBe(t('profile.myDebt'))
     const loading = w.findAll('div.text-fg-disabled').find((d) => d.text() === t('common.loading'))!
     expect(loading.find('svg.animate-spin').exists()).toBe(true)
+    expect(w.find('div.text-xl').exists()).toBe(false)
+    expect(w.find('a[href^="/member/"]').exists()).toBe(false)
   })
 
   it('debt > 0: amount in text-fg-danger, unpaidSessions, history link to /member/<id>', async () => {
@@ -144,6 +148,43 @@ describe('ProfileView (I/O matrix)', () => {
     const clean = w.findAll('div.text-xl').find((d) => d.text() === t('profile.debtFree'))!
     expect(clean.classes()).toContain('text-fg-success')
     expect(debtCard(w).textContent).not.toContain(t('profile.unpaidSessions', { count: 0 }))
+  })
+
+  it('debt: no history link when the profile has no id', async () => {
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    auth.user = { id: 'u1', email: 'an@club.vn' } as any
+    auth.profile = null
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:p(.*)*', component: { template: '<div />' } }],
+    })
+    router.push('/profile')
+    await router.isReady()
+    const w = mount(ProfileView, { global: { plugins: [router] } })
+    await flushPromises()
+    expect(w.findAll('div.text-xl').some((d) => d.text() === t('profile.debtFree'))).toBe(true)
+    expect(w.find('a[href^="/member/"]').exists()).toBe(false)
+    expect(w.text()).not.toContain(t('profile.viewHistory'))
+  })
+
+  it('bank form: every Form Field label is tied to its input', async () => {
+    const { w } = await mountProfile('admin')
+    await buttonByText(w, t('profile.addBank')).trigger('click')
+    const fields = w.findAll('[data-ds="Form Field"]')
+    const keys = [
+      'profile.bankId',
+      'profile.templateLabel',
+      'profile.accountNumber',
+      'profile.accountName',
+    ]
+    expect(fields).toHaveLength(keys.length)
+    fields.forEach((field, i) => {
+      const id = field.get('input').attributes('id')
+      expect(id).toBeTruthy()
+      expect(field.get('label').attributes('for')).toBe(id)
+      expect(field.get('label').text()).toBe(t(keys[i]!))
+    })
   })
 
   it('bank section: hidden for a member, shown for an admin', async () => {
