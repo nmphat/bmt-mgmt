@@ -8,6 +8,12 @@ import { Plus, ChevronRight } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
+import Alert from '@/components/ui/Alert.vue'
+import Button from '@/components/ui/Button.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import SessionStatusBadge from '@/components/ui/SessionStatusBadge.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -46,24 +52,13 @@ async function fetchSessions() {
   }
 }
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'open':
-      return 'bg-status-info text-status-info-strong'
-    case 'waiting_for_payment':
-      return 'bg-status-warning text-status-warning-strong'
-    case 'done':
-      return 'bg-status-success text-status-success-strong'
-    case 'cancelled':
-      return 'bg-status-neutral text-status-neutral-strong'
-    default:
-      return 'bg-status-neutral text-status-neutral-strong'
-  }
-}
-
-function getStatusLabel(status: string) {
-  return t.value(`common.${status}`)
-}
+const STATUS_DS = {
+  open: 'Open',
+  waiting_for_payment: 'Waiting For Payment',
+  done: 'Done',
+  cancelled: 'Cancelled',
+} as const
+const dsStatus = (s: string) => STATUS_DS[s as keyof typeof STATUS_DS] ?? 'Cancelled'
 
 onMounted(fetchSessions)
 watch(
@@ -74,37 +69,36 @@ watch(
 
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <h1 class="text-[20px] font-bold leading-tight tracking-tight text-fg-primary">
-        {{ t('dashboard.title') }}
-      </h1>
-      <router-link
-        v-if="authStore.isAdmin"
-        to="/create-session?from=sessions"
-        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-      >
-        <Plus class="mr-2 h-5 w-5" />
-        {{ t('dashboard.newSession') }}
-      </router-link>
-    </div>
-
-    <div
-      v-if="errorMessage"
-      class="mb-4 rounded-xl border border-status-danger-border bg-status-danger-subtle p-4 text-sm font-bold text-status-danger-strong"
+    <PageHeader
+      :layout="authStore.isAdmin ? 'Title Action' : 'Title'"
+      :title="t('dashboard.title')"
+      class="mb-6"
     >
+      <template #actions>
+        <Button
+          v-if="authStore.isAdmin"
+          as="RouterLink"
+          to="/create-session?from=sessions"
+          size="Default"
+          variant="Primary"
+          :leading-icon="Plus"
+        >
+          {{ t('dashboard.newSession') }}
+        </Button>
+      </template>
+    </PageHeader>
+
+    <Alert v-if="errorMessage" tone="Danger" variant="Box" class="mb-4">
       {{ errorMessage }}
-    </div>
+    </Alert>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-brand-600"></div>
+      <Spinner size="48" tone="Brand" />
     </div>
 
-    <div
-      v-else-if="sessions.length === 0"
-      class="rounded-xl border border-divider bg-white px-4 py-12 text-center shadow-sm"
-    >
-      <p class="text-fg-muted">{{ t('dashboard.noSessions') }}</p>
-    </div>
+    <EmptyState v-else-if="sessions.length === 0" variant="Card">
+      {{ t('dashboard.noSessions') }}
+    </EmptyState>
 
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <router-link
@@ -112,33 +106,26 @@ watch(
         :key="session.id"
         :to="`/session/${session.id}`"
         :aria-label="t('dashboard.sessionCardAria', { title: session.title })"
-        class="block rounded-xl border border-divider bg-white p-4 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        class="flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
       >
-        <div class="mb-3 flex items-start justify-between gap-3">
-          <h2 class="text-[20px] font-bold leading-tight text-fg-primary">{{ session.title }}</h2>
-          <span
-            :class="[
-              'shrink-0 rounded-full px-2 py-1 text-sm font-bold leading-tight',
-              getStatusColor(session.status),
-            ]"
-          >
-            {{ getStatusLabel(session.status) }}
-          </span>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-start justify-between gap-3">
+            <h2 class="text-xl font-bold text-fg-primary">{{ session.title }}</h2>
+            <SessionStatusBadge :status="dsStatus(session.status)" />
+          </div>
+          <p class="text-sm font-bold capitalize text-fg-secondary">
+            {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy', { locale: dateLocale }) }}
+          </p>
         </div>
-        <p class="mb-4 text-sm font-bold capitalize text-fg-secondary">
-          {{ format(new Date(session.session_date), 'EEEE, dd/MM/yyyy', { locale: dateLocale }) }}
-        </p>
         <div class="grid grid-cols-2 gap-3 text-sm text-fg-secondary">
-          <span class="rounded-xl bg-gray-50 px-3 py-2 font-bold tabular-nums">
+          <span class="rounded-xl bg-surface-subtle px-3 py-2 font-bold tabular-nums">
             {{ session.total_intervals }} {{ t('dashboard.intervals') }}
           </span>
-          <span class="rounded-xl bg-gray-50 px-3 py-2 text-right font-bold tabular-nums">
+          <span class="rounded-xl bg-surface-subtle px-3 py-2 text-right font-bold tabular-nums">
             {{ session.total_registrations }} {{ t('dashboard.registrations') }}
           </span>
         </div>
-        <div
-          class="mt-4 flex min-h-11 items-center justify-between rounded-xl text-sm font-bold text-brand-600"
-        >
+        <div class="flex min-h-11 items-center justify-between text-sm font-bold text-fg-brand">
           {{ t('dashboard.viewDetails') }}
           <ChevronRight class="h-4 w-4" />
         </div>

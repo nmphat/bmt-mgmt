@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase'
 import { useRoute, useRouter } from 'vue-router'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
+import Button from '@/components/ui/Button.vue'
+import FieldMessage from '@/components/ui/FieldMessage.vue'
+import Input from '@/components/ui/Input.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -46,58 +50,54 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+  <div
+    class="min-h-screen flex items-center justify-center bg-surface-page px-4 py-12 sm:px-6 lg:px-8"
+  >
     <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-[20px] font-bold leading-[1.2] text-fg-primary">
-          {{ signInTitle }}
-        </h2>
-        <p class="mt-3 text-center text-sm text-fg-secondary">
-          {{ t('auth.signInSubtitle') }}
-        </p>
-      </div>
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div class="rounded-md shadow-sm -space-y-px">
+      <PageHeader
+        layout="Centered"
+        :level="2"
+        :title="signInTitle"
+        :subtitle="t('auth.signInSubtitle')"
+      />
+      <form class="space-y-6" @submit.prevent="handleLogin">
+        <div class="space-y-3">
           <div>
             <label for="email-address" class="sr-only">{{ t('auth.emailPlaceholder') }}</label>
-            <input
+            <Input
               v-model="email"
+              size="Default"
               id="email-address"
               name="email"
               type="email"
               autocomplete="email"
               required
-              class="relative block min-h-11 w-full appearance-none rounded-none rounded-t-md border border-input px-3 py-2 text-base text-fg-primary placeholder-gray-500 focus:z-10 focus:border-brand-500 focus:outline-none focus:ring-brand-500 sm:text-sm"
               :placeholder="t('auth.emailPlaceholder')"
             />
           </div>
           <div>
             <label for="password" class="sr-only">{{ t('auth.passwordPlaceholder') }}</label>
-            <input
+            <Input
               v-model="password"
+              size="Default"
               id="password"
               name="password"
               type="password"
               autocomplete="current-password"
               required
-              class="relative block min-h-11 w-full appearance-none rounded-none rounded-b-md border border-input px-3 py-2 text-base text-fg-primary placeholder-gray-500 focus:z-10 focus:border-brand-500 focus:outline-none focus:ring-brand-500 sm:text-sm"
               :placeholder="t('auth.passwordPlaceholder')"
             />
           </div>
         </div>
 
-        <div v-if="errorMsg" class="text-status-danger-action text-sm text-center">
+        <FieldMessage v-if="errorMsg" tone="Error" align="Center">
           {{ errorMsg }}
-        </div>
+        </FieldMessage>
 
         <div>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="group relative flex min-h-11 w-full justify-center rounded-xl border border-transparent bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50"
-          >
+          <Button type="submit" size="Default" variant="Primary" :disabled="loading" class="w-full">
             {{ loading ? t('auth.signingIn') : t('auth.signInButton') }}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
