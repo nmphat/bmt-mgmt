@@ -374,3 +374,12 @@ Desktop (≥ 640px):
 | `pending` (snapshot)  | gray      | Chưa trả     |
 | `partial` (snapshot)  | yellow    | Trả một phần |
 | `paid` (snapshot)     | green     | Đã trả       |
+
+---
+
+## Design tokens (B-1, 2026-09-28)
+
+- `src/assets/tokens.css` được sinh từ Figma variables bằng `tools/figma-sync/token_sync.py` trong kit. Không sửa tay; đổi màu/size trong Figma rồi sinh lại.
+- Tên: `text/*` → `fg-*` (`text-fg-muted`), `surface/*` → `surface-*` (`bg-surface-card`), `border/*` → `line-*` (`border-line-input`), `status/*` → `status-*`. Control: `h-control-sm|md|lg` (36/44/48), `rounded-control`.
+- `divider` và `input` là alias tạm của `line-divider` / `line-input`, bỏ khi B-1 xong.
+- View và component chỉ dùng token, không dùng màu palette (`bg-green-600`, `text-gray-500`). `src/__tests__/designTokens.test.ts` chặn điều này; các file chưa chuyển nằm trong `PALETTE_ALLOWED`, mỗi slice của B-1 gỡ file của mình ra.
