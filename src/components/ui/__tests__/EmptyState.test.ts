@@ -36,4 +36,18 @@ describe('EmptyState', () => {
     expect(w.get('svg').classes()).toContain(icon)
     expect(w.findAll('p')[0]!.text()).toBe('Clear')
   })
+
+  it('action slot renders after the body', () => {
+    const w = mount(EmptyState, {
+      slots: { default: 'Sign in first', action: '<a href="/login">Login</a>' },
+    })
+    const kids = w.element.children
+    expect(kids[kids.length - 1]!.tagName).toBe('A')
+    expect(w.get('a').text()).toBe('Login')
+  })
+
+  it('no action slot: nothing after the body', () => {
+    const w = mount(EmptyState, { slots: { default: 'Nothing' } })
+    expect(w.element.lastElementChild!.tagName).toBe('P')
+  })
 })

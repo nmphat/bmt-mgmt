@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 
-// Figma set "Empty State" (components/empty_state.py). Default slot = the body text.
+// Figma set "Empty State" (components/empty_state.py). Default slot = the body text; `action` slot = the
+// exposed action (a Button) below it.
 export type EmptyStateVariant = 'Plain' | 'Card' | 'Dashed' | 'Dashed Muted'
 export type EmptyStateAlign = 'Center' | 'Left'
 export type EmptyStateSize = 'Default' | 'Small'
@@ -54,5 +55,6 @@ const ICON_SIZES: Record<EmptyStateSize, string> = { Default: 'size-16', Small: 
     <component :is="icon" v-if="icon" :class="[ICON_SIZES[size], 'shrink-0 text-fg-faint']" />
     <p v-if="heading" :class="HEADINGS[variant]">{{ heading }}</p>
     <p :class="[SIZES[size], BODIES[variant]]"><slot /></p>
+    <slot name="action" />
   </div>
 </template>

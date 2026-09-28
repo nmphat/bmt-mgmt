@@ -400,5 +400,8 @@ Nằm trong `src/components/ui/`, mỗi file là một component set trong Figma
 - `SessionStatusBadge` — trạng thái buổi: `status` Open/Waiting For Payment/Done/Cancelled; nhãn lấy từ `common.<status>`.
 - `PageHeader` — tiêu đề trang: `layout` Title/Title Action/Back Title/Icon Title/Centered; slot `actions`, `leading`.
 - `Alert` — hộp thông báo: `tone`, `size`, `variant` Box/Banner, `align`; Danger có `role="alert"`; slot `action`.
-- `EmptyState` — trạng thái rỗng: `variant` Plain/Card/Dashed/Dashed Muted, `align`, `size`, `icon`, `heading`.
+- `EmptyState` — trạng thái rỗng: `variant` Plain/Card/Dashed/Dashed Muted, `align`, `size`, `icon`, `heading`; slot `action` (nút bên dưới nội dung).
 - `Spinner` — vòng loading: `size` 32/48 (mặc định 32), `tone` Brand/Success; `role="status"` + sr-only `common.loading`.
+- `Avatar` — chữ cái đầu trong vòng tròn: `size` 32/64 (mặc định 32), `initial`.
+- `RoleBadge` — vai trò: `role` Admin/Member, `size` Default/Small (mặc định Default); bọc Badge Brand/Neutral, nhãn từ `common.admin`/`common.member`.
+- `SectionHeader` — thanh tiêu đề của card: `variant` Tinted/Caps/Plain Title (mặc định Caps), `title`, `icon`, `level` 2/3 (mặc định 2); slot `actions`.

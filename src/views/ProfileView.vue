@@ -17,8 +17,19 @@ import {
   Plus,
   ChevronRight,
   Loader2,
-  AlertTriangle,
+  TriangleAlert,
 } from 'lucide-vue-next'
+import Alert from '@/components/ui/Alert.vue'
+import Avatar from '@/components/ui/Avatar.vue'
+import Badge from '@/components/ui/Badge.vue'
+import Button from '@/components/ui/Button.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import FieldMessage from '@/components/ui/FieldMessage.vue'
+import FormField from '@/components/ui/FormField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import Input from '@/components/ui/Input.vue'
+import RoleBadge from '@/components/ui/RoleBadge.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -118,59 +129,42 @@ const isAdmin = computed(() => authStore.isAdmin)
   <div class="max-w-2xl mx-auto px-4 py-6 space-y-5">
     <!-- ── Guest state ─────────────────────────────────── -->
     <template v-if="!authStore.isAuthenticated">
-      <div class="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <User class="w-16 h-16 text-gray-300" />
-        <p class="text-fg-muted text-base">{{ t('profile.guestPrompt') }}</p>
-        <router-link
-          to="/login"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl shadow-sm hover:bg-brand-700 transition"
-        >
-          <LogIn class="w-4 h-4" />
-          {{ t('auth.login') }}
-        </router-link>
-      </div>
+      <EmptyState :icon="User">
+        {{ t('profile.guestPrompt') }}
+        <template #action>
+          <Button as="RouterLink" to="/login" size="Large" variant="Primary" :leading-icon="LogIn">
+            {{ t('auth.login') }}
+          </Button>
+        </template>
+      </EmptyState>
     </template>
 
     <template v-else>
       <!-- ── User card ──────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-divider p-6">
-        <div class="flex items-center gap-4">
-          <!-- Avatar -->
-          <div
-            class="w-16 h-16 rounded-full bg-brand-100 border-2 border-brand-200 flex items-center justify-center text-2xl font-extrabold text-brand-700 flex-shrink-0"
-          >
-            {{ avatarChar }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-bold text-fg-primary truncate">{{ displayName }}</h2>
-            <p class="text-sm text-fg-muted truncate">{{ authStore.user?.email }}</p>
-            <span
-              class="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full"
-              :class="isAdmin ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-fg-secondary'"
-            >
-              {{ isAdmin ? t('common.admin') : t('common.member') }}
-            </span>
-          </div>
+      <div
+        class="flex items-center gap-4 rounded-xl border border-line-divider bg-surface-card p-6 shadow-sm"
+      >
+        <Avatar size="64" :initial="avatarChar" />
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 class="truncate text-xl font-bold text-fg-primary">{{ displayName }}</h2>
+          <p class="truncate text-sm text-fg-muted">{{ authStore.user?.email }}</p>
+          <RoleBadge :role="isAdmin ? 'Admin' : 'Member'" size="Small" class="self-start" />
         </div>
       </div>
 
       <!-- ── Debt overview ──────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden">
-        <div class="px-5 py-4 border-b border-divider">
-          <h3 class="text-sm font-semibold text-fg-muted uppercase tracking-wider">
-            {{ t('profile.myDebt') }}
-          </h3>
-        </div>
+      <div class="overflow-hidden rounded-xl border border-line-divider bg-surface-card shadow-sm">
+        <SectionHeader :title="t('profile.myDebt')" :level="3" />
         <div class="p-5">
-          <div v-if="debtLoading" class="flex items-center gap-2 text-fg-disabled">
-            <Loader2 class="w-4 h-4 animate-spin" />
+          <div v-if="debtLoading" class="flex items-center gap-2 text-sm text-fg-disabled">
+            <Loader2 class="size-4 animate-spin" />
             {{ t('common.loading') }}
           </div>
           <div v-else class="flex items-center justify-between">
             <div>
               <div
-                class="text-2xl font-extrabold"
-                :class="myDebt > 0 ? 'text-red-600' : 'text-green-600'"
+                class="text-xl font-bold"
+                :class="myDebt > 0 ? 'text-fg-danger' : 'text-fg-success'"
               >
                 {{ myDebt > 0 ? formatCurrency(myDebt) : t('profile.debtFree') }}
               </div>
@@ -178,14 +172,16 @@ const isAdmin = computed(() => authStore.isAdmin)
                 {{ t('profile.unpaidSessions', { count: unpaidCount }) }}
               </div>
             </div>
-            <router-link
+            <Button
               v-if="authStore.profile?.id"
+              as="RouterLink"
               :to="'/member/' + authStore.profile.id"
-              class="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+              size="Small"
+              variant="Ghost"
+              :trailing-icon="ChevronRight"
             >
               {{ t('profile.viewHistory') }}
-              <ChevronRight class="w-4 h-4" />
-            </router-link>
+            </Button>
           </div>
         </div>
       </div>
@@ -193,23 +189,20 @@ const isAdmin = computed(() => authStore.isAdmin)
       <!-- ── Bank config (admin only) ───────────────────── -->
       <div
         v-if="isAdmin"
-        class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden"
+        class="overflow-hidden rounded-xl border border-line-divider bg-surface-card shadow-sm"
       >
-        <div class="px-5 py-4 border-b border-divider flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <CreditCard class="w-4 h-4 text-fg-disabled" />
-            <h3 class="text-sm font-semibold text-fg-muted uppercase tracking-wider">
-              {{ t('profile.bankConfig') }}
-            </h3>
-          </div>
-          <button
-            @click="showAddForm = !showAddForm"
-            class="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 transition"
-          >
-            <Plus class="w-4 h-4" />
-            {{ t('profile.addBank') }}
-          </button>
-        </div>
+        <SectionHeader :icon="CreditCard" :title="t('profile.bankConfig')" :level="3">
+          <template #actions>
+            <Button
+              size="Default"
+              variant="Ghost"
+              :leading-icon="Plus"
+              @click="showAddForm = !showAddForm"
+            >
+              {{ t('profile.addBank') }}
+            </Button>
+          </template>
+        </SectionHeader>
 
         <!-- Add form -->
         <Transition
@@ -220,109 +213,100 @@ const isAdmin = computed(() => authStore.isAdmin)
           leave-from-class="opacity-100 translate-y-0"
           leave-to-class="opacity-0 -translate-y-1"
         >
-          <div v-if="showAddForm" class="px-5 py-4 bg-gray-50 border-b border-divider space-y-3">
+          <div
+            v-if="showAddForm"
+            class="space-y-3 border-b border-line-divider bg-surface-subtle px-5 py-4"
+          >
             <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
-                  t('profile.bankId')
-                }}</label>
-                <input
+              <FormField :label="t('profile.bankId')" label-style="Small" v-slot="{ controlProps }">
+                <Input
                   v-model="bankForm.bank_id"
+                  v-bind="controlProps"
+                  class="uppercase"
                   placeholder="TPB, MB, VCB..."
-                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 uppercase"
                 />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
-                  t('profile.templateLabel')
-                }}</label>
-                <input
-                  v-model="bankForm.template"
-                  placeholder="compact2"
-                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
-                  t('profile.accountNumber')
-                }}</label>
-                <input
+              </FormField>
+              <FormField
+                :label="t('profile.templateLabel')"
+                label-style="Small"
+                v-slot="{ controlProps }"
+              >
+                <Input v-model="bankForm.template" v-bind="controlProps" placeholder="compact2" />
+              </FormField>
+              <FormField
+                :label="t('profile.accountNumber')"
+                label-style="Small"
+                v-slot="{ controlProps }"
+              >
+                <Input
                   v-model="bankForm.account_number"
+                  v-bind="controlProps"
                   placeholder="10003392871"
-                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
                 />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-fg-secondary mb-1">{{
-                  t('profile.accountName')
-                }}</label>
-                <input
+              </FormField>
+              <FormField
+                :label="t('profile.accountName')"
+                label-style="Small"
+                v-slot="{ controlProps }"
+              >
+                <Input
                   v-model="bankForm.account_name"
+                  v-bind="controlProps"
+                  class="uppercase"
                   placeholder="NGUYEN VAN A"
-                  class="w-full px-3 py-2 text-sm border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 uppercase"
                 />
-              </div>
+              </FormField>
             </div>
-            <p v-if="bankFormError" class="text-xs text-status-danger-action flex items-center gap-1">
-              <AlertTriangle class="w-3.5 h-3.5" />{{ bankFormError }}
-            </p>
+            <FieldMessage v-if="bankFormError" tone="Error" size="Small" :icon="TriangleAlert">
+              {{ bankFormError }}
+            </FieldMessage>
             <div class="flex gap-2 justify-end">
-              <button
-                @click="showAddForm = false"
-                class="px-4 py-2 text-sm text-fg-secondary hover:bg-gray-200 rounded-lg transition"
-              >
+              <Button variant="Ghost" @click="showAddForm = false">
                 {{ t('common.cancel') }}
-              </button>
-              <button
-                @click="submitAddBank"
-                :disabled="addLoading"
-                class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg disabled:opacity-50 transition"
-              >
-                <Loader2 v-if="addLoading" class="w-3.5 h-3.5 animate-spin" />
+              </Button>
+              <Button :disabled="addLoading" :loading="addLoading" @click="submitAddBank">
                 {{ t('profile.saveBank') }}
-              </button>
+              </Button>
             </div>
           </div>
         </Transition>
 
-        <div class="divide-y divide-gray-100">
+        <div>
           <!-- Fallback notice when no DB rows -->
-          <div v-if="usingFallback" class="px-5 py-4">
-            <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
-              <AlertTriangle class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p class="text-sm font-medium text-amber-800">{{ t('profile.noBank') }}</p>
-                <p class="text-xs text-amber-600 mt-0.5">{{ t('profile.fallbackNote') }}</p>
-                <div class="mt-2 text-xs text-amber-700 space-y-0.5">
-                  <div><span class="font-medium">Bank:</span> TPB (TPBank)</div>
-                  <div><span class="font-medium">STK:</span> 10003392871</div>
-                </div>
+          <div v-if="usingFallback" class="border-b border-line-subtle px-5 py-4 last:border-b-0">
+            <Alert tone="Warning" :icon="TriangleAlert">
+              <p class="font-bold">{{ t('profile.noBank') }}</p>
+              <p>{{ t('profile.fallbackNote') }}</p>
+              <div class="space-y-0.5 text-xs">
+                <div><span class="font-medium">Bank:</span> TPB (TPBank)</div>
+                <div><span class="font-medium">STK:</span> 10003392871</div>
               </div>
-            </div>
+            </Alert>
           </div>
 
           <!-- Bank config rows -->
-          <div v-for="config in configs" :key="config.id" class="px-5 py-4 flex items-center gap-3">
+          <div
+            v-for="config in configs"
+            :key="config.id"
+            class="flex items-center gap-3 border-b border-line-subtle px-5 py-4 last:border-b-0"
+          >
             <!-- Active indicator -->
             <button
               @click="handleSetActive(config.id)"
-              class="flex-shrink-0 transition hover:scale-110"
+              class="shrink-0 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
               :title="t('profile.activateBank')"
             >
-              <CheckCircle2 v-if="config.is_active" class="w-5 h-5 text-green-500" />
-              <Circle v-else class="w-5 h-5 text-gray-300 hover:text-brand-400" />
+              <CheckCircle2 v-if="config.is_active" class="size-5 text-fg-success-soft" />
+              <Circle v-else class="size-5 text-fg-faint hover:text-fg-brand" />
             </button>
 
             <!-- Bank info -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-bold text-fg-primary text-sm">{{ config.bank_id }}</span>
-                <span
-                  v-if="config.is_active"
-                  class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-status-success text-status-success-strong"
-                >
+                <Badge v-if="config.is_active" size="Small" tone="Success">
                   {{ t('profile.activeLabel') }}
-                </span>
+                </Badge>
               </div>
               <p class="text-xs text-fg-muted truncate">
                 {{ config.account_number }} · {{ config.account_name }}
@@ -330,32 +314,34 @@ const isAdmin = computed(() => authStore.isAdmin)
             </div>
 
             <!-- Delete -->
-            <button
+            <IconButton
+              :icon="Trash2"
+              :label="t('settings.deleteBank')"
+              size="Small"
+              shape="Square"
+              variant="Ghost"
               @click="handleDelete(config.id)"
-              class="flex-shrink-0 p-1.5 text-fg-disabled hover:text-status-danger-action hover:bg-status-danger-subtle rounded-lg transition"
-            >
-              <Trash2 class="w-4 h-4" />
-            </button>
+            />
           </div>
         </div>
 
-        <div v-if="bankLoading" class="px-5 py-3 text-xs text-fg-disabled flex items-center gap-2">
-          <Loader2 class="w-3.5 h-3.5 animate-spin" /> {{ t('common.loading') }}
+        <div v-if="bankLoading" class="flex items-center gap-2 px-5 py-3 text-xs text-fg-disabled">
+          <Loader2 class="size-3.5 animate-spin" /> {{ t('common.loading') }}
         </div>
       </div>
 
       <!-- ── Logout ──────────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-divider overflow-hidden">
+      <div class="overflow-hidden rounded-xl border border-line-divider bg-surface-card shadow-sm">
         <button
           @click="handleLogout"
           :disabled="loggingOut"
-          class="w-full flex items-center justify-between px-5 py-4 text-status-danger-action hover:bg-status-danger-subtle transition disabled:opacity-50"
+          class="flex w-full items-center justify-between px-5 py-4 text-status-danger-action transition hover:bg-status-danger-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus disabled:cursor-not-allowed disabled:opacity-50"
         >
           <div class="flex items-center gap-3">
-            <LogOut class="w-5 h-5" />
+            <LogOut class="size-5" />
             <span class="font-medium">{{ t('auth.logout') }}</span>
           </div>
-          <Loader2 v-if="loggingOut" class="w-4 h-4 animate-spin" />
+          <Loader2 v-if="loggingOut" class="size-4 animate-spin" />
         </button>
       </div>
 
