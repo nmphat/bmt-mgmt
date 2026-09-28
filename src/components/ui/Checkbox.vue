@@ -36,7 +36,7 @@ const state = computed(
     :value="value"
     :disabled="disabled"
     :class="[
-      'shrink-0 cursor-pointer rounded-sm border-line-input accent-surface-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+      'shrink-0 cursor-pointer accent-surface-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
       SIZES[size],
     ]"
   />

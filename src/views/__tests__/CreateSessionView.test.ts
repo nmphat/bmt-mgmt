@@ -63,6 +63,32 @@ describe('CreateSessionView (I/O matrix: Create submit)', () => {
     expect(submit(w).attributes('data-ds-state')).toBe('Disabled')
   })
 
+  it('submits the bound form values, court fee as a number', async () => {
+    rpc.mockResolvedValue({ data: 'new-id', error: null } as any)
+    const w = await mountCreate()
+    await setValid(w, true)
+    await w.get('#title').setValue('Buổi thứ Tư')
+    await w.get('#date').setValue('2026-10-01')
+    await w.get('#startTime').setValue('17:30')
+    await w.get('#endTime').setValue('19:30')
+    await w.get('#courtFee').setValue('50000')
+    await setValid(w, true)
+    await w.get('form').trigger('submit')
+    await flushPromises()
+    expect(rpc).toHaveBeenCalledWith(
+      'create_session_with_bookings',
+      expect.objectContaining({
+        p_title: 'Buổi thứ Tư',
+        p_start_time: new Date('2026-10-01T17:30:00+07:00').toISOString(),
+        p_end_time: new Date('2026-10-01T19:30:00+07:00').toISOString(),
+        p_created_by: 'u1',
+        p_court_fee_addon: 50000,
+      }),
+    )
+    const payload = rpc.mock.calls[0]![1] as Record<string, unknown>
+    expect(typeof payload.p_court_fee_addon).toBe('number')
+  })
+
   it('disabled when bookings are invalid, enabled again when valid', async () => {
     const w = await mountCreate()
     await setValid(w, false)

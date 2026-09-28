@@ -81,6 +81,12 @@ describe('Button', () => {
     expect(w.emitted()).toHaveProperty('click')
   })
 
+  it('defaults a native button to type="button"; a caller type wins', () => {
+    expect(mount(Button).attributes('type')).toBe('button')
+    expect(mount(Button, { attrs: { type: 'submit' } }).attributes('type')).toBe('submit')
+    expect(mount(Button, { props: { as: 'a' } }).attributes('type')).toBeUndefined()
+  })
+
   it('renders as a link without the disabled attribute', () => {
     const w = mount(Button, { props: { as: 'a', disabled: true }, attrs: { href: '/x' } })
     expect(w.element.tagName).toBe('A')

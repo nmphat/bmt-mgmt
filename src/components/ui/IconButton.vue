@@ -49,6 +49,7 @@ const state = computed(() => (props.disabled ? 'Disabled' : 'Default'))
     :data-ds-shape="shape"
     :data-ds-style="variant"
     :data-ds-state="state"
+    type="button"
     :disabled="disabled"
     :aria-label="label"
     :aria-busy="loading ? 'true' : undefined"

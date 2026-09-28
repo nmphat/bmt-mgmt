@@ -13,6 +13,13 @@ describe('IconButton', () => {
     expect(w.find('svg.lucide-x').exists()).toBe(true)
   })
 
+  it('defaults to type="button"; a caller type wins', () => {
+    expect(mount(IconButton, { props: base }).attributes('type')).toBe('button')
+    expect(mount(IconButton, { props: base, attrs: { type: 'submit' } }).attributes('type')).toBe(
+      'submit',
+    )
+  })
+
   it.each([
     ['Small', 'size-8'],
     ['Default', 'h-control-md'],

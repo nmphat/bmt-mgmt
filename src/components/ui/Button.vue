@@ -79,6 +79,7 @@ const state = computed(() =>
     :data-ds-size="size"
     :data-ds-style="variant"
     :data-ds-state="state"
+    :type="isNative ? 'button' : undefined"
     :disabled="isNative ? disabled : undefined"
     :aria-disabled="!isNative && disabled ? 'true' : undefined"
     :aria-busy="loading ? 'true' : undefined"
