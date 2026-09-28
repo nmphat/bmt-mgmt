@@ -17,9 +17,7 @@ const PALETTE_ALLOWED = [
   'views/MemberDetailView.vue',
   'views/MemberView.vue',
   'views/PaymentView.vue',
-  'views/ProfileView.vue',
   'views/SessionDetailView.vue',
-  'views/SettingsView.vue',
 ]
 
 const PALETTE_CLASS =
