@@ -383,3 +383,22 @@ Desktop (≥ 640px):
 - Tên: `text/*` → `fg-*` (`text-fg-muted`), `surface/*` → `surface-*` (`bg-surface-card`), `border/*` → `line-*` (`border-line-input`), `status/*` → `status-*`. Control: `h-control-sm|md|lg` (36/44/48), `rounded-control`.
 - `divider` và `input` là alias tạm của `line-divider` / `line-input`, bỏ khi B-1 xong.
 - View và component chỉ dùng token, không dùng màu palette (`bg-green-600`, `text-gray-500`). `src/__tests__/designTokens.test.ts` chặn điều này; các file chưa chuyển nằm trong `PALETTE_ALLOWED`, mỗi slice của B-1 gỡ file của mình ra.
+
+## Shared UI components (B-1)
+
+Nằm trong `src/components/ui/`, mỗi file là một component set trong Figma. Prop = trục variant của Figma (giá trị đúng chuỗi Figma, trục `Style` → prop `variant`); root có `data-ds="<tên set>"` và `data-ds-<trục>` để figma-sync so khớp. Chỉ dùng token, không gọi Supabase.
+
+- `Button` — nút chữ và link dạng nút: `size` Small/Default/Large (36/44/48, mặc định Small), `variant` 9 kiểu; `loading` (spinner + `aria-busy`, không tự disable), `pressed` (Outline Danger), `leadingIcon`/`trailingIcon`, `as` (`button`, `a`, `RouterLink`).
+- `IconButton` — nút chỉ có icon: `size` Small 32/Default 44 (mặc định Small), `shape` Round/Square, `variant` Ghost…/Outline; `label` bắt buộc (`aria-label`).
+- `Input` — ô nhập, `v-model`: `size` Small/Default/Large (mặc định Small), `suffix`; thuộc tính native (`id`, `type`, `min`, …) đi thẳng vào `<input>`.
+- `Select` — `<select>` native với chevron, `v-model`, `size` Small/Default/Large (mặc định Small), slot = các `<option>`.
+- `Checkbox` — checkbox native, `v-model` (boolean hoặc mảng + `value`), `size` 16/20/24 (mặc định 16).
+- `FieldLabel` — nhãn trên control: `variant` Default/Small/Caps/Muted.
+- `FieldMessage` — chữ gợi ý/lỗi: `tone` Help/Error, `size`, `align` Left/Center.
+- `FormField` — nhãn + control + message, gap 4; nối `for`/`id`, `aria-describedby`, `aria-invalid` (khi Error) qua slot prop `controlProps`.
+- `Badge` — pill chung: `size` Default/Small, `tone` Info/Warning/Success/Danger/Neutral/Brand.
+- `SessionStatusBadge` — trạng thái buổi: `status` Open/Waiting For Payment/Done/Cancelled; nhãn lấy từ `common.<status>`.
+- `PageHeader` — tiêu đề trang: `layout` Title/Title Action/Back Title/Icon Title/Centered; slot `actions`, `leading`.
+- `Alert` — hộp thông báo: `tone`, `size`, `variant` Box/Banner, `align`; Danger có `role="alert"`; slot `action`.
+- `EmptyState` — trạng thái rỗng: `variant` Plain/Card/Dashed/Dashed Muted, `align`, `size`, `icon`, `heading`.
+- `Spinner` — vòng loading: `size` 32/48 (mặc định 32), `tone` Brand/Success; `role="status"` + sr-only `common.loading`.

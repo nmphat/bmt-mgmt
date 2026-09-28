@@ -7,6 +7,11 @@ import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
 import { ChevronLeft } from 'lucide-vue-next'
 import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
+import Button from '@/components/ui/Button.vue'
+import FieldMessage from '@/components/ui/FieldMessage.vue'
+import FormField from '@/components/ui/FormField.vue'
+import Input from '@/components/ui/Input.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import type { CourtBookingDraft } from '@/types'
 
 const router = useRouter()
@@ -128,111 +133,101 @@ async function createSession() {
 <template>
   <div class="max-w-2xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
-      <router-link
+      <Button
+        as="RouterLink"
         to="/sessions"
-        class="inline-flex min-h-11 items-center text-sm font-bold text-brand-600 transition hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+        size="Default"
+        variant="Ghost"
+        :leading-icon="ChevronLeft"
       >
-        <ChevronLeft class="mr-1 h-5 w-5" />
         {{ t('common.backToSessions') }}
-      </router-link>
+      </Button>
     </div>
 
-    <div class="rounded-xl border border-divider bg-white p-4 shadow-sm sm:p-6">
-      <h1 class="mb-6 text-[20px] font-bold leading-tight tracking-tight text-fg-primary">
-        {{ t('createSession.title') }}
-      </h1>
+    <div class="rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm sm:p-6">
+      <PageHeader :title="t('createSession.title')" class="mb-6" />
 
       <form @submit.prevent="createSession" class="space-y-6">
-        <div>
-          <label for="title" class="block text-sm font-bold text-fg-secondary">{{
-            t('session.title')
-          }}</label>
-          <input
+        <FormField control-id="title" :label="t('session.title')" v-slot="{ controlProps }">
+          <Input
             v-model="form.title"
+            v-bind="controlProps"
+            size="Default"
             type="text"
-            id="title"
             required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             :placeholder="t('createSession.titlePlaceholder')"
           />
-        </div>
+        </FormField>
 
-        <div>
-          <label for="date" class="block text-sm font-bold text-fg-secondary">{{
-            t('createSession.date')
-          }}</label>
-          <input
-            v-model="form.date"
-            type="date"
-            id="date"
-            required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
-          />
-        </div>
+        <FormField control-id="date" :label="t('createSession.date')" v-slot="{ controlProps }">
+          <Input v-model="form.date" v-bind="controlProps" size="Default" type="date" required />
+        </FormField>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label for="startTime" class="block text-sm font-bold text-fg-secondary">{{
-              t('createSession.startTime')
-            }}</label>
-            <input
+          <FormField
+            control-id="startTime"
+            :label="t('createSession.startTime')"
+            v-slot="{ controlProps }"
+          >
+            <Input
               v-model="form.startTime"
+              v-bind="controlProps"
+              size="Default"
               type="time"
-              id="startTime"
               required
-              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             />
-          </div>
-          <div>
-            <label for="endTime" class="block text-sm font-bold text-fg-secondary">{{
-              t('createSession.endTime')
-            }}</label>
-            <input
-              v-model="form.endTime"
-              type="time"
-              id="endTime"
-              required
-              class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
-            />
-            <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-status-danger-action">
+          </FormField>
+          <FormField control-id="endTime" :label="t('createSession.endTime')" message-tone="Error">
+            <template #default="{ controlProps }">
+              <Input
+                v-model="form.endTime"
+                v-bind="controlProps"
+                size="Default"
+                type="time"
+                required
+              />
+            </template>
+            <template v-if="sessionTimeInvalid" #message>
               {{ t('createSession.endTimeError') }}
-            </p>
-          </div>
+            </template>
+          </FormField>
         </div>
 
-        <p class="text-sm text-fg-muted">
+        <FieldMessage>
           {{ t('courtBooking.intervalPreview', { count: intervalPreview }) }}
-        </p>
+        </FieldMessage>
 
-        <div>
-          <label for="courtFee" class="block text-sm font-bold text-fg-secondary">{{
-            t('session.courtFeeAddon')
-          }}</label>
-          <input
+        <FormField
+          control-id="courtFee"
+          :label="t('session.courtFeeAddon')"
+          :message="t('session.courtFeeAddonHint')"
+          v-slot="{ controlProps }"
+        >
+          <Input
             v-model.number="form.courtFee"
+            v-bind="controlProps"
+            size="Default"
             type="number"
-            id="courtFee"
             min="0"
             step="1000"
             required
-            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
           />
-          <p class="mt-1 text-sm text-fg-muted">{{ t('session.courtFeeAddonHint') }}</p>
-        </div>
+        </FormField>
 
-        <div>
-          <label for="defaultCourtPrice" class="block text-sm font-bold text-fg-secondary">{{
-            t('session.defaultCourtPrice')
-          }}</label>
-          <input
+        <FormField
+          control-id="defaultCourtPrice"
+          :label="t('session.defaultCourtPrice')"
+          v-slot="{ controlProps }"
+        >
+          <Input
             v-model.number="defaultCourtPrice"
+            v-bind="controlProps"
+            size="Default"
             type="number"
-            id="defaultCourtPrice"
             min="0"
             step="1000"
-            class="mt-1 block min-h-11 w-full rounded-xl border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
           />
-        </div>
+        </FormField>
 
         <!-- Court Bookings -->
         <CourtBookingEditor
@@ -244,13 +239,15 @@ async function createSession() {
         />
 
         <div class="pt-4">
-          <button
+          <Button
             type="submit"
+            size="Large"
+            variant="Primary"
             :disabled="loading || !bookingsValid || sessionTimeInvalid"
-            class="flex min-h-11 w-full justify-center rounded-xl bg-brand-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            class="w-full"
           >
             {{ loading ? t('createSession.creating') : t('createSession.createButton') }}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
