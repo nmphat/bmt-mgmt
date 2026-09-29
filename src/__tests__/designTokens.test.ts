@@ -4,11 +4,7 @@ import { describe, it, expect } from 'vitest'
 // palette shade such as `bg-green-600` or `text-gray-500`. Files that still use palette shades are listed below; each
 // B-1 slice migrates its files and removes them from this list, and the last slice leaves it empty.
 const PALETTE_ALLOWED = [
-  'App.vue',
-  'components/AppHeader.vue',
-  'components/BottomNav.vue',
   'components/CashPaymentModal.vue',
-  'components/HomeDebtTable.vue',
   'components/ManualPaymentModal.vue',
   'components/PaymentQRModal.vue',
   'components/SessionExtraCharges.vue',

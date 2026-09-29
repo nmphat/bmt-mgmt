@@ -8,6 +8,7 @@ import HomeDebtTable from '@/components/HomeDebtTable.vue'
 import { useToast } from 'vue-toastification'
 import CashPaymentModal from '@/components/CashPaymentModal.vue'
 import { useAuthStore } from '@/stores/auth'
+import PageHeader from '@/components/ui/PageHeader.vue'
 
 const langStore = useLangStore()
 const t = computed(() => langStore.t)
@@ -228,9 +229,7 @@ onMounted(fetchDebts)
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold tracking-tight text-fg-primary">{{ t('debt.title') }}</h1>
-    </div>
+    <PageHeader layout="Title" :title="t('debt.title')" class="mb-6" />
 
     <HomeDebtTable
       :key="debtTableKey"

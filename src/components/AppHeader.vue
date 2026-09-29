@@ -5,6 +5,7 @@ import { useLangStore } from '@/stores/lang'
 import { useRouter } from 'vue-router'
 import { LogOut, Menu, Settings, User, Wallet } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
+import Avatar from '@/components/ui/Avatar.vue'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -100,13 +101,20 @@ watch(
 
 <template>
   <header
-    class="sticky top-0 z-50 border-b border-divider bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90"
+    data-ds="App Header"
+    :data-ds-auth="authStore.isAuthenticated ? 'Signed In' : 'Guest'"
+    class="sticky top-0 z-50 border-b border-line-divider bg-surface-card/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-surface-card/90 sm:px-6 lg:px-8"
   >
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+    <div class="mx-auto flex h-14 max-w-[76rem] items-center justify-between">
       <!-- Logo / Title -->
-      <router-link to="/" class="flex items-center gap-2 group">
+      <router-link
+        to="/"
+        data-ds="Brand Logo"
+        data-ds-state="Default"
+        class="group flex items-center gap-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
+      >
         <div
-          class="shadow-brand bg-brand-600 text-white p-1.5 rounded-xl transition-colors duration-200 group-hover:bg-brand-700"
+          class="shadow-brand rounded-xl bg-surface-brand p-1.5 text-fg-on-brand transition-colors duration-200 group-hover:bg-fg-brand-strong"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -124,7 +132,7 @@ watch(
           </svg>
         </div>
         <span
-          class="text-lg font-semibold tracking-tight text-fg-primary transition-colors duration-200 group-hover:text-brand-600"
+          class="text-lg font-semibold tracking-tight text-fg-primary transition-colors duration-200 group-hover:text-fg-brand"
           >Badminton Mgmt</span
         >
       </router-link>
@@ -133,22 +141,25 @@ watch(
       <nav class="hidden md:flex h-14 items-stretch gap-6 mx-6">
         <router-link
           to="/"
-          active-class="text-brand-600 border-brand-600"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
+          data-ds="Header Nav Link"
+          active-class="text-fg-brand border-line-brand"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
         >
           {{ t('nav.home') }}
         </router-link>
         <router-link
           to="/sessions"
-          active-class="text-brand-600 border-brand-600"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
+          data-ds="Header Nav Link"
+          active-class="text-fg-brand border-line-brand"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
         >
           {{ t('nav.sessions') }}
         </router-link>
         <router-link
           to="/members"
-          active-class="text-brand-600 border-brand-600"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-brand-600"
+          data-ds="Header Nav Link"
+          active-class="text-fg-brand border-line-brand"
+          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
         >
           {{ t('nav.members') }}
         </router-link>
@@ -158,8 +169,10 @@ watch(
       <div class="flex items-center gap-2 sm:gap-4">
         <!-- 1. Language Switcher -->
         <button
+          data-ds="Language Toggle"
+          :data-ds-lang="langStore.currentLang === 'vi' ? 'VI' : 'EN'"
           @click="selectLang(langStore.currentLang === 'vi' ? 'en' : 'vi')"
-          class="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 py-1 text-sm transition-colors duration-200 hover:bg-gray-100 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+          class="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xl px-2 text-sm transition-colors duration-200 hover:bg-surface-muted active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line-focus"
           :title="langStore.currentLang === 'vi' ? t('nav.switchEn') : t('nav.switchVi')"
           :aria-label="t('shell.languageSwitcher')"
         >
@@ -171,14 +184,16 @@ watch(
         <!-- 2. Debt Badge (Logged in only) -->
         <div
           v-if="authStore.isAuthenticated"
-          class="hidden sm:flex min-h-11 items-center px-3 py-1.5 rounded-full border text-xs font-semibold shadow-sm transition-colors cursor-default"
+          data-ds="Debt Chip"
+          :data-ds-state="myDebt > 0 ? 'Debt' : 'Clean'"
+          class="hidden sm:flex h-11 cursor-default items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
           :class="
             myDebt > 0
               ? 'bg-status-danger-subtle text-status-danger-strong border-status-danger-border'
               : 'bg-status-success-subtle text-status-success-strong border-status-success-border'
           "
         >
-          <Wallet class="w-3.5 h-3.5 mr-1.5" />
+          <Wallet class="size-3.5" />
           <span v-if="myDebt > 0">{{ t('debt.prefix') }}: {{ formatCurrency(myDebt) }}</span>
           <span v-else>{{ t('debt.clean') }}</span>
         </div>
@@ -187,27 +202,27 @@ watch(
         <template v-if="authStore.isAuthenticated">
           <div class="relative">
             <button
+              data-ds="User Menu Trigger"
+              data-ds-state="Default"
               @click="userMenuOpen = !userMenuOpen"
-              class="flex min-h-11 min-w-11 items-center justify-center gap-2 text-sm text-fg-secondary transition-colors duration-200 hover:text-brand-600 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              class="flex min-h-11 min-w-11 items-center justify-center gap-2 text-sm text-fg-secondary transition-colors duration-200 hover:text-fg-brand active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line-focus"
               :aria-label="t('shell.openUserMenu')"
               :aria-expanded="userMenuOpen"
               aria-haspopup="menu"
             >
-              <div
-                class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center border border-brand-200 text-brand-700 font-bold"
-              >
-                {{ displayName.charAt(0).toUpperCase() }}
-              </div>
-              <Menu class="hidden h-4 w-4 sm:block" aria-hidden="true" />
+              <Avatar size="32" :initial="displayName.charAt(0).toUpperCase()" />
+              <Menu class="hidden size-4 text-fg-secondary sm:block" aria-hidden="true" />
             </button>
 
             <!-- Dropdown Menu -->
             <div
               v-if="userMenuOpen"
-              class="absolute right-0 z-[60] mt-2 w-56 rounded-lg bg-white py-1 shadow-lg ring-1 ring-black/5"
+              data-ds="User Menu"
+              data-ds-style="Default"
+              class="absolute right-0 z-[60] mt-2 w-56 rounded-lg border border-line-subtle bg-surface-card py-1 shadow-lg"
               role="menu"
             >
-              <div class="px-4 py-2 border-b border-divider">
+              <div class="px-4 py-2 border-b border-line-divider">
                 <p class="text-sm font-medium text-fg-primary truncate">{{ displayName }}</p>
                 <p class="text-xs text-fg-muted truncate">{{ authStore.user?.email }}</p>
               </div>
@@ -215,31 +230,37 @@ watch(
               <router-link
                 v-if="authStore.profile?.id"
                 :to="'/member/' + authStore.profile.id"
-                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-gray-50"
+                data-ds="Menu Item"
+                data-ds-tone="Default"
+                class="flex h-11 w-full items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
                 role="menuitem"
                 @click="userMenuOpen = false"
               >
-                <User class="h-4 w-4" aria-hidden="true" />
+                <User class="size-4" aria-hidden="true" />
                 {{ t('auth.profile') }}
               </router-link>
 
               <router-link
                 v-if="authStore.isAdmin"
                 to="/settings"
-                class="flex min-h-11 items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-gray-50"
+                data-ds="Menu Item"
+                data-ds-tone="Default"
+                class="flex h-11 w-full items-center gap-2 px-4 py-2 text-sm text-fg-secondary transition-colors duration-150 hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
                 role="menuitem"
                 @click="userMenuOpen = false"
               >
-                <Settings class="h-4 w-4" aria-hidden="true" />
+                <Settings class="size-4" aria-hidden="true" />
                 {{ t('auth.admin_settings') }}
               </router-link>
 
               <button
+                data-ds="Menu Item"
+                data-ds-tone="Danger"
                 @click="handleLogout"
-                class="flex min-h-11 w-full items-center px-4 py-2 text-left text-sm text-status-danger-action transition-colors duration-150 hover:bg-status-danger-subtle"
+                class="flex h-11 w-full items-center gap-2 px-4 py-2 text-left text-sm text-status-danger-action transition-colors duration-150 hover:bg-status-danger-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
                 role="menuitem"
               >
-                <LogOut class="w-4 h-4 mr-2" />
+                <LogOut class="size-4" />
                 {{ t('auth.logout') }}
               </button>
             </div>

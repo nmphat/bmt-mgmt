@@ -23,41 +23,65 @@ const isActive = (path: '/' | '/members' | '/sessions') => {
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-divider bg-white/95 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden"
+    data-ds="Bottom Nav"
+    :data-ds-active="
+      isActive('/')
+        ? 'Home'
+        : isActive('/members')
+          ? 'Members'
+          : isActive('/sessions')
+            ? 'Sessions'
+            : 'None'
+    "
+    class="fixed inset-x-0 bottom-0 z-40 border-t border-line-divider bg-surface-card/95 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur md:hidden"
     aria-label="Primary mobile navigation"
   >
     <div class="mx-auto grid max-w-md grid-cols-3 gap-1">
       <RouterLink
         to="/"
-        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-        :class="isActive('/') ? 'bg-brand-50 text-brand-600' : 'text-fg-secondary hover:bg-gray-50'"
+        data-ds="Bottom Nav Item"
+        :data-ds-state="isActive('/') ? 'Active' : 'Inactive'"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line-focus"
+        :class="
+          isActive('/')
+            ? 'bg-surface-brand-subtle text-fg-brand'
+            : 'text-fg-secondary hover:bg-surface-subtle'
+        "
         :aria-current="isActive('/') ? 'page' : undefined"
       >
-        <Home class="h-5 w-5" aria-hidden="true" />
+        <Home class="size-5" aria-hidden="true" />
         <span>{{ t('nav.debtHome') }}</span>
       </RouterLink>
 
       <RouterLink
         to="/members"
-        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        data-ds="Bottom Nav Item"
+        :data-ds-state="isActive('/members') ? 'Active' : 'Inactive'"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line-focus"
         :class="
-          isActive('/members') ? 'bg-brand-50 text-brand-600' : 'text-fg-secondary hover:bg-gray-50'
+          isActive('/members')
+            ? 'bg-surface-brand-subtle text-fg-brand'
+            : 'text-fg-secondary hover:bg-surface-subtle'
         "
         :aria-current="isActive('/members') ? 'page' : undefined"
       >
-        <Users class="h-5 w-5" aria-hidden="true" />
+        <Users class="size-5" aria-hidden="true" />
         <span>{{ t('nav.members') }}</span>
       </RouterLink>
 
       <RouterLink
         to="/sessions"
-        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        data-ds="Bottom Nav Item"
+        :data-ds-state="isActive('/sessions') ? 'Active' : 'Inactive'"
+        class="flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors duration-200 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line-focus"
         :class="
-          isActive('/sessions') ? 'bg-brand-50 text-brand-600' : 'text-fg-secondary hover:bg-gray-50'
+          isActive('/sessions')
+            ? 'bg-surface-brand-subtle text-fg-brand'
+            : 'text-fg-secondary hover:bg-surface-subtle'
         "
         :aria-current="isActive('/sessions') ? 'page' : undefined"
       >
-        <CalendarDays class="h-5 w-5" aria-hidden="true" />
+        <CalendarDays class="size-5" aria-hidden="true" />
         <span>{{ t('nav.sessions') }}</span>
       </RouterLink>
     </div>
