@@ -308,7 +308,9 @@ onMounted(fetchMemberDetails)
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h2 class="text-base font-bold text-fg-primary transition group-hover:text-fg-brand">
+                <h2
+                  class="text-base font-bold text-fg-primary transition group-hover:text-fg-brand"
+                >
                   {{ session.session_title }}
                 </h2>
                 <p class="mt-1 text-sm text-fg-muted">
@@ -317,7 +319,15 @@ onMounted(fetchMemberDetails)
                   }}
                 </p>
               </div>
-              <PaymentStatusBadge :status="session.status === 'paid' ? 'Paid' : session.status === 'partial' ? 'Partial' : 'Pending'" />
+              <PaymentStatusBadge
+                :status="
+                  session.status === 'paid'
+                    ? 'Paid'
+                    : session.status === 'partial'
+                      ? 'Partial'
+                      : 'Pending'
+                "
+              />
             </div>
 
             <dl class="grid grid-cols-2 gap-3 text-sm">
@@ -413,7 +423,7 @@ onMounted(fetchMemberDetails)
                 @keydown.enter.prevent="openSessionDetail(session.session_id)"
                 @keydown.space.prevent="openSessionDetail(session.session_id)"
               >
-                <td class="px-6 py-4 text-base">
+                <td class="px-6 py-4 whitespace-nowrap text-base">
                   <div class="font-bold text-fg-primary transition group-hover:text-fg-brand">
                     {{ session.session_title }}
                   </div>
@@ -425,28 +435,36 @@ onMounted(fetchMemberDetails)
                     }}
                   </div>
                 </td>
-                <td class="px-6 py-4 text-right text-base text-fg-muted">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-base text-fg-muted">
                   {{ formatCurrency(session.final_amount) }}
                 </td>
-                <td class="px-6 py-4 text-left text-base text-fg-muted">
+                <td class="px-6 py-4 whitespace-nowrap text-left text-base text-fg-muted">
                   {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
                 </td>
-                <td class="px-6 py-4 text-right text-base text-fg-muted">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-base text-fg-muted">
                   {{ formatCurrency(session.court_fee_amount) }}
                 </td>
-                <td class="px-6 py-4 text-right text-base text-fg-muted">
+                <td class="px-6 py-4 whitespace-nowrap text-right text-base text-fg-muted">
                   {{ formatCurrency(session.shuttle_fee_amount) }}
                 </td>
                 <td
-                  class="px-6 py-4 text-right text-base font-bold"
+                  class="px-6 py-4 whitespace-nowrap text-right text-base font-bold"
                   :class="session.remaining_amount > 0 ? 'text-fg-danger' : 'text-fg-primary'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <PaymentStatusBadge :status="session.status === 'paid' ? 'Paid' : session.status === 'partial' ? 'Partial' : 'Pending'" />
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                  <PaymentStatusBadge
+                    :status="
+                      session.status === 'paid'
+                        ? 'Paid'
+                        : session.status === 'partial'
+                          ? 'Partial'
+                          : 'Pending'
+                    "
+                  />
                 </td>
-                <td class="px-6 py-4 text-center">
+                <td class="px-6 py-4 whitespace-nowrap text-center">
                   <IconButton
                     v-if="session.status !== 'paid'"
                     :icon="QrCode"

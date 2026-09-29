@@ -398,7 +398,7 @@ onMounted(fetchMembers)
               :class="editingMemberId === member.id && 'bg-surface-subtle'"
             >
               <!-- Name -->
-              <td class="px-6 py-4 text-base text-fg-primary">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-fg-primary">
                 <Input
                   v-if="editingMemberId === member.id"
                   v-model="editForm.display_name"
@@ -410,7 +410,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Role -->
-              <td class="px-6 py-4 text-base text-fg-muted">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-fg-muted">
                 <Select
                   v-if="editingMemberId === member.id"
                   v-model="editForm.role"
@@ -424,7 +424,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Is Active -->
-              <td class="px-6 py-4 text-base text-center text-fg-muted">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-center text-fg-muted">
                 <div v-if="editingMemberId === member.id" class="flex justify-center">
                   <Checkbox v-model="editForm.is_active" />
                 </div>
@@ -435,7 +435,7 @@ onMounted(fetchMembers)
               </td>
 
               <!-- Actions -->
-              <td class="px-6 py-4 text-base text-right">
+              <td class="px-6 py-4 whitespace-nowrap text-base text-right">
                 <div v-if="editingMemberId === member.id" class="flex justify-end gap-3">
                   <IconButton
                     :icon="Save"

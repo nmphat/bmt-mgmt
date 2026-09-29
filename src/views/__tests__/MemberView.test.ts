@@ -169,9 +169,7 @@ describe('MemberView (I/O matrix)', () => {
     const mobileDetails = card.get('a[href="/member/m1"]')
     expect(mobileDetails.attributes('data-ds-style')).toBe('Outline Brand')
     expect(mobileDetails.attributes('data-ds-size')).toBe('Default')
-    expect(mobileDetails.attributes('aria-label')).toBe(
-      t('member.viewDetailsFor', { name: 'An' }),
-    )
+    expect(mobileDetails.attributes('aria-label')).toBe(t('member.viewDetailsFor', { name: 'An' }))
     expect(mobileDetails.find('svg.lucide-chevron-right').exists()).toBe(true)
   })
 
@@ -248,7 +246,10 @@ describe('MemberView (I/O matrix)', () => {
   // Row: Row badges
   it('row badges: Role Badge Default Admin/Member, Member Active Badge on mobile, Check / X in the table', async () => {
     h.result = {
-      data: [member('a1', 'Admin User', 'admin', true), member('m1', 'Member User', 'member', false)],
+      data: [
+        member('a1', 'Admin User', 'admin', true),
+        member('m1', 'Member User', 'member', false),
+      ],
       error: null,
     }
     const { w } = await mountMembers('member')
@@ -297,12 +298,9 @@ describe('MemberView (I/O matrix)', () => {
 
     const chain = chainWith('update')!
     expect(chain.calls.map((c) => c.m)).toEqual(['update', 'eq'])
-    expect(chain.calls[0]!.args[0]).toMatchObject({
-      display_name: 'An 2',
-      role: 'member',
-      is_active: true,
-    })
-    expect(typeof chain.calls[0]!.args[0].updated_at).toBe('string')
+    expect(chain.calls[0]!.args).toEqual([
+      { display_name: 'An 2', role: 'member', is_active: true, updated_at: expect.any(String) },
+    ])
     expect(chain.calls[1]!.args).toEqual(['id', 'm1'])
     expect(w.find('article form').exists()).toBe(false)
     expect(w.get('article').get('h2').text()).toBe('An 2')
@@ -324,7 +322,12 @@ describe('MemberView (I/O matrix)', () => {
     h.result = { data: null, error: null }
     await rowSave(w).trigger('click')
     await flushPromises()
-    expect(chainArgs('update')![0]).toMatchObject({ display_name: 'An 3' })
+    const chain = chainWith('update')!
+    expect(chain.calls.map((c) => c.m)).toEqual(['update', 'eq'])
+    expect(chain.calls[0]!.args).toEqual([
+      { display_name: 'An 3', role: 'member', is_active: true, updated_at: expect.any(String) },
+    ])
+    expect(chain.calls[1]!.args).toEqual(['id', 'm1'])
     expect(w.find('tbody tr input').exists()).toBe(false)
   })
 

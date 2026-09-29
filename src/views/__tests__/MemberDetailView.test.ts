@@ -302,6 +302,33 @@ describe('MemberDetailView (I/O matrix)', () => {
     expect(JSON.parse(modal(w).attributes('data-group')!)).toBe(null)
   })
 
+  it('session QR: the desktop row QR opens the modal and does not navigate', async () => {
+    setup({ sessions: [session({ snapshot_id: 'a', session_id: 'sess1', status: 'pending' })] })
+    const { w, push } = await mountDetail()
+    await tableRows(w)[0]!.get('[data-ds="Icon Button"]').trigger('click')
+    await flushPromises()
+    expect(push).not.toHaveBeenCalled()
+    expect(modal(w).attributes('data-show')).toBe('true')
+    expect(JSON.parse(modal(w).attributes('data-snapshot')!).id).toBe('a')
+  })
+
+  it('session open: click, Enter and Space on a mobile item push /session/<id>', async () => {
+    setup({ sessions: [session({ snapshot_id: 'a', session_id: 'sess1' })] })
+    const { w, push } = await mountDetail()
+    const item = () => mobileItems(w)[0]!
+
+    await item().trigger('click')
+    expect(push).toHaveBeenCalledWith('/session/sess1')
+
+    push.mockClear()
+    await item().trigger('keydown', { key: 'Enter' })
+    expect(push).toHaveBeenCalledWith('/session/sess1')
+
+    push.mockClear()
+    await item().trigger('keydown', { key: ' ' })
+    expect(push).toHaveBeenCalledWith('/session/sess1')
+  })
+
   it('session open: click, Enter and Space on a row push /session/<id>', async () => {
     setup({ sessions: [session({ snapshot_id: 'a', session_id: 'sess1' })] })
     const { w, push } = await mountDetail()
