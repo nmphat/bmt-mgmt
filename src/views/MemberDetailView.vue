@@ -232,10 +232,6 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-// DB snapshot status -> Figma "Payment Status Badge" variant (components.md).
-const STATUS_DS = { paid: 'Paid', partial: 'Partial', pending: 'Pending' } as const
-const dsStatus = (status: MemberSessionDetail['status']) => STATUS_DS[status]
-
 function getTranslation(key: string, params: any = {}) {
   // Safe wrapper if needed, or just use t.value
   return t.value(key, params)
@@ -321,7 +317,7 @@ onMounted(fetchMemberDetails)
                   }}
                 </p>
               </div>
-              <PaymentStatusBadge :status="dsStatus(session.status)" />
+              <PaymentStatusBadge :status="session.status === 'paid' ? 'Paid' : session.status === 'partial' ? 'Partial' : 'Pending'" />
             </div>
 
             <dl class="grid grid-cols-2 gap-3 text-sm">
@@ -448,7 +444,7 @@ onMounted(fetchMemberDetails)
                   {{ formatCurrency(session.remaining_amount) }}
                 </td>
                 <td class="px-6 py-4 text-center">
-                  <PaymentStatusBadge :status="dsStatus(session.status)" />
+                  <PaymentStatusBadge :status="session.status === 'paid' ? 'Paid' : session.status === 'partial' ? 'Partial' : 'Pending'" />
                 </td>
                 <td class="px-6 py-4 text-center">
                   <IconButton
