@@ -30,7 +30,7 @@ type Props = {
   isAdmin?: boolean
 }
 
-async function mountTable(props: Props = {}) {
+async function mountTable(props: Props = {}, attachTo?: HTMLElement) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -43,6 +43,7 @@ async function mountTable(props: Props = {}) {
   return mount(HomeDebtTable, {
     props: { members: [], loading: false, hasMore: false, search: '', ...props },
     global: { plugins: [router] },
+    attachTo,
   })
 }
 
@@ -113,7 +114,7 @@ describe('HomeDebtTable (I/O matrix)', () => {
 
   // Row: Select
   it('select: card area click, Enter and Space toggle; the checkbox toggles once', async () => {
-    const w = await mountTable({ members: [m1] })
+    const w = await mountTable({ members: [m1] }, document.body)
     const area = () => cards(w)[0]!.get('[role="button"]')
     await area().trigger('click')
     expect(cards(w)[0]!.attributes('data-ds-selected')).toBe('true')
@@ -128,8 +129,16 @@ describe('HomeDebtTable (I/O matrix)', () => {
     const box = cards(w)[0]!.get('input[type="checkbox"]')
     expect(box.attributes('data-ds-size')).toBe('24')
     expect(box.attributes('aria-label')).toBe(t('debt.selectedCount', { count: 1 }))
-    await box.setValue(false)
+    // happy-dom fires the checkbox's change only when it is connected (the test mounts attached). The click
+    // bubbles to the @click.stop wrapper; the selection flips exactly once per click.
+    const clickBox = () => cards(w)[0]!.get('input[type="checkbox"]').trigger('click')
+    await clickBox()
     expect(cards(w)[0]!.attributes('data-ds-selected')).toBe('false')
+    expect(area().attributes('aria-pressed')).toBe('false')
+    await clickBox()
+    expect(cards(w)[0]!.attributes('data-ds-selected')).toBe('true')
+    expect(area().attributes('aria-pressed')).toBe('true')
+    w.unmount()
   })
 
   // Row: Table row
