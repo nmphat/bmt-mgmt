@@ -14,8 +14,6 @@ const PALETTE_ALLOWED = [
   'components/SessionExtraCharges.vue',
   'components/session/CourtBookingEditor.vue',
   'components/session/ShuttleUsageEditor.vue',
-  'views/MemberDetailView.vue',
-  'views/MemberView.vue',
   'views/PaymentView.vue',
   'views/SessionDetailView.vue',
 ]

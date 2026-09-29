@@ -4,9 +4,21 @@ import { supabase } from '@/lib/supabase'
 import type { Member } from '@/types'
 import { useAuthStore } from '@/stores/auth'
 import { useLangStore } from '@/stores/lang'
-import { Check, X, Edit, Save, Trash2, UserPlus, Loader2, ChevronRight } from 'lucide-vue-next'
+import { Check, X, Edit, Save, Trash2, UserPlus, ChevronRight } from 'lucide-vue-next'
 import { useToast } from 'vue-toastification'
 import { computed } from 'vue'
+import Button from '@/components/ui/Button.vue'
+import Checkbox from '@/components/ui/Checkbox.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import FormField from '@/components/ui/FormField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import Input from '@/components/ui/Input.vue'
+import MemberActiveBadge from '@/components/ui/MemberActiveBadge.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import RoleBadge from '@/components/ui/RoleBadge.vue'
+import Select from '@/components/ui/Select.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import TableHeaderCell from '@/components/ui/TableHeaderCell.vue'
 
 const authStore = useAuthStore()
 const langStore = useLangStore()
@@ -175,239 +187,191 @@ onMounted(fetchMembers)
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <h1 class="text-[20px] font-bold leading-[1.2] tracking-tight text-fg-primary">
-        {{ t('member.title') }}
-      </h1>
-      <button
-        v-if="authStore.isAdmin && !showAddForm"
-        @click="showAddForm = true"
-        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 text-base font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-      >
-        <UserPlus class="w-5 h-5 mr-2" />
-        {{ t('member.newName') }}
-      </button>
-    </div>
+    <PageHeader layout="Title Action" :title="t('member.title')" class="mb-6">
+      <template #actions>
+        <Button
+          v-if="authStore.isAdmin && !showAddForm"
+          size="Default"
+          variant="Primary"
+          :leading-icon="UserPlus"
+          @click="showAddForm = true"
+        >
+          {{ t('member.newName') }}
+        </Button>
+      </template>
+    </PageHeader>
 
     <!-- Add Member Form -->
     <div
       v-if="showAddForm && authStore.isAdmin"
-      class="mb-8 rounded-xl border border-brand-100 bg-white p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300"
+      class="mb-8 flex flex-col gap-4 rounded-xl border border-line-brand-muted bg-surface-card p-6 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300"
     >
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-bold text-fg-primary">
           {{ t('member.addTitle') }}
         </h2>
-        <button
+        <IconButton
+          :icon="X"
+          :label="t('common.cancel')"
+          size="Default"
+          shape="Square"
+          variant="Ghost"
           @click="showAddForm = false"
-          class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled transition hover:text-fg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-          :aria-label="t('common.cancel')"
-        >
-          <X class="w-5 h-5" />
-        </button>
+        />
       </div>
       <form @submit.prevent="addMember" class="grid grid-cols-1 gap-4 md:grid-cols-4 items-end">
-        <div>
-          <label class="block text-base font-bold text-fg-secondary mb-1">{{
-            t('member.displayName')
-          }}</label>
-          <input
+        <FormField :label="t('member.displayName')" v-slot="{ controlProps }">
+          <Input
             v-model="newMember.display_name"
+            v-bind="controlProps"
+            size="Default"
             type="text"
             required
-            class="block min-h-11 w-full rounded-md border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
             :placeholder="t('member.namePlaceholder')"
           />
-        </div>
-        <div>
-          <label class="block text-base font-bold text-fg-secondary mb-1">{{ t('member.role') }}</label>
-          <select
-            v-model="newMember.role"
-            class="block min-h-11 w-full rounded-md border border-input px-3 py-2 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
-          >
+        </FormField>
+        <FormField :label="t('member.role')" control="Select" v-slot="{ controlProps }">
+          <Select v-model="newMember.role" v-bind="controlProps" size="Default">
             <option value="member">{{ t('member.memberRole') }}</option>
             <option value="admin">{{ t('member.adminRole') }}</option>
-          </select>
-        </div>
-        <div class="flex flex-wrap gap-4 mb-2 md:mb-0">
-          <label class="flex min-h-11 items-center text-base text-fg-secondary cursor-pointer">
-            <input
-              v-model="newMember.is_active"
-              type="checkbox"
-              class="h-4 w-4 text-brand-600 rounded border-input mr-2"
-            />
+          </Select>
+        </FormField>
+        <div class="flex flex-wrap items-center gap-4 mb-2 md:mb-0">
+          <label class="flex h-11 items-center gap-2 text-base text-fg-secondary cursor-pointer">
+            <Checkbox v-model="newMember.is_active" />
             {{ t('member.active') }}
           </label>
           <label
-            class="flex min-h-11 items-center text-base text-brand-600 font-bold cursor-pointer border-l pl-4 border-divider"
+            class="flex h-11 items-center gap-2 border-l border-line-divider pl-4 font-bold text-fg-brand cursor-pointer"
           >
-            <input
-              v-model="createAnother"
-              type="checkbox"
-              class="h-4 w-4 text-brand-600 rounded border-input mr-2"
-            />
+            <Checkbox v-model="createAnother" />
             {{ t('member.createAnother') }}
           </label>
         </div>
         <div class="flex gap-2">
-          <button
+          <Button
             type="submit"
+            size="Default"
+            variant="Primary"
             :disabled="actionLoading"
-            class="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand-600 px-4 text-base font-bold text-white transition hover:bg-brand-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            :loading="actionLoading"
+            class="flex-1"
           >
-            <Loader2 v-if="actionLoading" class="w-4 h-4 mr-2 animate-spin" />
             {{ t('member.create') }}
-          </button>
-          <button
-            type="button"
-            @click="showAddForm = false"
-            class="min-h-11 rounded-xl border border-input px-4 text-base font-bold text-fg-secondary transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-          >
+          </Button>
+          <Button size="Default" variant="Secondary" @click="showAddForm = false">
             {{ t('common.cancel') }}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
 
     <div v-if="loading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+      <Spinner size="48" />
     </div>
 
     <div v-else class="space-y-4">
-      <div
-        v-if="members.length === 0"
-        class="rounded-xl border border-divider bg-white p-6 text-center text-base text-fg-secondary shadow-sm"
-      >
+      <EmptyState v-if="members.length === 0" variant="Card" align="Center">
         {{ t('member.emptyState') }}
-      </div>
+      </EmptyState>
 
       <div v-else class="space-y-3 md:hidden">
         <article
           v-for="member in members"
           :key="member.id"
-          class="rounded-xl border border-divider bg-white p-4 shadow-sm"
+          class="flex flex-col gap-3 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm"
         >
           <form
             v-if="editingMemberId === member.id"
             @submit.prevent="saveEdit(member.id)"
-            class="space-y-4 rounded-xl border border-brand-100 bg-brand-50/40 p-3"
+            class="flex flex-col gap-4 rounded-xl border border-line-brand-muted bg-surface-brand-subtle p-3"
           >
-            <div>
-              <label class="mb-1 block text-sm font-bold text-fg-secondary">
-                {{ t('member.displayName') }}
-              </label>
-              <input
+            <FormField :label="t('member.displayName')" v-slot="{ controlProps }">
+              <Input
                 v-model="editForm.display_name"
+                v-bind="controlProps"
+                size="Default"
                 type="text"
-                class="block min-h-11 w-full rounded-xl border border-input px-3 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label class="mb-1 block text-sm font-bold text-fg-secondary">
-                {{ t('member.role') }}
-              </label>
-              <select
-                v-model="editForm.role"
-                class="block min-h-11 w-full rounded-xl border border-input px-3 text-base shadow-sm focus:border-brand-500 focus:ring-brand-500"
-              >
+            <FormField :label="t('member.role')" control="Select" v-slot="{ controlProps }">
+              <Select v-model="editForm.role" v-bind="controlProps" size="Default">
                 <option value="member">{{ t('member.memberRole') }}</option>
                 <option value="admin">{{ t('member.adminRole') }}</option>
-              </select>
-            </div>
+              </Select>
+            </FormField>
 
             <div class="space-y-2">
               <label
-                class="flex min-h-11 items-center rounded-xl border border-divider bg-white px-3 text-base text-fg-secondary"
+                class="flex h-11 items-center gap-2 rounded-xl border border-line-divider bg-surface-card px-3 text-base text-fg-secondary cursor-pointer"
               >
-                <input
-                  v-model="editForm.is_active"
-                  type="checkbox"
-                  class="mr-2 h-4 w-4 rounded border-input text-brand-600 focus:ring-brand-500"
-                />
+                <Checkbox v-model="editForm.is_active" />
                 {{ t('member.active') }}
               </label>
             </div>
 
             <div class="grid grid-cols-2 gap-2">
-              <button
-                type="submit"
-                class="inline-flex min-h-11 items-center justify-center rounded-xl bg-green-600 px-4 text-base font-bold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-              >
-                <Save class="mr-2 h-4 w-4" />
+              <Button type="submit" size="Default" variant="Success" :leading-icon="Save">
                 {{ t('common.save') }}
-              </button>
-              <button
-                type="button"
-                @click="cancelEdit"
-                class="inline-flex min-h-11 items-center justify-center rounded-xl border border-input bg-white px-4 text-base font-bold text-fg-secondary transition hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-              >
-                <X class="mr-2 h-4 w-4" />
+              </Button>
+              <Button size="Default" variant="Secondary" :leading-icon="X" @click="cancelEdit">
                 {{ t('common.cancel') }}
-              </button>
+              </Button>
             </div>
           </form>
 
-          <div v-else class="space-y-3">
+          <div v-else class="flex flex-col gap-3">
             <div class="flex items-start justify-between gap-3">
-              <div>
-                <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
+              <div class="flex flex-col gap-1">
+                <h2 class="text-xl font-bold text-fg-primary">
                   {{ member.display_name }}
                 </h2>
-                <p class="mt-1 text-sm font-bold text-fg-muted">{{ t('member.role') }}</p>
+                <p class="text-sm font-bold text-fg-muted">{{ t('member.role') }}</p>
               </div>
-              <span
-                :class="[
-                  'rounded-full px-3 py-1 text-sm font-bold',
-                  member.role === 'admin'
-                    ? 'bg-brand-100 text-brand-800'
-                    : 'bg-status-neutral text-status-neutral-strong',
-                ]"
-              >
-                {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
-              </span>
+              <RoleBadge :role="member.role === 'admin' ? 'Admin' : 'Member'" />
             </div>
 
             <div class="flex flex-wrap gap-2">
-              <span
-                :class="[
-                  'rounded-full px-3 py-1 text-sm font-bold',
-                  member.is_active ? 'bg-status-success text-status-success-strong' : 'bg-status-neutral text-status-neutral-strong',
-                ]"
-              >
-                {{ member.is_active ? t('member.activeStatus') : t('member.inactiveStatus') }}
-              </span>
+              <MemberActiveBadge :active="member.is_active" />
             </div>
 
-            <div class="flex flex-col gap-2 pt-1">
+            <div class="flex flex-col gap-2">
               <div class="flex gap-2">
-                <router-link
+                <Button
+                  as="RouterLink"
                   :to="`/member/${member.id}`"
-                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-brand-200 px-4 text-base font-bold text-brand-700 transition hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  size="Default"
+                  variant="Outline Brand"
+                  :trailing-icon="ChevronRight"
+                  class="flex-1"
                   :aria-label="t('member.viewDetailsFor', { name: member.display_name })"
                 >
                   {{ t('debt.details') }}
-                  <ChevronRight class="ml-1 h-4 w-4" />
-                </router-link>
-                <button
+                </Button>
+                <Button
                   v-if="authStore.isAdmin"
-                  @click="startEdit(member)"
-                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-divider px-4 text-base font-bold text-brand-700 transition hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  size="Default"
+                  variant="Outline Brand"
+                  :leading-icon="Edit"
+                  class="flex-1"
                   :aria-label="t('member.editMember', { name: member.display_name })"
+                  @click="startEdit(member)"
                 >
-                  <Edit class="mr-2 h-4 w-4" />
                   {{ t('common.edit') }}
-                </button>
+                </Button>
               </div>
-              <button
+              <Button
                 v-if="authStore.isAdmin"
-                @click="deleteMember(member.id, member.display_name)"
-                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-status-danger-border px-4 text-base font-bold text-status-danger-action transition hover:bg-status-danger-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                size="Default"
+                variant="Outline Danger"
+                :leading-icon="Trash2"
+                class="w-full"
                 :aria-label="t('member.deleteMember', { name: member.display_name })"
+                @click="deleteMember(member.id, member.display_name)"
               >
-                <Trash2 class="mr-2 h-4 w-4" />
                 {{ t('common.delete') }}
-              </button>
+              </Button>
             </div>
           </div>
         </article>
@@ -415,139 +379,114 @@ onMounted(fetchMembers)
 
       <div
         v-if="members.length > 0"
-        class="hidden overflow-x-auto md:block rounded-lg border border-divider bg-white shadow-sm"
+        class="hidden overflow-x-auto md:block rounded-lg border border-line-divider bg-surface-card shadow-sm"
       >
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full">
+          <thead>
             <tr>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
-              >
-                {{ t('member.name') }}
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
-              >
-                {{ t('member.role') }}
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider"
-              >
-                {{ t('member.active') }}
-              </th>
-              <th
-                scope="col"
-                class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-              >
-                {{ t('common.actions') }}
-              </th>
+              <TableHeaderCell>{{ t('member.name') }}</TableHeaderCell>
+              <TableHeaderCell>{{ t('member.role') }}</TableHeaderCell>
+              <TableHeaderCell align="Center">{{ t('member.active') }}</TableHeaderCell>
+              <TableHeaderCell align="Right">{{ t('common.actions') }}</TableHeaderCell>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody>
             <tr
               v-for="member in members"
               :key="member.id"
-              :class="{ 'bg-gray-50': editingMemberId === member.id }"
+              class="border-b border-line-divider last:border-b-0"
+              :class="editingMemberId === member.id && 'bg-surface-subtle'"
             >
               <!-- Name -->
-              <td class="px-6 py-4 whitespace-nowrap text-base text-fg-primary">
-                <input
+              <td class="px-6 py-4 text-base text-fg-primary">
+                <Input
                   v-if="editingMemberId === member.id"
                   v-model="editForm.display_name"
+                  size="Small"
                   type="text"
-                  class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-base border px-2 py-1"
+                  :aria-label="t('member.displayName')"
                 />
                 <span v-else class="font-bold">{{ member.display_name }}</span>
               </td>
 
               <!-- Role -->
-              <td class="px-6 py-4 whitespace-nowrap text-base text-fg-muted">
-                <select
+              <td class="px-6 py-4 text-base text-fg-muted">
+                <Select
                   v-if="editingMemberId === member.id"
                   v-model="editForm.role"
-                  class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-base border px-2 py-1"
+                  size="Small"
+                  :aria-label="t('member.role')"
                 >
                   <option value="member">{{ t('member.memberRole') }}</option>
                   <option value="admin">{{ t('member.adminRole') }}</option>
-                </select>
-                <span
-                  v-else
-                  :class="[
-                    'px-2 py-1 text-sm font-bold rounded-full',
-                    member.role === 'admin'
-                      ? 'bg-brand-100 text-brand-800'
-                      : 'bg-status-neutral text-status-neutral-strong',
-                  ]"
-                >
-                  {{ member.role === 'admin' ? t('member.adminRole') : t('member.memberRole') }}
-                </span>
+                </Select>
+                <RoleBadge v-else :role="member.role === 'admin' ? 'Admin' : 'Member'" />
               </td>
 
               <!-- Is Active -->
-              <td class="px-6 py-4 whitespace-nowrap text-center text-base text-fg-muted">
+              <td class="px-6 py-4 text-base text-center text-fg-muted">
                 <div v-if="editingMemberId === member.id" class="flex justify-center">
-                  <input
-                    v-model="editForm.is_active"
-                    type="checkbox"
-                    class="h-4 w-4 text-brand-600 focus:ring-brand-500 border-input rounded cursor-pointer"
-                  />
+                  <Checkbox v-model="editForm.is_active" />
                 </div>
                 <div v-else>
-                  <Check v-if="member.is_active" class="w-5 h-5 text-green-500 mx-auto" />
-                  <X v-else class="w-5 h-5 text-gray-300 mx-auto" />
+                  <Check v-if="member.is_active" class="w-5 h-5 text-fg-success-soft mx-auto" />
+                  <X v-else class="w-5 h-5 text-fg-faint mx-auto" />
                 </div>
               </td>
 
               <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap text-right text-base font-bold">
-                <div v-if="editingMemberId === member.id" class="flex justify-end gap-2">
-                  <button
-                    @click="saveEdit(member.id)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-green-600 hover:text-green-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+              <td class="px-6 py-4 text-base text-right">
+                <div v-if="editingMemberId === member.id" class="flex justify-end gap-3">
+                  <IconButton
+                    :icon="Save"
+                    :label="t('common.save')"
                     :title="t('common.save')"
-                    :aria-label="t('common.save')"
-                  >
-                    <Save class="w-5 h-5" />
-                  </button>
-                  <button
-                    @click="cancelEdit"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-status-danger-action hover:text-red-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                    size="Default"
+                    shape="Square"
+                    variant="Ghost Success"
+                    @click="saveEdit(member.id)"
+                  />
+                  <IconButton
+                    :icon="X"
+                    :label="t('common.cancel')"
                     :title="t('common.cancel')"
-                    :aria-label="t('common.cancel')"
-                  >
-                    <X class="w-5 h-5" />
-                  </button>
+                    size="Default"
+                    shape="Square"
+                    variant="Ghost Danger"
+                    @click="cancelEdit"
+                  />
                 </div>
-                <div v-else class="flex justify-end gap-3">
-                  <router-link
+                <div v-else class="flex justify-end items-center gap-3">
+                  <Button
+                    as="RouterLink"
                     :to="`/member/${member.id}`"
-                    class="inline-flex items-center text-brand-600 hover:text-brand-900"
+                    size="Small"
+                    variant="Ghost"
+                    :trailing-icon="ChevronRight"
                     :title="t('debt.details')"
                   >
                     {{ t('debt.details') }}
-                    <ChevronRight class="w-4 h-4 ml-1" />
-                  </router-link>
-                  <button
+                  </Button>
+                  <IconButton
                     v-if="authStore.isAdmin"
-                    @click="startEdit(member)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-brand-600 hover:text-brand-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                    :icon="Edit"
+                    :label="t('member.editMember', { name: member.display_name })"
                     :title="t('common.edit')"
-                    :aria-label="t('member.editMember', { name: member.display_name })"
-                  >
-                    <Edit class="w-5 h-5" />
-                  </button>
-                  <button
+                    size="Default"
+                    shape="Square"
+                    variant="Ghost Brand"
+                    @click="startEdit(member)"
+                  />
+                  <IconButton
                     v-if="authStore.isAdmin"
-                    @click="deleteMember(member.id, member.display_name)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled hover:text-status-danger-action focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                    :icon="Trash2"
+                    :label="t('member.deleteMember', { name: member.display_name })"
                     :title="t('common.delete')"
-                    :aria-label="t('member.deleteMember', { name: member.display_name })"
-                  >
-                    <Trash2 class="w-5 h-5" />
-                  </button>
+                    size="Default"
+                    shape="Square"
+                    variant="Ghost"
+                    @click="deleteMember(member.id, member.display_name)"
+                  />
                 </div>
               </td>
             </tr>

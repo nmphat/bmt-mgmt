@@ -10,6 +10,13 @@ import { useToast } from 'vue-toastification'
 import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
 import { mergeTimeIntervals } from '@/utils/time'
+import Button from '@/components/ui/Button.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import PaymentStatusBadge from '@/components/ui/PaymentStatusBadge.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import TableHeaderCell from '@/components/ui/TableHeaderCell.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -225,20 +232,9 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'paid':
-      return 'bg-status-success text-status-success-strong'
-    case 'partial':
-      return 'bg-status-warning text-status-warning-strong'
-    default:
-      return 'bg-status-danger text-status-danger-strong'
-  }
-}
-
-function getStatusLabel(status: string) {
-  return t.value(`payment.${status}`)
-}
+// DB snapshot status -> Figma "Payment Status Badge" variant (components.md).
+const STATUS_DS = { paid: 'Paid', partial: 'Partial', pending: 'Pending' } as const
+const dsStatus = (status: MemberSessionDetail['status']) => STATUS_DS[status]
 
 function getTranslation(key: string, params: any = {}) {
   // Safe wrapper if needed, or just use t.value
@@ -251,66 +247,62 @@ onMounted(fetchMemberDetails)
 <template>
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex items-center mb-6">
-      <button
-        type="button"
-        @click="router.back()"
-        class="mr-4 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted transition hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-        :aria-label="t('common.back')"
-      >
-        <ArrowLeft class="w-6 h-6" aria-hidden="true" />
-      </button>
-      <div>
-        <h1 class="text-[20px] font-bold leading-[1.2] tracking-tight text-fg-primary">
-          {{ memberName }}
-        </h1>
-        <p class="text-sm text-fg-muted">{{ t('debt.history') }}</p>
-      </div>
-    </div>
+    <PageHeader layout="Back Title" :title="memberName" :subtitle="t('debt.history')" class="mb-6">
+      <template #leading>
+        <IconButton
+          :icon="ArrowLeft"
+          :label="t('common.back')"
+          size="Default"
+          shape="Round"
+          variant="Ghost"
+          @click="router.back()"
+        />
+      </template>
+    </PageHeader>
 
     <!-- Debt Summary Card -->
     <div
-      class="bg-white rounded-xl shadow-sm border border-divider p-6 mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      class="mb-8 flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
     >
-      <div>
+      <div class="flex flex-col gap-1">
         <span class="text-sm font-bold text-fg-muted uppercase tracking-wider">{{
           t('debt.totalDebt')
         }}</span>
-        <div class="mt-1 flex items-baseline">
+        <div class="flex items-baseline">
           <span
-            class="text-[32px] font-bold leading-[1.05] text-fg-primary"
-            :class="{ 'text-red-600': totalDebt > 0 }"
+            class="text-3xl font-bold"
+            :class="totalDebt > 0 ? 'text-fg-danger' : 'text-fg-primary'"
           >
             {{ formatCurrency(totalDebt) }}
           </span>
         </div>
       </div>
-      <button
+      <Button
         v-if="totalDebt > 0"
-        type="button"
-        @click="handlePayAll"
-        class="flex min-h-11 items-center rounded-xl bg-brand-600 px-4 py-2 font-bold text-white shadow transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        size="Default"
+        variant="Primary"
+        :leading-icon="CreditCard"
         :aria-label="`${t('debt.payAll')}: ${memberName}`"
+        @click="handlePayAll"
       >
-        <CreditCard class="w-5 h-5 mr-2" aria-hidden="true" />
         {{ t('debt.payAll') }}
-      </button>
+      </Button>
     </div>
 
     <!-- Session History -->
-    <div class="bg-white shadow-sm rounded-xl border border-divider overflow-hidden">
+    <div class="bg-surface-card shadow-sm rounded-xl border border-line-divider overflow-hidden">
       <div v-if="loading" class="p-8 flex justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+        <Spinner size="32" />
       </div>
       <template v-else>
-        <div class="md:hidden divide-y divide-gray-100">
-          <div v-if="sessions.length === 0" class="p-6 text-center text-fg-muted">
+        <div class="md:hidden">
+          <EmptyState v-if="sessions.length === 0" variant="Plain" align="Center">
             {{ t('debt.emptyBody') }}
-          </div>
+          </EmptyState>
           <article
             v-for="session in visibleMobileSessions"
             :key="session.snapshot_id"
-            class="group cursor-pointer space-y-4 p-4 transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
+            class="group flex cursor-pointer flex-col gap-4 border-b border-line-subtle p-4 last:border-b-0 transition hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-line-focus"
             role="link"
             tabindex="0"
             :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
@@ -320,7 +312,7 @@ onMounted(fetchMemberDetails)
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h2 class="text-base font-bold text-fg-primary transition group-hover:text-brand-600">
+                <h2 class="text-base font-bold text-fg-primary transition group-hover:text-fg-brand">
                   {{ session.session_title }}
                 </h2>
                 <p class="mt-1 text-sm text-fg-muted">
@@ -329,12 +321,7 @@ onMounted(fetchMemberDetails)
                   }}
                 </p>
               </div>
-              <span
-                class="inline-flex shrink-0 rounded-full px-2 py-1 text-[14px] font-bold leading-[1.35]"
-                :class="getStatusColor(session.status)"
-              >
-                {{ getStatusLabel(session.status) }}
-              </span>
+              <PaymentStatusBadge :status="dsStatus(session.status)" />
             </div>
 
             <dl class="grid grid-cols-2 gap-3 text-sm">
@@ -368,7 +355,7 @@ onMounted(fetchMemberDetails)
                 <dt class="font-bold text-fg-muted">{{ t('debt.remaining') }}</dt>
                 <dd
                   class="mt-1 text-right font-bold"
-                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-fg-primary'"
+                  :class="session.remaining_amount > 0 ? 'text-fg-danger' : 'text-fg-primary'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </dd>
@@ -376,23 +363,24 @@ onMounted(fetchMemberDetails)
             </dl>
 
             <div class="flex justify-end">
-              <button
+              <Button
                 v-if="session.status !== 'paid'"
-                type="button"
-                @click.stop="handleSinglePay(session)"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                size="Default"
+                variant="Primary"
+                :leading-icon="QrCode"
                 :title="t('payment.scanQR')"
                 :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
+                @click.stop="handleSinglePay(session)"
               >
-                <QrCode class="w-5 h-5" aria-hidden="true" />
                 {{ t('debt.createPaymentQR') }}
-              </button>
+              </Button>
             </div>
           </article>
           <div v-if="sessions.length > mobileSessionLimit" class="p-4">
-            <button
-              type="button"
-              class="flex min-h-11 w-full items-center justify-center rounded-xl border border-divider bg-white px-4 text-sm font-bold text-brand-600 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            <Button
+              size="Default"
+              variant="Outline Brand"
+              class="w-full"
               @click="showAllMobileSessions = !showAllMobileSessions"
             >
               {{
@@ -400,68 +388,28 @@ onMounted(fetchMemberDetails)
                   ? t('debt.showFewerSessions')
                   : t('debt.showMoreSessions', { count: sessions.length - mobileSessionLimit })
               }}
-            </button>
+            </Button>
           </div>
         </div>
         <div class="hidden overflow-x-auto md:block">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+          <table class="min-w-full">
+            <thead>
               <tr>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('debt.sessionName') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('debt.cost') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-left text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('session.time') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('session.courtFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('session.shuttleFee') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-right text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('debt.remaining') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('debt.status') }}
-                </th>
-                <th
-                  scope="col"
-                  class="px-6 py-3 text-center text-[14px] font-bold leading-[1.35] text-fg-muted uppercase tracking-wider"
-                >
-                  {{ t('debt.action') }}
-                </th>
+                <TableHeaderCell>{{ t('debt.sessionName') }}</TableHeaderCell>
+                <TableHeaderCell align="Right">{{ t('debt.cost') }}</TableHeaderCell>
+                <TableHeaderCell>{{ t('session.time') }}</TableHeaderCell>
+                <TableHeaderCell align="Right">{{ t('session.courtFee') }}</TableHeaderCell>
+                <TableHeaderCell align="Right">{{ t('session.shuttleFee') }}</TableHeaderCell>
+                <TableHeaderCell align="Right">{{ t('debt.remaining') }}</TableHeaderCell>
+                <TableHeaderCell align="Center">{{ t('debt.status') }}</TableHeaderCell>
+                <TableHeaderCell align="Center">{{ t('debt.action') }}</TableHeaderCell>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr
                 v-for="session in sessions"
                 :key="session.snapshot_id"
-                class="group cursor-pointer hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600"
+                class="group cursor-pointer border-b border-line-divider last:border-b-0 hover:bg-surface-subtle focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-line-focus"
                 role="link"
                 tabindex="0"
                 :aria-label="t('dashboard.sessionCardAria', { title: session.session_title })"
@@ -469,13 +417,11 @@ onMounted(fetchMemberDetails)
                 @keydown.enter.prevent="openSessionDetail(session.session_id)"
                 @keydown.space.prevent="openSessionDetail(session.session_id)"
               >
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div
-                    class="text-sm font-bold text-fg-primary transition group-hover:text-brand-600"
-                  >
+                <td class="px-6 py-4 text-base">
+                  <div class="font-bold text-fg-primary transition group-hover:text-fg-brand">
                     {{ session.session_title }}
                   </div>
-                  <div class="text-[14px] leading-[1.35] text-fg-muted">
+                  <div class="text-sm text-fg-muted">
                     {{
                       format(new Date(session.start_time), 'dd/MM/yyyy HH:mm', {
                         locale: dateLocale,
@@ -483,43 +429,38 @@ onMounted(fetchMemberDetails)
                     }}
                   </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
+                <td class="px-6 py-4 text-right text-base text-fg-muted">
                   {{ formatCurrency(session.final_amount) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-fg-muted">
+                <td class="px-6 py-4 text-left text-base text-fg-muted">
                   {{ sessionIntervalsMap[session.snapshot_id] || '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
+                <td class="px-6 py-4 text-right text-base text-fg-muted">
                   {{ formatCurrency(session.court_fee_amount) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-fg-muted">
+                <td class="px-6 py-4 text-right text-base text-fg-muted">
                   {{ formatCurrency(session.shuttle_fee_amount) }}
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold"
-                  :class="session.remaining_amount > 0 ? 'text-red-600' : 'text-fg-primary'"
+                  class="px-6 py-4 text-right text-base font-bold"
+                  :class="session.remaining_amount > 0 ? 'text-fg-danger' : 'text-fg-primary'"
                 >
                   {{ formatCurrency(session.remaining_amount) }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
-                  <span
-                    class="px-2 inline-flex text-[14px] leading-[1.35] font-bold rounded-full"
-                    :class="getStatusColor(session.status)"
-                  >
-                    {{ getStatusLabel(session.status) }}
-                  </span>
+                <td class="px-6 py-4 text-center">
+                  <PaymentStatusBadge :status="dsStatus(session.status)" />
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold">
-                  <button
+                <td class="px-6 py-4 text-center">
+                  <IconButton
                     v-if="session.status !== 'paid'"
-                    type="button"
-                    @click.stop="handleSinglePay(session)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-brand-50 p-2 text-brand-600 transition hover:bg-brand-100 hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                    :icon="QrCode"
+                    :label="`${t('payment.scanQR')}: ${session.session_title}`"
                     :title="t('payment.scanQR')"
-                    :aria-label="`${t('payment.scanQR')}: ${session.session_title}`"
-                  >
-                    <QrCode class="w-5 h-5" aria-hidden="true" />
-                  </button>
+                    size="Default"
+                    shape="Round"
+                    variant="Outline"
+                    @click.stop="handleSinglePay(session)"
+                  />
                 </td>
               </tr>
             </tbody>
