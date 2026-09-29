@@ -80,8 +80,18 @@ describe('AppHeader (I/O matrix)', () => {
       ['/sessions', t('nav.sessions')],
       ['/members', t('nav.members')],
     ])
+    expect(links.map((l) => l.attributes('data-ds-state'))).toEqual([
+      'Active',
+      'Inactive',
+      'Inactive',
+    ])
+    expect(links.map((l) => l.attributes('aria-current'))).toEqual(['page', undefined, undefined])
     expect(links[0]!.classes()).toEqual(
       expect.arrayContaining(['text-fg-brand', 'border-line-brand']),
+    )
+    expect(links[0]!.classes()).not.toContain('border-transparent')
+    expect(links[1]!.classes()).toEqual(
+      expect.arrayContaining(['border-transparent', 'text-fg-secondary']),
     )
     const toggle = w.get('[data-ds="Language Toggle"]')
     expect(toggle.attributes('data-ds-lang')).toBe('VI')

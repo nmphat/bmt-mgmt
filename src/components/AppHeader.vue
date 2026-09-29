@@ -139,29 +139,56 @@ watch(
 
       <!-- Desktop public navigation mirrors the three mobile tabs without exposing login/admin. -->
       <nav class="hidden md:flex h-14 items-stretch gap-6 mx-6">
-        <router-link
-          to="/"
-          data-ds="Header Nav Link"
-          active-class="text-fg-brand border-line-brand"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
-        >
-          {{ t('nav.home') }}
+        <router-link v-slot="{ href, navigate, isActive, isExactActive }" to="/" custom>
+          <a
+            :href="href"
+            data-ds="Header Nav Link"
+            :data-ds-state="isActive ? 'Active' : 'Inactive'"
+            :aria-current="isExactActive ? 'page' : undefined"
+            class="flex items-center border-b-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
+            :class="
+              isActive
+                ? 'text-fg-brand border-line-brand'
+                : 'border-transparent text-fg-secondary hover:text-fg-brand'
+            "
+            @click="navigate"
+          >
+            {{ t('nav.home') }}
+          </a>
         </router-link>
-        <router-link
-          to="/sessions"
-          data-ds="Header Nav Link"
-          active-class="text-fg-brand border-line-brand"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
-        >
-          {{ t('nav.sessions') }}
+        <router-link v-slot="{ href, navigate, isActive, isExactActive }" to="/sessions" custom>
+          <a
+            :href="href"
+            data-ds="Header Nav Link"
+            :data-ds-state="isActive ? 'Active' : 'Inactive'"
+            :aria-current="isExactActive ? 'page' : undefined"
+            class="flex items-center border-b-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
+            :class="
+              isActive
+                ? 'text-fg-brand border-line-brand'
+                : 'border-transparent text-fg-secondary hover:text-fg-brand'
+            "
+            @click="navigate"
+          >
+            {{ t('nav.sessions') }}
+          </a>
         </router-link>
-        <router-link
-          to="/members"
-          data-ds="Header Nav Link"
-          active-class="text-fg-brand border-line-brand"
-          class="flex items-center border-b-2 border-transparent text-sm font-medium text-fg-secondary transition-colors duration-200 hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
-        >
-          {{ t('nav.members') }}
+        <router-link v-slot="{ href, navigate, isActive, isExactActive }" to="/members" custom>
+          <a
+            :href="href"
+            data-ds="Header Nav Link"
+            :data-ds-state="isActive ? 'Active' : 'Inactive'"
+            :aria-current="isExactActive ? 'page' : undefined"
+            class="flex items-center border-b-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-line-focus"
+            :class="
+              isActive
+                ? 'text-fg-brand border-line-brand'
+                : 'border-transparent text-fg-secondary hover:text-fg-brand'
+            "
+            @click="navigate"
+          >
+            {{ t('nav.members') }}
+          </a>
         </router-link>
       </nav>
 
