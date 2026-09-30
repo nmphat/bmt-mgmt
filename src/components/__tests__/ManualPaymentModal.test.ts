@@ -53,7 +53,9 @@ describe('ManualPaymentModal (I/O matrix)', () => {
     expect(alerts[0]!.html()).toContain(t('payment.amountReceived', { name: 'An' }))
     expect(w.get('[data-ds="Read-only Field"]').text()).toBe('An')
     const panel = w.get('[data-ds="Amount Panel"]')
-    expect(panel.attributes('data-ds-style')).toBe('Warning')
+    expect(panel.attributes('data-ds-tone')).toBe('Warning')
+    expect(w.get('[data-ds="Manual Payment Body"]').attributes('data-ds-step')).toBe('Entry')
+    expect(w.get('[data-ds="Read-only Field"]').attributes('data-ds-size')).toBe('Default')
     expect(norm(panel.text())).toContain(money(54000))
     const amount = w.get('input#amount')
     expect((amount.element as HTMLInputElement).value).toBe('54000')
@@ -84,7 +86,16 @@ describe('ManualPaymentModal (I/O matrix)', () => {
       'Primary',
       'Regular',
     ])
-    expect(rows.every((r) => r.attributes('data-ds-style') === 'Inline Divided')).toBe(true)
+    expect(w.get('[data-ds="Manual Payment Body"]').attributes('data-ds-step')).toBe('Review')
+    expect(
+      rows.every(
+        (r) =>
+          r.attributes('data-ds-layout') === 'Inline Divided' &&
+          r.attributes('data-ds-tone') === 'Neutral' &&
+          r.attributes('data-ds-align') === 'Left' &&
+          r.attributes('data-ds-style') === undefined,
+      ),
+    ).toBe(true)
     expect(rows[3]!.text()).toContain('Tiền mặt')
 
     const [confirm] = footerButtons(w)

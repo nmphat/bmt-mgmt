@@ -153,7 +153,12 @@ async function handleConfirm() {
           />
         </template>
 
-        <div v-if="snapshot" data-ds="Manual Payment Body" class="flex flex-col gap-4 py-5">
+        <div
+          v-if="snapshot"
+          data-ds="Manual Payment Body"
+          :data-ds-step="currentStep === 'entry' ? 'Entry' : 'Review'"
+          class="flex flex-col gap-4 bg-surface-card py-5"
+        >
           <template v-if="currentStep === 'entry'">
             <Alert tone="Info" :icon="Info">
               <div v-html="t('payment.amountReceived', { name: memberName })"></div>
@@ -163,6 +168,7 @@ async function handleConfirm() {
               <FieldLabel>{{ t('payment.reviewMember') }}</FieldLabel>
               <div
                 data-ds="Read-only Field"
+                data-ds-size="Default"
                 class="flex h-control-md items-center rounded-control border border-line-divider bg-surface-subtle px-3 text-base font-bold uppercase text-fg-primary"
               >
                 {{ memberName }}
@@ -171,7 +177,7 @@ async function handleConfirm() {
 
             <div
               data-ds="Amount Panel"
-              data-ds-style="Warning"
+              data-ds-tone="Warning"
               class="flex flex-col gap-1 rounded-xl border border-status-warning-border bg-status-warning-subtle p-4"
             >
               <p class="text-sm font-bold text-status-warning-strong">
@@ -219,7 +225,9 @@ async function handleConfirm() {
             <dl class="overflow-hidden rounded-xl border border-line-divider bg-surface-card">
               <div
                 data-ds="Key Value Row"
-                data-ds-style="Inline Divided"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
                 data-ds-value-tone="Primary"
                 class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
               >
@@ -228,7 +236,9 @@ async function handleConfirm() {
               </div>
               <div
                 data-ds="Key Value Row"
-                data-ds-style="Inline Divided"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
                 data-ds-value-tone="Brand"
                 class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
               >
@@ -239,7 +249,9 @@ async function handleConfirm() {
               </div>
               <div
                 data-ds="Key Value Row"
-                data-ds-style="Inline Divided"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
                 data-ds-value-tone="Primary"
                 class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
               >
@@ -252,7 +264,9 @@ async function handleConfirm() {
               </div>
               <div
                 data-ds="Key Value Row"
-                data-ds-style="Inline Divided"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
                 data-ds-value-tone="Regular"
                 class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
               >

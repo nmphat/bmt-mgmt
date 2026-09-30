@@ -117,7 +117,7 @@ onMounted(() => {
       class="mt-4 w-full max-w-md overflow-hidden rounded-3xl bg-surface-card sm:mt-10"
     >
       <!-- Header -->
-      <div class="flex flex-col items-center gap-1 border-b border-line-divider p-6">
+      <div class="flex flex-col items-center gap-1 border-b border-line-divider p-6 text-center">
         <h1 class="text-2xl font-extrabold uppercase tracking-tight text-fg-primary">
           {{ t('payment.qrTitle') }}
         </h1>
@@ -131,10 +131,11 @@ onMounted(() => {
           data-ds-style="Raised"
           :src="qrUrl"
           alt="VietQR"
-          class="size-72 rounded-xl border-4 border-line-inverse object-contain shadow-xl"
+          class="size-72 rounded-xl border-4 border-line-inverse object-contain shadow-xl transition duration-300 hover:scale-[1.02]"
         />
         <div
           data-ds="Waiting Pill"
+          data-ds-style="Default"
           class="flex items-center gap-2 whitespace-nowrap rounded-full border-2 border-line-brand-emphasis bg-surface-card px-4 py-2 text-xs font-extrabold text-fg-brand shadow-lg"
         >
           <Loader2 aria-hidden="true" class="size-3.5 animate-spin" />
@@ -146,7 +147,7 @@ onMounted(() => {
       <div class="flex flex-col items-center gap-8 p-8">
         <div
           data-ds="Amount Panel"
-          data-ds-style="Hero"
+          data-ds-tone="Hero"
           class="flex w-full flex-col items-center gap-1 p-4"
         >
           <p class="text-sm font-bold uppercase tracking-widest text-fg-disabled">
@@ -167,11 +168,11 @@ onMounted(() => {
             data-ds="Transfer Code Card"
             data-ds-style="Page"
             :data-ds-state="copied ? 'Copied' : 'Default'"
-            class="flex w-full items-center justify-between gap-3 rounded-xl border-2 p-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
+            class="flex w-full items-center justify-between gap-3 rounded-xl border-2 p-4 transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
             :class="
               copied
                 ? 'border-line-success bg-status-success-subtle'
-                : 'border-line-brand-muted bg-surface-brand-subtle'
+                : 'border-line-brand-muted bg-surface-brand-subtle hover:border-line-brand'
             "
             @click="copyCode"
           >
@@ -195,7 +196,7 @@ onMounted(() => {
         <Button
           size="Large"
           variant="Primary"
-          class="w-full"
+          class="w-full active:scale-[0.98]"
           :leading-icon="Share2"
           :loading="isSharing"
           :disabled="isSharing"

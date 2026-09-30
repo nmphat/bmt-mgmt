@@ -104,7 +104,8 @@ describe('PaymentQRModal (I/O matrix)', () => {
     expect(w.get('#modal-title').text()).toBe(t('payment.paymentFor', { name: 'An' }))
     expect(w.get('[data-ds="Modal Panel"]').attributes('data-ds-width')).toBe('lg')
     const panel = w.get('[data-ds="Amount Panel"]')
-    expect(panel.attributes('data-ds-style')).toBe('Brand')
+    expect(panel.attributes('data-ds-tone')).toBe('Brand')
+    expect(w.get('[data-ds="Payment QR Body"]').attributes('data-ds-state')).toBe('Pending')
     expect(norm(panel.text())).toContain(money(54000))
     expect(w.get('[data-ds="QR Image"] img').attributes('src')).toBe(
       'https://img.vietqr.io/image/TPB-123-compact2.png?amount=54000&addInfo=CL8F3A21%20An',
@@ -135,6 +136,7 @@ describe('PaymentQRModal (I/O matrix)', () => {
       ],
     })
     expect(w.emitted('payment-complete')).toHaveLength(1)
+    expect(w.get('[data-ds="Payment QR Body"]').attributes('data-ds-state')).toBe('Paid')
     expect(w.get('[data-ds="Result State"]').attributes('data-ds-style')).toBe('Circle')
     expect(w.get('[data-ds="Icon Tile"]').attributes('data-ds-style')).toBe('Success Circle')
     const footerBtn = w.get('[data-ds="Modal Footer"] [data-ds="Button"]')

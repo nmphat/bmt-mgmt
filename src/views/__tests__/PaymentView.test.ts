@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import PaymentView from '@/views/PaymentView.vue'
+import source from '@/views/PaymentView.vue?raw'
 import { useLangStore } from '@/stores/lang'
 
 vi.mock('@/lib/supabase', () => ({
@@ -22,6 +23,9 @@ vi.mock('vue-toastification', () => ({
 
 const t = (key: string, params?: any) => useLangStore().t(key, params)
 const norm = (s: string) => s.replace(/\s/g, ' ')
+
+const money = (n: number) =>
+  norm(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n))
 
 async function mountPay(url: string) {
   setActivePinia(createPinia())
@@ -44,16 +48,15 @@ describe('PaymentView (I/O matrix)', () => {
     const w = await mountPay('/pay?code=BMT123&amount=150000')
     const card = w.get('[data-ds="Payment Page Card"]')
     expect(card.attributes('data-ds-style')).toBe('Default')
-    expect(norm(w.get('[data-ds="Amount Panel"]').text())).toContain(
-      norm(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(150000)),
-    )
-    expect(w.get('[data-ds="Amount Panel"]').attributes('data-ds-style')).toBe('Hero')
+    expect(norm(w.get('[data-ds="Amount Panel"]').text())).toContain(money(150000))
+    expect(w.get('[data-ds="Amount Panel"]').attributes('data-ds-tone')).toBe('Hero')
+    expect(w.get('[data-ds="Waiting Pill"]').attributes('data-ds-style')).toBe('Default')
     expect(w.get('[data-ds="Transfer Code Card"]').text()).toContain('BMT123')
     expect(w.get('[data-ds="QR Image"]').attributes('src')).toContain(
       'amount=150000&addInfo=BMT123',
     )
     expect(w.get('[data-ds="Waiting Pill"]').text()).toBe(t('payment.waitingTransfer'))
-    expect(w.html()).not.toMatch(new RegExp('dark' + ':'))
+    expect(source).not.toContain('dark' + ':')
   })
 
   it('copy: writes the code and shows the Copied state', async () => {
@@ -92,7 +95,7 @@ describe('PaymentView (I/O matrix)', () => {
 
   it('empty route renders with 0 amount', async () => {
     const w = await mountPay('/pay')
-    expect(norm(w.get('[data-ds="Amount Panel"]').text())).toContain('0')
+    expect(norm(w.get('[data-ds="Amount Panel"]').text())).toContain(money(0))
     expect(w.get('[data-ds="Transfer Code Card"]').exists()).toBe(true)
   })
 })

@@ -126,7 +126,8 @@ async function handleConfirm() {
         continue
       }
 
-      const freshRemaining = (freshSnapshot.final_amount || 0) - (freshSnapshot.paid_amount || 0)
+      const freshRemaining =
+        (freshSnapshot.final_amount || 0) - (freshSnapshot.paid_amount || 0)
       if (freshRemaining <= 0) continue // Already paid by another admin
 
       const payment = Math.min(freshRemaining, remainingInput)
@@ -148,7 +149,9 @@ async function handleConfirm() {
     }
 
     if (failedCount === 0) {
-      toast.success(t.value('payment.cashPaymentSuccess', { count: paidSnapshotIds.length }))
+      toast.success(
+        t.value('payment.cashPaymentSuccess', { count: paidSnapshotIds.length }),
+      )
     } else {
       toast.warning(
         t.value('payment.cashPaymentPartial', {
@@ -215,7 +218,17 @@ function handleClose() {
         </template>
 
         <!-- Body -->
-        <div data-ds="Cash Payment Body" class="py-4">
+        <div data-ds="Cash Payment Body"
+          :data-ds-step="
+            loadingSnapshots
+              ? 'Loading'
+              : snapshots.length === 0
+                ? 'Empty'
+                : currentStep === 'confirm'
+                  ? 'Confirm'
+                  : undefined
+          "
+          class="bg-surface-card py-4">
           <!-- Loading -->
           <div v-if="loadingSnapshots" class="flex justify-center py-8">
             <Spinner size="32" tone="Success" />
@@ -265,7 +278,7 @@ function handleClose() {
                 :key="s.snapshot_id"
                 data-ds="Amount List Item"
                 data-ds-style="Allocation"
-                class="flex justify-between gap-3 rounded-lg border border-line-divider px-3 py-2"
+                class="flex items-center justify-between gap-3 rounded-lg border border-line-divider px-3 py-2"
               >
                 <div class="min-w-0 flex-1">
                   <div class="truncate text-sm font-medium text-fg-primary">

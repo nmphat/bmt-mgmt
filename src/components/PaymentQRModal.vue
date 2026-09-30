@@ -249,7 +249,8 @@ onUnmounted(() => {
         <div
           v-if="snapshot || groupData"
           data-ds="Payment QR Body"
-          class="flex flex-col items-center gap-5 py-5"
+          :data-ds-state="isPaid || isPaymentComplete ? 'Paid' : 'Pending'"
+          class="flex flex-col items-center gap-5 bg-surface-card py-5"
         >
           <!-- Paid State -->
           <div
@@ -276,7 +277,7 @@ onUnmounted(() => {
           <template v-else>
             <div
               data-ds="Amount Panel"
-              data-ds-style="Brand"
+              data-ds-tone="Brand"
               class="flex w-full flex-col items-center gap-1 rounded-xl border border-line-brand-muted bg-surface-brand-subtle p-4"
             >
               <span class="text-sm font-bold text-fg-brand-strong">{{
@@ -317,7 +318,7 @@ onUnmounted(() => {
                   type="button"
                   data-ds="Copy Button"
                   :data-ds-state="copied ? 'Copied' : 'Default'"
-                  class="inline-flex h-control-md items-center gap-1 rounded-control px-3 text-sm font-bold text-fg-brand transition hover:bg-surface-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus"
+                  class="inline-flex h-control-md items-center gap-1 rounded-control px-3 text-sm font-bold text-fg-brand transition hover:bg-surface-brand-muted hover:text-fg-brand-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus"
                   :aria-label="t('payment.copyCode')"
                   @click="copyPaymentCode"
                 >
@@ -363,7 +364,7 @@ onUnmounted(() => {
                   :key="m.name"
                   data-ds="Amount List Item"
                   data-ds-style="Simple"
-                  class="flex justify-between gap-3 rounded-lg bg-surface-card px-3 py-2 text-sm"
+                  class="flex items-center justify-between gap-3 rounded-lg bg-surface-card px-3 py-2 text-sm"
                 >
                   <span class="min-w-0 font-bold text-fg-secondary">{{ m.name }}</span>
                   <span class="shrink-0 font-bold text-fg-primary tabular-nums">{{
