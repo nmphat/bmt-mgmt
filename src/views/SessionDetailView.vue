@@ -16,7 +16,10 @@ import { format } from 'date-fns'
 import { vi, enUS } from 'date-fns/locale'
 import { useLangStore } from '@/stores/lang'
 import {
+  AlertTriangle,
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   RefreshCcw,
   UserX,
   UserPlus,
@@ -30,6 +33,19 @@ import {
   QrCode,
   Check,
 } from 'lucide-vue-next'
+import Alert from '@/components/ui/Alert.vue'
+import Badge from '@/components/ui/Badge.vue'
+import Button from '@/components/ui/Button.vue'
+import Checkbox from '@/components/ui/Checkbox.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import FormField from '@/components/ui/FormField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import Input from '@/components/ui/Input.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
+import Select from '@/components/ui/Select.vue'
+import SessionStatusBadge from '@/components/ui/SessionStatusBadge.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import TableHeaderCell from '@/components/ui/TableHeaderCell.vue'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
 import ManualPaymentModal from '@/components/ManualPaymentModal.vue'
 import SessionExtraCharges from '@/components/SessionExtraCharges.vue'
@@ -781,18 +797,13 @@ const formatSessionDate = (isoString: string) => {
   return format(new Date(isoString), 'EEEE, dd/MM/yyyy', { locale: dateLocale.value })
 }
 
-const getStatusLabel = (status: string) => {
-  return t.value(`common.${status}`)
-}
-
-const getStatusChipClass = (status: string) =>
-  status === 'done'
-    ? 'bg-status-success text-status-success-strong'
-    : status === 'waiting_for_payment'
-      ? 'bg-status-warning text-status-warning-strong'
-      : status === 'cancelled'
-        ? 'bg-status-neutral text-status-neutral-strong'
-        : 'bg-status-info text-status-info-strong'
+const STATUS_DS = {
+  open: 'Open',
+  waiting_for_payment: 'Waiting For Payment',
+  done: 'Done',
+  cancelled: 'Cancelled',
+} as const
+const dsStatus = (s: string) => STATUS_DS[s as keyof typeof STATUS_DS] ?? 'Cancelled'
 
 const totalCollected = computed(() => {
   if (costs.value.length > 0) {
@@ -994,161 +1005,128 @@ onUnmounted(() => {
 <template>
   <div class="session-detail-shell mx-auto max-w-full px-4 py-4 sm:px-6 md:py-6 lg:px-8">
     <div v-if="loading && !session" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+      <Spinner size="48" />
     </div>
 
-    <div
-      v-else-if="pageError"
-      class="rounded-xl border border-status-danger-border bg-status-danger-subtle p-5 text-sm text-status-danger-strong"
-      role="alert"
-      aria-live="polite"
-    >
+    <Alert v-else-if="pageError" tone="Danger" aria-live="polite">
       <p class="font-bold">{{ pageError }}</p>
-      <button
-        type="button"
-        class="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-        @click="() => fetchData()"
-      >
-        {{ t('session.refreshSession') }}
-      </button>
-    </div>
+      <template #action>
+        <Button size="Default" variant="Outline Danger" @click="() => fetchData()">
+          {{ t('session.refreshSession') }}
+        </Button>
+      </template>
+    </Alert>
 
     <div v-else-if="session" class="space-y-4">
-      <div
-        v-if="pageError || actionError || paymentDataError"
-        class="rounded-xl border border-status-danger-border bg-status-danger-subtle p-4 text-sm text-status-danger-strong"
-        role="alert"
-        aria-live="polite"
-      >
+      <Alert v-if="pageError || actionError || paymentDataError" tone="Danger" aria-live="polite">
         <p v-if="pageError" class="font-bold">{{ pageError }}</p>
         <p v-if="actionError" class="font-bold">{{ actionError }}</p>
         <p v-if="paymentDataError" class="font-bold">{{ paymentDataError }}</p>
-        <button
-          type="button"
-          class="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-status-danger-border bg-white px-4 py-2 text-sm font-bold text-status-danger-strong transition hover:bg-status-danger focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-          @click="() => fetchData()"
-        >
-          {{ t('session.refreshSession') }}
-        </button>
-      </div>
+        <template #action>
+          <Button size="Default" variant="Outline Danger" @click="() => fetchData()">
+            {{ t('session.refreshSession') }}
+          </Button>
+        </template>
+      </Alert>
 
       <section
         id="overview-section"
-        class="session-scroll-target rounded-xl border border-divider bg-white p-4 shadow-sm sm:p-6"
+        data-ds="Session Overview Section"
+        class="session-scroll-target flex flex-col gap-5 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm md:p-6"
       >
-        <div class="mb-4 flex items-center justify-between gap-3">
-          <button
-            type="button"
+        <div class="flex items-center justify-between gap-3">
+          <Button
+            size="Default"
+            variant="Ghost"
+            :leading-icon="ChevronLeft"
             @click="$router.back()"
-            class="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-bold text-brand-600 transition hover:bg-brand-50 hover:text-brand-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
           >
-            <ChevronLeft class="h-5 w-5" aria-hidden="true" />
             {{ t('common.back') }}
-          </button>
-          <button
-            type="button"
-            @click="() => fetchData()"
-            class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-divider text-fg-secondary transition hover:border-brand-200 hover:bg-brand-50 hover:text-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-            :aria-label="t('session.refreshSession')"
+          </Button>
+          <IconButton
+            size="Default"
+            shape="Square"
+            variant="Outline"
+            :icon="RefreshCcw"
+            :label="t('session.refreshSession')"
             :title="t('session.refreshSession')"
-          >
-            <RefreshCcw class="h-5 w-5" :class="{ 'animate-spin': loading }" aria-hidden="true" />
-            <span class="sr-only">{{ t('session.refreshSession') }}</span>
-          </button>
+            :loading="loading"
+            @click="() => fetchData()"
+          />
         </div>
 
         <!-- Edit Mode -->
-        <div v-if="isEditingSession && authStore.isAdmin" class="space-y-4">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
+        <div v-if="isEditingSession && authStore.isAdmin" class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-bold text-fg-primary">
               {{ t('session.editSession') }}
             </h2>
-            <button
-              type="button"
+            <IconButton
+              size="Default"
+              shape="Square"
+              variant="Ghost"
+              :icon="X"
+              :label="t('common.cancel')"
               @click="isEditingSession = false"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled transition hover:bg-gray-100 hover:text-fg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-              :aria-label="t('common.cancel')"
-            >
-              <X class="w-5 h-5" aria-hidden="true" />
-            </button>
+            />
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{ t('session.title') }}</label>
-              <input
-                v-model="sessionForm.title"
-                type="text"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{ t('common.status') }}</label>
-              <select
-                v-model="sessionForm.status"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
-              >
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <FormField :label="t('session.title')" v-slot="{ controlProps }">
+              <Input v-model="sessionForm.title" v-bind="controlProps" size="Default" type="text" />
+            </FormField>
+            <FormField control="Select" :label="t('common.status')" v-slot="{ controlProps }">
+              <Select v-model="sessionForm.status" v-bind="controlProps" size="Default">
                 <option value="open">{{ t('common.open') }}</option>
                 <option value="waiting_for_payment">{{ t('common.waiting_for_payment') }}</option>
                 <option value="done">{{ t('common.done') }}</option>
                 <option value="cancelled">{{ t('common.cancelled') }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{
-                t('createSession.startTime')
-              }}</label>
-              <input
+              </Select>
+            </FormField>
+            <FormField :label="t('createSession.startTime')" v-slot="{ controlProps }">
+              <Input
                 v-model="sessionForm.session_start"
+                v-bind="controlProps"
+                size="Default"
                 type="time"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
               />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{
-                t('createSession.endTime')
-              }}</label>
-              <input
-                v-model="sessionForm.session_end"
-                type="time"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
-              />
-              <p v-if="sessionTimeInvalid" class="mt-1 text-sm text-status-danger-action">
+            </FormField>
+            <FormField :label="t('createSession.endTime')" message-tone="Error">
+              <template #default="{ controlProps }">
+                <Input
+                  v-model="sessionForm.session_end"
+                  v-bind="controlProps"
+                  size="Default"
+                  type="time"
+                />
+              </template>
+              <template v-if="sessionTimeInvalid" #message>
                 {{ t('createSession.endTimeError') }}
-              </p>
-            </div>
+              </template>
+            </FormField>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{
-                t('session.courtFeeAddon')
-              }}</label>
-              <input
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormField :label="t('session.courtFeeAddon')" v-slot="{ controlProps }">
+              <Input
                 v-model.number="sessionForm.court_fee_addon"
+                v-bind="controlProps"
+                size="Default"
                 type="number"
                 step="1000"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
               />
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-fg-secondary">{{
-                t('session.defaultCourtPrice')
-              }}</label>
-              <input
+            </FormField>
+            <FormField :label="t('session.defaultCourtPrice')" v-slot="{ controlProps }">
+              <Input
                 v-model.number="defaultCourtPrice"
+                v-bind="controlProps"
+                size="Default"
                 type="number"
                 step="1000"
-                class="mt-1 block min-h-11 w-full rounded-xl border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-2"
               />
-            </div>
+            </FormField>
           </div>
-          <div v-if="timesChanged" class="md:col-span-2 lg:col-span-5">
-            <div
-              class="flex items-start gap-2 rounded-xl border border-status-danger-border bg-status-danger-subtle p-3 text-sm text-status-danger-strong"
-            >
-              <span class="mt-0.5">&#x26A0;&#xFE0F;</span>
-              <span>{{ t('session.intervalsResetWarning') }}</span>
-            </div>
-          </div>
+          <Alert v-if="timesChanged" tone="Danger" :icon="AlertTriangle">
+            {{ t('session.intervalsResetWarning') }}
+          </Alert>
           <CourtBookingEditor
             v-model:bookings="courtBookingDrafts"
             :session-start="sessionForm.session_start"
@@ -1156,166 +1134,150 @@ onUnmounted(() => {
             :default-price="defaultCourtPrice"
             @update:valid="bookingsValid = $event"
           />
-          <div class="flex justify-end gap-3 pt-2 border-t border-gray-50 mt-4">
-            <button
-              type="button"
-              @click="isEditingSession = false"
-              class="min-h-11 rounded-xl border border-input bg-white px-4 py-2 text-sm font-bold text-fg-secondary transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-            >
+          <div class="flex justify-end gap-3 border-t border-line-divider pt-4">
+            <Button size="Default" variant="Secondary" @click="isEditingSession = false">
               {{ t('common.cancel') }}
-            </button>
-            <button
-              type="button"
-              @click="saveSession"
+            </Button>
+            <Button
+              size="Default"
+              variant="Primary"
+              :leading-icon="Save"
+              :loading="isSavingSession"
               :disabled="isSavingSession || !bookingsValid || sessionTimeInvalid"
-              class="flex min-h-11 items-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50"
+              @click="saveSession"
             >
-              <Save v-if="!isSavingSession" class="w-4 h-4 mr-2" />
-              <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
               {{ t('common.save') }}
-            </button>
+            </Button>
           </div>
         </div>
 
         <!-- View Mode -->
-        <div v-else class="space-y-5">
+        <div v-else class="flex flex-col gap-5">
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div class="min-w-0">
-              <div class="mb-2 flex items-start gap-3">
-                <h1 class="text-[20px] font-bold leading-[1.2] tracking-tight text-fg-primary">
+            <div class="flex min-w-0 flex-col gap-2">
+              <div class="flex items-start gap-3">
+                <h1 class="text-xl font-bold text-fg-primary">
                   {{ session.title }}
                 </h1>
-                <button
+                <IconButton
                   v-if="isSessionEditable"
-                  type="button"
-                  @click="startEditing"
-                  class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-fg-disabled transition hover:bg-brand-50 hover:text-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                  size="Default"
+                  shape="Square"
+                  variant="Ghost"
+                  :icon="Edit"
+                  :label="t('session.editSession')"
                   :title="t('session.editSession')"
-                  :aria-label="t('session.editSession')"
-                >
-                  <Edit class="h-5 w-5" aria-hidden="true" />
-                </button>
+                  @click="startEditing"
+                />
               </div>
-              <p class="text-sm font-normal capitalize text-fg-secondary">
+              <p class="text-sm capitalize text-fg-secondary">
                 {{ formatSessionDate(session.session_date) }}
                 <span v-if="sessionTimeRange"> · {{ sessionTimeRange }}</span>
               </p>
             </div>
 
-            <span
-              class="inline-flex w-fit items-center rounded-full px-3 py-1 text-sm font-bold capitalize"
-              :class="getStatusChipClass(session.status)"
-            >
-              {{ getStatusLabel(session.status) }}
-            </span>
+            <SessionStatusBadge :status="dsStatus(session.status)" />
           </div>
 
-          <div class="grid grid-cols-1 gap-3 text-base sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-xl bg-gray-50 p-3">
-              <span class="mb-1 block text-sm font-bold text-fg-muted">{{
-                t('session.courtFee')
-              }}</span>
-              <span class="font-bold text-fg-primary">{{
+          <div class="flex flex-col gap-3 md:flex-row">
+            <div
+              data-ds="Stat Tile"
+              data-ds-tone="Neutral"
+              class="flex flex-col gap-1 rounded-xl bg-surface-subtle p-3 md:flex-1"
+            >
+              <span class="text-sm font-bold text-fg-muted">{{ t('session.courtFee') }}</span>
+              <span class="text-base font-bold text-fg-primary">{{
                 formatCurrency(session.court_fee_total)
               }}</span>
             </div>
-            <div class="rounded-xl bg-gray-50 p-3">
-              <span class="mb-1 block text-sm font-bold text-fg-muted">{{
-                t('session.shuttleFee')
-              }}</span>
-              <span class="font-bold text-fg-primary">{{
+            <div
+              data-ds="Stat Tile"
+              data-ds-tone="Neutral"
+              class="flex flex-col gap-1 rounded-xl bg-surface-subtle p-3 md:flex-1"
+            >
+              <span class="text-sm font-bold text-fg-muted">{{ t('session.shuttleFee') }}</span>
+              <span class="text-base font-bold text-fg-primary">{{
                 formatCurrency(session.shuttle_fee_total)
               }}</span>
             </div>
             <div
               v-if="session.status === 'waiting_for_payment' || session.status === 'done'"
-              class="rounded-xl bg-brand-50 p-3"
+              data-ds="Stat Tile"
+              data-ds-tone="Brand"
+              class="flex flex-col gap-1 rounded-xl bg-surface-brand-subtle p-3 md:flex-1"
             >
-              <span class="mb-1 block text-sm font-bold text-brand-700">{{
+              <span class="text-sm font-bold text-fg-brand-strong">{{
                 t('session.totalCollected')
               }}</span>
-              <span class="font-bold text-brand-700">{{ formatCurrency(totalCollected) }}</span>
+              <span class="text-base font-bold text-fg-brand-strong">{{
+                formatCurrency(totalCollected)
+              }}</span>
             </div>
           </div>
 
-          <div
-            v-if="overviewMessage"
-            class="rounded-xl border border-divider bg-gray-50 px-4 py-3 text-sm font-normal text-fg-secondary"
-          >
-            {{ overviewMessage }}
-          </div>
+          <Alert v-if="overviewMessage" tone="Neutral">{{ overviewMessage }}</Alert>
 
-          <div v-if="isSessionEditable" class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              @click="cancelSession"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gray-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
-            >
-              🚫 {{ t('session.cancelSession') }}
-            </button>
-            <button
-              type="button"
-              @click="finalizeSession"
+          <div v-if="isSessionEditable" class="flex flex-col gap-2 md:flex-row md:justify-end">
+            <Button size="Default" variant="Secondary" @click="cancelSession">
+              {{ t('session.cancelSession') }}
+            </Button>
+            <Button
+              size="Default"
+              variant="Primary"
+              :leading-icon="Lock"
+              :loading="finalizeLoading"
               :disabled="finalizeLoading"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              @click="finalizeSession"
             >
-              <Lock v-if="!finalizeLoading" class="mr-2 h-4 w-4" aria-hidden="true" />
-              <Loader2 v-else class="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               {{ t('session.finalize') }}
-            </button>
+            </Button>
           </div>
         </div>
       </section>
 
       <!-- Cancelled Banner -->
-      <div v-if="isSessionCancelled" class="bg-gray-50 border-l-4 border-gray-400 p-4 mb-8">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <X class="h-5 w-5 text-fg-disabled" aria-hidden="true" />
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-fg-secondary">
-              {{ t('session.cancelledMessage') }}
-            </p>
-          </div>
-        </div>
-      </div>
+      <Alert v-if="isSessionCancelled" tone="Neutral" variant="Banner" :icon="X" class="mb-8">
+        {{ t('session.cancelledMessage') }}
+      </Alert>
 
       <!-- Attendance -->
       <section
         id="attendance-section"
-        class="session-scroll-target rounded-xl border border-divider bg-white shadow-sm"
+        class="session-scroll-target rounded-xl border border-line-divider bg-surface-card shadow-sm"
       >
-        <div class="px-6 py-4 border-b border-divider bg-gray-50">
-          <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
-            {{ t('session.attendance') }}
-          </h2>
-          <span
-            v-if="attendanceLockMessage"
-            class="mt-2 inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-bold text-fg-secondary"
-          >
-            <Lock class="mr-1.5 h-4 w-4 text-fg-disabled" aria-hidden="true" />
-            {{ t('session.lockedStatusLabel') }}
-          </span>
-        </div>
+        <SectionHeader variant="Tinted" :title="t('session.attendance')">
+          <template #badge>
+            <Badge v-if="attendanceLockMessage" tone="Neutral" :icon="Lock">
+              {{ t('session.lockedStatusLabel') }}
+            </Badge>
+          </template>
+        </SectionHeader>
 
         <!-- Add Members to Session -->
-        <div class="border-b border-divider p-4 sm:p-6">
+        <div class="border-b border-line-divider p-4 sm:p-6">
           <div
             v-if="isSessionEditable"
-            class="rounded-xl border border-brand-100 bg-brand-50/60 p-4"
+            data-ds="Add Members Panel"
+            class="flex flex-col gap-3 rounded-xl border border-line-brand-muted bg-surface-brand-subtle p-4"
             ref="dropdownRef"
           >
-            <div class="mb-3 flex items-center gap-2">
-              <UserPlus class="h-5 w-5 text-brand-600" aria-hidden="true" />
-              <h3 class="text-base font-bold text-fg-primary">{{ t('session.addMembersTitle') }}</h3>
+            <div class="flex items-center gap-2">
+              <UserPlus class="size-5 text-fg-brand" aria-hidden="true" />
+              <h3 class="text-base font-bold text-fg-primary">
+                {{ t('session.addMembersTitle') }}
+              </h3>
             </div>
             <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start">
               <div class="relative w-full sm:w-80">
                 <button
                   type="button"
+                  data-ds="Select Trigger"
+                  :data-ds-content="selectedMemberIds.length === 0 ? 'Placeholder' : 'Selected'"
+                  :data-ds-open="String(showMemberDropdown)"
+                  aria-haspopup="listbox"
+                  :aria-expanded="showMemberDropdown"
                   @click="showMemberDropdown = !showMemberDropdown"
-                  class="flex min-h-11 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-2 text-left text-sm shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                  class="flex h-control-md w-full cursor-pointer items-center justify-between rounded-control border border-line-input bg-surface-card px-4 text-left text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 sm:w-80"
                 >
                   <span v-if="selectedMemberIds.length === 0" class="text-fg-muted">{{
                     t('session.selectMembers')
@@ -1323,132 +1285,127 @@ onUnmounted(() => {
                   <span v-else class="font-bold text-fg-primary">{{
                     t('session.selectedCount', { count: selectedMemberIds.length })
                   }}</span>
-                  <ChevronLeft
-                    class="h-4 w-4 text-fg-disabled transition-transform duration-200"
-                    :class="showMemberDropdown ? 'rotate-90' : '-rotate-90'"
-                  />
+                  <ChevronUp v-if="showMemberDropdown" class="size-4 text-fg-disabled" />
+                  <ChevronDown v-else class="size-4 text-fg-disabled" />
                 </button>
                 <!-- Custom Checkbox Dropdown -->
                 <div
                   v-if="showMemberDropdown"
-                  class="absolute z-[60] left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-xl border border-divider bg-white shadow-lg animate-in fade-in zoom-in-95 duration-100"
+                  data-ds="Multi-select Menu"
+                  :data-ds-content="availableMembers.length === 0 ? 'Empty' : 'Options'"
+                  class="absolute z-[60] left-0 right-0 mt-2 max-h-60 overflow-y-auto rounded-xl border border-line-divider bg-surface-card shadow-lg animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <div
-                    v-if="availableMembers.length === 0"
-                    class="p-3 text-center text-base italic text-fg-muted"
-                  >
+                  <EmptyState v-if="availableMembers.length === 0" variant="Plain" align="Center">
                     {{ t('session.noMoreMembers') }}
-                  </div>
+                  </EmptyState>
                   <label
                     v-for="m in availableMembers"
                     :key="m.id"
-                    class="flex min-h-11 cursor-pointer select-none items-center px-3 py-2 transition hover:bg-brand-50"
+                    data-ds="Checkbox Field"
+                    data-ds-style="Option"
+                    :data-ds-checked="String(selectedMemberIds.includes(m.id))"
+                    class="flex h-11 cursor-pointer select-none items-center gap-3 px-3 hover:bg-surface-brand-subtle"
                   >
-                    <input
-                      type="checkbox"
-                      :value="m.id"
-                      v-model="selectedMemberIds"
-                      class="mr-3 h-5 w-5 rounded border-input text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                    />
+                    <Checkbox size="20" :value="m.id" v-model="selectedMemberIds" />
                     <span class="text-base text-fg-secondary">{{ m.display_name }}</span>
                   </label>
                 </div>
               </div>
-              <button
-                type="button"
-                @click="registerMembers"
+              <Button
+                size="Default"
+                variant="Primary"
+                :leading-icon="UserPlus"
+                :loading="isRegistering"
                 :disabled="selectedMemberIds.length === 0 || isRegistering"
-                class="flex min-h-11 items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-base font-bold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:whitespace-nowrap"
+                @click="registerMembers"
               >
-                <UserPlus v-if="!isRegistering" class="mr-1.5 h-4 w-4" />
-                <Loader2 v-else class="mr-1.5 h-4 w-4 animate-spin" />
                 {{ isRegistering ? t('common.loading') : t('session.register') }}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
         <div class="space-y-4 p-4 md:hidden">
-          <div
+          <EmptyState
             v-if="registrations.length === 0"
-            class="rounded-xl border border-dashed border-input bg-gray-50 p-5 text-center text-sm text-fg-secondary"
+            variant="Dashed Muted"
+            align="Center"
+            size="Small"
           >
             {{ t('session.noRegisteredMembers') }}
-          </div>
+          </EmptyState>
           <article
             v-for="reg in registrations"
             :key="reg.id"
-            class="rounded-xl border border-divider bg-white p-4 shadow-sm"
-            :class="{ 'bg-gray-50 opacity-90': isRegistrationAbsent(reg) }"
+            data-ds="Registration Card"
+            :data-ds-absent="String(isRegistrationAbsent(reg))"
+            :data-ds-editable="String(isSessionEditable)"
+            class="flex flex-col gap-4 rounded-xl border border-line-divider p-4 shadow-sm"
+            :class="isRegistrationAbsent(reg) ? 'bg-surface-subtle opacity-90' : 'bg-surface-card'"
           >
             <div class="flex items-start justify-between gap-3">
-              <div>
+              <div class="flex flex-col gap-1">
                 <h3 class="text-base font-bold text-fg-primary">
                   {{ reg.member?.display_name }}
                 </h3>
-                <p class="mt-1 text-sm font-normal text-fg-secondary">
+                <p class="flex gap-1 text-sm text-fg-secondary">
                   {{ t('session.presentIntervals') }}:
                   <span class="tabular-nums text-fg-primary">
                     {{ presentIntervalCount(reg.member_id) }}/{{ intervals.length }}
                   </span>
                 </p>
               </div>
-              <span
-                v-if="isRegistrationAbsent(reg)"
-                class="rounded-full bg-status-danger-subtle px-3 py-1 text-sm font-bold text-status-danger-action"
-              >
+              <Badge v-if="isRegistrationAbsent(reg)" tone="Danger">
                 {{ t('session.absent') }}
-              </span>
+              </Badge>
             </div>
 
-            <p
+            <Alert
               v-if="isRegistrationAbsent(reg) || attendanceLockMessage"
-              class="mt-3 rounded-xl border border-divider bg-gray-50 px-3 py-2 text-sm text-fg-secondary"
+              tone="Neutral"
+              :icon="Lock"
             >
-              <Lock class="mr-1 inline h-4 w-4 align-[-2px] text-fg-disabled" aria-hidden="true" />
               {{ isRegistrationAbsent(reg) ? t('session.absent') : t('session.lockedStatusLabel') }}
-            </p>
+            </Alert>
 
-            <div v-if="isSessionEditable" class="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                @click="toggleAbsent(reg)"
-                class="flex min-h-11 items-center justify-center rounded-xl border px-3 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                :class="
-                  isRegistrationAbsent(reg)
-                    ? 'border-status-danger-border bg-status-danger-subtle text-status-danger-strong'
-                    : 'border-input bg-white text-fg-secondary hover:border-status-danger-border hover:text-status-danger-strong'
-                "
+            <div v-if="isSessionEditable" class="grid grid-cols-2 gap-2">
+              <Button
+                size="Default"
+                :variant="isRegistrationAbsent(reg) ? 'Outline Danger' : 'Secondary'"
+                :pressed="isRegistrationAbsent(reg)"
+                :leading-icon="UserX"
                 :aria-pressed="isRegistrationAbsent(reg) ? 'true' : 'false'"
+                @click="toggleAbsent(reg)"
               >
-                <UserX class="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {{ t('session.markAbsent') }}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="Default"
+                variant="Outline Danger"
+                :leading-icon="Trash2"
                 @click="removeRegistration(reg.id, reg.member?.display_name || '', reg.member_id)"
-                class="flex min-h-11 items-center justify-center rounded-xl border border-status-danger-border bg-white px-3 py-2 text-sm font-bold text-status-danger-action transition hover:bg-status-danger-subtle focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
               >
-                <Trash2 class="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {{ t('common.remove') }}
-              </button>
+              </Button>
             </div>
 
-            <div class="mt-4 space-y-2">
+            <div class="flex flex-col gap-2">
               <label
                 v-for="interval in intervals"
                 :key="interval.id"
-                class="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-divider bg-gray-50 px-3 py-2"
+                data-ds="Interval Check Row"
+                :data-ds-checked="String(presence[reg.member_id]?.[interval.id] || false)"
+                :data-ds-editable="String(isSessionEditable)"
+                class="flex h-11 items-center justify-between gap-3 rounded-xl border border-line-divider bg-surface-subtle px-3 py-2"
                 :class="{ 'opacity-70': !isSessionEditable }"
               >
                 <span class="text-sm font-normal text-fg-secondary">
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
                 </span>
-                <input
-                  type="checkbox"
-                  :checked="presence[reg.member_id]?.[interval.id] || false"
+                <Checkbox
+                  size="24"
+                  :model-value="presence[reg.member_id]?.[interval.id] || false"
                   @change="togglePresence(reg.member_id, interval.id)"
                   :disabled="!isSessionEditable"
-                  class="h-6 w-6 rounded border-input text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   :aria-label="`${reg.member?.display_name || t('common.member')} ${formatTime(interval.start_time)} - ${formatTime(interval.end_time)}`"
                 />
               </label>
@@ -1456,47 +1413,51 @@ onUnmounted(() => {
           </article>
         </div>
         <div class="hidden md:block overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  class="sticky left-0 z-10 bg-gray-50 px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider border-r border-divider shadow-[2px_0_5px_rgba(0,0,0,0.05)] w-48"
-                >
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b border-line-divider">
+                <TableHeaderCell align="Left" class="sticky left-0 z-10 w-48">
                   {{ t('common.member') }}
-                </th>
-                <th
+                </TableHeaderCell>
+                <TableHeaderCell
                   v-if="isSessionEditable"
-                  scope="col"
-                  class="px-2 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider w-12"
+                  align="Center"
+                  density="Compact"
+                  class="w-12"
                 >
                   <span class="sr-only">{{ t('common.actions') }}</span>
-                </th>
-                <th
+                </TableHeaderCell>
+                <TableHeaderCell
                   v-if="isSessionEditable"
-                  scope="col"
-                  class="px-2 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider w-16"
+                  align="Center"
+                  density="Compact"
+                  class="w-16"
                 >
                   {{ t('session.absent') }}
-                </th>
-                <th
+                </TableHeaderCell>
+                <TableHeaderCell
                   v-for="interval in intervals"
                   :key="interval.id"
-                  scope="col"
-                  class="px-3 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider min-w-[100px]"
+                  align="Center"
+                  density="Compact"
+                  class="min-w-[100px]"
                 >
                   {{ formatTime(interval.start_time) }} - {{ formatTime(interval.end_time) }}
-                </th>
+                </TableHeaderCell>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-surface-card">
               <tr
                 v-for="reg in registrations"
                 :key="reg.id"
-                :class="{ 'opacity-60 bg-gray-50': isRegistrationAbsent(reg) }"
+                data-ds="Attendance Row"
+                :data-ds-absent="String(isRegistrationAbsent(reg))"
+                :data-ds-editable="String(isSessionEditable)"
+                class="border-b border-line-divider last:border-b-0"
+                :class="{ 'bg-surface-subtle opacity-60': isRegistrationAbsent(reg) }"
               >
                 <td
-                  class="sticky left-0 z-10 bg-white px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary border-r border-divider shadow-[2px_0_5px_rgba(0,0,0,0.05)]"
+                  class="sticky left-0 z-10 whitespace-nowrap border-r border-line-divider bg-surface-card px-6 py-4 text-base font-bold text-fg-primary"
                 >
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}
@@ -1507,28 +1468,29 @@ onUnmounted(() => {
                     >
                   </div>
                 </td>
-                <td v-if="isSessionEditable" class="px-2 py-4 whitespace-nowrap text-center">
-                  <button
-                    type="button"
+                <td v-if="isSessionEditable" class="px-3 py-4 whitespace-nowrap text-center">
+                  <IconButton
+                    size="Default"
+                    shape="Square"
+                    variant="Ghost"
+                    :icon="Trash2"
+                    :label="t('session.removeRegistrationTooltip')"
+                    :title="t('session.removeRegistrationTooltip')"
                     @click="
                       removeRegistration(reg.id, reg.member?.display_name || '', reg.member_id)
                     "
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled transition hover:text-status-danger-action focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                    :title="t('session.removeRegistrationTooltip')"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
+                  />
                 </td>
-                <td v-if="isSessionEditable" class="px-2 py-4 whitespace-nowrap text-center">
-                  <button
-                    type="button"
-                    @click="toggleAbsent(reg)"
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-fg-disabled transition hover:text-status-danger-action focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                    :class="{ 'text-status-danger-action': isRegistrationAbsent(reg) }"
+                <td v-if="isSessionEditable" class="px-3 py-4 whitespace-nowrap text-center">
+                  <IconButton
+                    size="Default"
+                    shape="Square"
+                    :variant="isRegistrationAbsent(reg) ? 'Ghost Danger' : 'Ghost'"
+                    :icon="UserX"
+                    :label="t('session.markAbsentTooltip')"
                     :title="t('session.markAbsentTooltip')"
-                  >
-                    <UserX class="w-5 h-5" />
-                  </button>
+                    @click="toggleAbsent(reg)"
+                  />
                 </td>
                 <td
                   v-for="interval in intervals"
@@ -1536,12 +1498,11 @@ onUnmounted(() => {
                   class="px-3 py-4 whitespace-nowrap text-center"
                 >
                   <div class="flex justify-center items-center h-full">
-                    <input
-                      type="checkbox"
-                      :checked="presence[reg.member_id]?.[interval.id] || false"
+                    <Checkbox
+                      size="24"
+                      :model-value="presence[reg.member_id]?.[interval.id] || false"
                       @change="togglePresence(reg.member_id, interval.id)"
                       :disabled="!isSessionEditable || isSessionFinalized"
-                      class="h-6 w-6 cursor-pointer rounded border-input text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </td>
