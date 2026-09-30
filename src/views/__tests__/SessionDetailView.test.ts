@@ -148,9 +148,7 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('member')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(0)
     expect(w.findAll('#payments-section thead th')).toHaveLength(8)
-    expect(
-      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
-    ).toBe('5')
+    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('5')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(false)
   })
 
@@ -158,9 +156,7 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('admin')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(2)
     expect(w.findAll('#payments-section thead th')).toHaveLength(9)
-    expect(
-      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
-    ).toBe('6')
+    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('6')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(true)
   })
 
@@ -215,6 +211,8 @@ const button = (w: ReturnType<typeof mount>, label: string) =>
 const overview = (w: ReturnType<typeof mount>) => w.get('#overview-section')
 const cards = (w: ReturnType<typeof mount>) => w.findAll('[data-ds="Registration Card"]')
 const rows = (w: ReturnType<typeof mount>) => w.findAll('tr[data-ds="Attendance Row"]')
+const PALETTE_CLASS =
+  /(?:^|[^a-z-])((?:bg|text|border|ring|divide|from|via|to|outline|fill|stroke|placeholder|decoration|accent|caret)-(?:gray|red|green|amber|blue|emerald|brand|slate|zinc|neutral|stone|orange|yellow|lime|teal|cyan|sky|indigo|violet|purple|fuchsia|pink|rose)-\d+)/g
 const upserts = () => h.calls.filter((c) => c.m === 'upsert')
 
 describe('SessionDetailView page states', () => {
@@ -678,9 +676,7 @@ describe('SessionDetailView S6 range', () => {
 
   it('has no palette class, emoji icon or gray-50 divider before the cost section', () => {
     expect(s6.length).toBeGreaterThan(1000)
-    expect(s6).not.toMatch(
-      /\b(bg|text|border|ring|divide|from|to|outline|shadow)-(gray|red|green|amber|blue|emerald|brand|white)(-\d+)?\b/,
-    )
+    expect([...s6.matchAll(PALETTE_CLASS)].map((m) => m[1])).toEqual([])
     expect(s6).not.toContain('🚫')
     expect(s6).not.toContain('⚠')
     expect(s6).not.toContain('&#x26A0;')
@@ -696,27 +692,57 @@ describe('SessionDetailView S6 range', () => {
   it('has the ARIA of the removed inline markup rendered by the shared components', async () => {
     openAttendance()
     const w = await mountDetail('admin')
-    // IconButton aria-label: refresh and edit (was aria-label on inline buttons)
-    for (const label of [t('session.refreshSession'), t('session.editSession')]) {
-      expect(overview(w).get(`button[aria-label="${label}"]`).attributes('data-ds')).toBe(
-        'Icon Button',
-      )
+    const hidden = (root: { findAll: (s: string) => any[] }, what: string) => {
+      const svgs = root.findAll('svg')
+      expect(svgs.length, what).toBeGreaterThan(0)
+      for (const svg of svgs) expect(svg.attributes('aria-hidden'), what).toBe('true')
     }
-    // lucide aria-hidden on icons inside Button, Badge and Alert
+    // IconButton aria-label and the aria-hidden icon inside: refresh and edit
+    for (const label of [t('session.refreshSession'), t('session.editSession')]) {
+      const btn = overview(w).get(`button[aria-label="${label}"]`)
+      expect(btn.attributes('data-ds')).toBe('Icon Button')
+      hidden(btn, label)
+    }
     for (const svg of overview(w).findAll('[data-ds="Button"] svg')) {
       expect(svg.attributes('aria-hidden')).toBe('true')
     }
+    // Locked Badge Lock and card lock-note Alert Lock, mobile card UserX / Trash2 Button icons
+    const card = cards(w)[1]!
+    hidden(card.get('[data-ds="Alert"]'), 'card lock note')
+    for (const label of [t('session.markAbsent'), t('common.remove')]) {
+      hidden(card.findAll('button').find((b) => b.text() === label)!, label)
+    }
     // Interval checkbox aria-label survives through Checkbox
-    const check = cards(w)[0]!.get('input[type="checkbox"]')
-    expect(check.attributes('aria-label')).toContain('An')
-    // the close X of the edit form is a labelled IconButton
+    expect(cards(w)[0]!.get('input[type="checkbox"]').attributes('aria-label')).toContain('An')
+    // the close X of the edit form is a labelled IconButton with an aria-hidden icon
     await overview(w)
       .get(`button[aria-label="${t('session.editSession')}"]`)
       .trigger('click')
+    const close = overview(w).get(`button[aria-label="${t('common.cancel')}"]`)
+    expect(close.attributes('data-ds')).toBe('Icon Button')
+    hidden(close, 'close')
+  })
+
+  it('has aria-hidden on the Locked Badge Lock and the cancelled Banner X', async () => {
+    withSession({ status: 'waiting_for_payment' }, ATTENDANCE_TABLES)
+    const w = await mountDetail('admin')
+    const badge = w.get('#attendance-section [data-ds="Section Header"] [data-ds="Badge"]')
+    expect(badge.get('svg').attributes('aria-hidden')).toBe('true')
+    w.unmount()
+    withSession({ status: 'cancelled' })
+    const c = await mountDetail('member')
     expect(
-      overview(w)
-        .get(`button[aria-label="${t('common.cancel')}"]`)
-        .attributes('data-ds'),
-    ).toBe('Icon Button')
+      c.get('[data-ds="Alert"][data-ds-style="Banner"] svg').attributes('aria-hidden'),
+    ).toBe('true')
+  })
+
+  it('announces the in-session error Alert with role alert and aria-live polite', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: { message: 'x' } } as any)
+    const w = await mountDetail('member')
+    const alert = w.get('.space-y-4 > [data-ds="Alert"]')
+    expect(alert.attributes('data-ds-tone')).toBe('Danger')
+    expect(alert.attributes('role')).toBe('alert')
+    expect(alert.attributes('aria-live')).toBe('polite')
+    expect(alert.text()).toContain(t('session.paymentDataLoadError'))
   })
 })
