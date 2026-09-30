@@ -404,7 +404,7 @@ Nằm trong `src/components/ui/`, mỗi file là một component set trong Figma
 - `Spinner` — vòng loading: `size` 32/48 (mặc định 32), `tone` Brand/Success; `role="status"` + sr-only `common.loading`.
 - `Avatar` — chữ cái đầu trong vòng tròn: `size` 32/64 (mặc định 32), `initial`.
 - `RoleBadge` — vai trò: `role` Admin/Member, `size` Default/Small (mặc định Default); bọc Badge Brand/Neutral, nhãn từ `common.admin`/`common.member`.
-- `SectionHeader` — thanh tiêu đề của card: `variant` Tinted/Caps/Plain Title (mặc định Caps), `title`, `icon`, `level` 2/3 (mặc định 2); slot `actions`.
+- `SectionHeader` — thanh tiêu đề của card: `variant` Tinted/Caps/Plain Title (mặc định Caps), `title`, `icon`, `level` 2/3 (mặc định 2); slot `actions`, slot `badge` (dưới tiêu đề).
 - `TableHeaderCell` — ô `<th scope="col">` của bảng desktop: `content` Text/Checkbox/Empty (mặc định Text), `align` Left/Center/Right (mặc định Left), `density` Default px-6/Compact px-3 (mặc định Default); cao 44, sm/Bold uppercase muted trên `surface/subtle`; slot mặc định = nhãn (hoặc checkbox).
 - `CountPill` — pill số đếm (số buổi chưa đóng): `tone` Danger (mặc định Danger); bọc Badge Small Danger, slot mặc định = số.
 - `StatusIcon` — icon trạng thái màu cố định theo loại: `kind` Check/Circle/Cross/Lock/Card (mặc định Check), `size` 16/20 (mặc định 16); `label` bắt buộc, hiển thị `sr-only` (caller truyền key có sẵn nói đúng nghĩa icon ở chỗ đó, ví dụ `payment.paid`, `payment.pending`, `member.activeStatus`, `session.lockedStatusLabel`).

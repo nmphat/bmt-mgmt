@@ -53,4 +53,17 @@ describe('SectionHeader', () => {
     })
     expect(w.get('button').text()).toBe('Add')
   })
+
+  it('badge slot renders under the title', () => {
+    const w = mount(SectionHeader, {
+      props: { title: 'Attendance' },
+      slots: { badge: '<span data-testid="badge">Locked</span>' },
+    })
+    const title = w.get('h2')
+    const badge = w.get('[data-testid="badge"]')
+    expect(badge.text()).toBe('Locked')
+    expect(
+      title.element.compareDocumentPosition(badge.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
 })

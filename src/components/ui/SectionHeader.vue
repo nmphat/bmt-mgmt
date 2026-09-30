@@ -2,7 +2,7 @@
 import type { Component } from 'vue'
 
 // Figma set "Section Header" (components/section_header.py): header bar of a card section. The exposed action
-// (a Button Ghost) goes in the `actions` slot.
+// (a Button Ghost) goes in the `actions` slot; the optional Badge goes in the `badge` slot, under the title.
 export type SectionHeaderVariant = 'Tinted' | 'Caps' | 'Plain Title'
 
 withDefaults(
@@ -37,14 +37,17 @@ const TITLES: Record<SectionHeaderVariant, string> = {
       VARIANTS[variant],
     ]"
   >
-    <div class="flex items-center gap-2">
-      <component
-        :is="icon"
-        v-if="icon"
-        class="size-4 shrink-0 text-fg-disabled"
-        aria-hidden="true"
-      />
-      <component :is="`h${level}`" :class="TITLES[variant]">{{ title }}</component>
+    <div class="flex flex-col items-start gap-2">
+      <div class="flex items-center gap-2">
+        <component
+          :is="icon"
+          v-if="icon"
+          class="size-4 shrink-0 text-fg-disabled"
+          aria-hidden="true"
+        />
+        <component :is="`h${level}`" :class="TITLES[variant]">{{ title }}</component>
+      </div>
+      <slot name="badge" />
     </div>
     <slot name="actions" />
   </div>
