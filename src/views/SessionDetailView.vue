@@ -24,7 +24,6 @@ import {
   UserX,
   UserPlus,
   Trash2,
-  Loader2,
   X,
   Edit,
   Save,
@@ -44,6 +43,7 @@ import Input from '@/components/ui/Input.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import Select from '@/components/ui/Select.vue'
 import SessionStatusBadge from '@/components/ui/SessionStatusBadge.vue'
+import StatusIcon from '@/components/ui/StatusIcon.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import TableHeaderCell from '@/components/ui/TableHeaderCell.vue'
 import PaymentQRModal from '@/components/PaymentQRModal.vue'
@@ -1514,63 +1514,95 @@ onUnmounted(() => {
       <!-- Cost Summary (Live mode) -->
       <section
         id="costs-section"
-        class="session-scroll-target rounded-xl border border-divider bg-white shadow-sm"
+        class="session-scroll-target rounded-xl border border-line-divider bg-surface-card shadow-sm"
       >
-        <div class="px-6 py-4 border-b border-divider bg-gray-50">
-          <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
-            {{ t('session.costSummary') }}
-            <span class="text-[14px] font-normal leading-[1.35] text-fg-muted"
-              >({{ t('session.live') }})</span
-            >
-          </h2>
-        </div>
+        <SectionHeader
+          variant="Tinted"
+          :title="t('session.costSummary')"
+          :suffix="`(${t('session.live')})`"
+        />
         <div v-if="session.status !== 'waiting_for_payment' && session.status !== 'done'">
           <div v-if="costs.length === 0" class="p-6 text-sm text-fg-muted md:hidden">
             {{ t('session.liveCostsEmpty') }}
           </div>
-          <div v-else class="space-y-4 p-4 md:hidden">
-            <div class="rounded-xl border border-green-100 bg-green-50 p-4">
-              <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
-              <p class="mt-1 text-[32px] font-bold leading-[1.05] text-green-700 tabular-nums">
+          <div v-else class="flex flex-col gap-4 p-4 md:hidden">
+            <div
+              data-ds="Amount Panel"
+              data-ds-tone="Success"
+              class="flex flex-col gap-1 rounded-xl border border-line-success-subtle bg-status-success-subtle p-4"
+            >
+              <p class="text-sm font-bold text-status-success-strong">
+                {{ t('session.surplusFund') }}
+              </p>
+              <p class="text-3xl font-bold text-fg-success tabular-nums">
                 {{ formatCurrency(surplus) }}
               </p>
-              <p class="mt-1 text-sm text-green-700">{{ t('session.live') }}</p>
+              <p class="text-sm text-status-success-strong">{{ t('session.live') }}</p>
             </div>
 
             <article
               v-for="cost in costs"
               :key="cost.member_id"
-              class="rounded-xl border border-divider bg-white p-4 shadow-sm"
+              data-ds="Cost Card"
+              :data-ds-extra="
+                cost.total_extra_fee > 0
+                  ? 'Positive'
+                  : cost.total_extra_fee < 0
+                    ? 'Negative'
+                    : 'None'
+              "
+              class="flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm"
             >
               <div class="flex items-start justify-between gap-3">
-                <div>
+                <div class="flex flex-col gap-1">
                   <h3 class="text-base font-bold text-fg-primary">
                     {{ cost.display_name }}
                   </h3>
-                  <p class="mt-1 text-sm font-bold text-fg-muted">
+                  <p class="text-sm font-bold text-fg-muted">
                     {{ t('session.live') }}
                   </p>
                 </div>
-                <div class="text-right">
+                <div class="flex flex-col items-end">
                   <p class="text-sm font-bold text-fg-muted">{{ t('session.total') }}</p>
-                  <p class="text-[32px] font-bold leading-[1.05] text-brand-700 tabular-nums">
+                  <p class="text-3xl font-bold text-fg-brand-strong tabular-nums">
                     {{ formatCurrency(cost.final_total) }}
                   </p>
                 </div>
               </div>
 
-              <dl class="mt-4 grid grid-cols-1 gap-3 text-sm">
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+              <dl class="flex flex-col gap-3 text-sm">
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
                   <dt class="font-bold text-fg-muted">{{ t('session.numIntervals') }}</dt>
                   <dd class="font-bold text-fg-primary tabular-nums">{{ cost.intervals_count }}</dd>
                 </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
                   <dt class="font-bold text-fg-muted">{{ t('session.courtFee') }}</dt>
                   <dd class="font-bold text-fg-primary tabular-nums">
                     {{ formatCurrency(cost.total_court_fee) }}
                   </dd>
                 </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
                   <dt class="font-bold text-fg-muted">{{ t('session.shuttleFee') }}</dt>
                   <dd class="font-bold text-fg-primary tabular-nums">
                     {{ formatCurrency(cost.total_shuttle_fee) }}
@@ -1578,27 +1610,49 @@ onUnmounted(() => {
                 </div>
                 <div
                   v-if="cost.total_extra_fee !== 0"
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  :data-ds-tone="cost.total_extra_fee > 0 ? 'Debt' : 'Credit'"
+                  :data-ds-value-tone="cost.total_extra_fee > 0 ? 'Debt' : 'Success'"
+                  data-ds-align="Left"
                   class="flex justify-between gap-3 rounded-xl px-3 py-2"
-                  :class="cost.total_extra_fee > 0 ? 'bg-red-50' : 'bg-green-50'"
+                  :class="
+                    cost.total_extra_fee > 0
+                      ? 'bg-status-danger-subtle'
+                      : 'bg-status-success-subtle'
+                  "
                 >
                   <dt
                     class="font-bold"
-                    :class="cost.total_extra_fee > 0 ? 'text-red-700' : 'text-green-700'"
+                    :class="
+                      cost.total_extra_fee > 0
+                        ? 'text-status-danger-strong'
+                        : 'text-status-success-strong'
+                    "
                   >
                     {{ t('session.extraFee') }}
                   </dt>
                   <dd
                     class="font-bold tabular-nums"
-                    :class="cost.total_extra_fee > 0 ? 'text-red-600' : 'text-green-600'"
+                    :class="cost.total_extra_fee > 0 ? 'text-fg-danger' : 'text-fg-success'"
                   >
                     {{
                       (cost.total_extra_fee > 0 ? '+' : '') + formatCurrency(cost.total_extra_fee)
                     }}
                   </dd>
                 </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-green-50 px-3 py-2">
-                  <dt class="font-bold text-green-800">{{ t('session.surplusFund') }}</dt>
-                  <dd class="font-bold text-green-700 tabular-nums">
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Credit"
+                  data-ds-value-tone="Success"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-status-success-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-status-success-strong">
+                    {{ t('session.surplusFund') }}
+                  </dt>
+                  <dd class="font-bold text-fg-success tabular-nums">
                     {{ formatCurrency(surplus) }}
                   </dd>
                 </div>
@@ -1607,49 +1661,31 @@ onUnmounted(() => {
           </div>
 
           <div class="hidden overflow-x-auto md:block">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+            <table class="min-w-full">
+              <thead>
                 <tr>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('common.member') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.total') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.numIntervals') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.courtFee') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.shuttleFee') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.extraFee') }}
-                  </th>
+                  <TableHeaderCell align="Left">{{ t('common.member') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.total') }}</TableHeaderCell>
+                  <TableHeaderCell align="Center">{{ t('session.numIntervals') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.courtFee') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.shuttleFee') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.extraFee') }}</TableHeaderCell>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="cost in costs" :key="cost.member_id">
+              <tbody class="bg-surface-card">
+                <tr
+                  v-for="cost in costs"
+                  :key="cost.member_id"
+                  data-ds="Cost Table Row"
+                  :data-ds-extra="
+                    cost.total_extra_fee > 0
+                      ? 'Positive'
+                      : cost.total_extra_fee < 0
+                        ? 'Negative'
+                        : 'Zero'
+                  "
+                  class="border-b border-line-divider"
+                >
                   <td class="px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary">
                     {{ cost.display_name }}
                   </td>
@@ -1671,10 +1707,10 @@ onUnmounted(() => {
                     class="px-6 py-4 whitespace-nowrap text-base text-right"
                     :class="
                       cost.total_extra_fee > 0
-                        ? 'text-red-600 font-bold'
+                        ? 'text-fg-danger font-bold'
                         : cost.total_extra_fee < 0
-                          ? 'text-green-600 font-bold'
-                          : 'text-fg-disabled'
+                          ? 'text-fg-success font-bold'
+                          : 'text-fg-muted'
                     "
                   >
                     {{
@@ -1686,11 +1722,16 @@ onUnmounted(() => {
                   </td>
                 </tr>
                 <!-- Surplus Row -->
-                <tr class="bg-gray-50">
-                  <td colspan="5" class="px-6 py-4 text-right text-base font-bold text-fg-secondary">
+                <tr data-ds="Surplus Table Row" data-ds-table="Cost" class="bg-surface-subtle">
+                  <td
+                    colspan="5"
+                    class="px-6 py-4 whitespace-nowrap text-right text-base font-bold text-fg-primary"
+                  >
                     {{ t('session.surplusFund') }}
                   </td>
-                  <td class="px-6 py-4 text-right text-base font-bold text-green-600">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-base font-bold text-fg-success"
+                  >
                     {{ formatCurrency(surplus) }}
                   </td>
                 </tr>
@@ -1723,23 +1764,23 @@ onUnmounted(() => {
 
       <section
         id="payments-section"
-        class="session-scroll-target rounded-xl border border-divider bg-white shadow-sm"
+        class="session-scroll-target rounded-xl border border-line-divider bg-surface-card shadow-sm"
       >
-        <div
-          class="px-6 py-4 border-b border-divider bg-gray-50 flex justify-between items-center"
-        >
-          <h2 class="text-[20px] font-bold leading-[1.2] text-fg-primary">
-            {{ t('session.paymentTable') }}
-          </h2>
-        </div>
+        <SectionHeader variant="Tinted" :title="t('session.paymentTable')" />
         <div v-if="isSessionFinalized">
           <div v-if="snapshots.length === 0" class="p-6 text-sm text-fg-muted md:hidden">
             {{ t('session.paymentSnapshotsEmpty') }}
           </div>
-          <div v-else class="space-y-4 p-4 md:hidden">
-            <div class="rounded-xl border border-green-100 bg-green-50 p-4">
-              <p class="text-sm font-bold text-green-800">{{ t('session.surplusFund') }}</p>
-              <p class="mt-1 text-[32px] font-bold leading-[1.05] text-green-700 tabular-nums">
+          <div v-else class="flex flex-col gap-4 p-4 md:hidden">
+            <div
+              data-ds="Amount Panel"
+              data-ds-tone="Success"
+              class="flex flex-col gap-1 rounded-xl border border-line-success-subtle bg-status-success-subtle p-4"
+            >
+              <p class="text-sm font-bold text-status-success-strong">
+                {{ t('session.surplusFund') }}
+              </p>
+              <p class="text-3xl font-bold text-fg-success tabular-nums">
                 {{ formatCurrency(surplus) }}
               </p>
             </div>
@@ -1747,221 +1788,52 @@ onUnmounted(() => {
             <article
               v-for="snapshot in snapshots"
               :key="snapshot.id"
-              class="rounded-xl border border-divider bg-white p-4 shadow-sm"
+              data-ds="Payment Card"
+              :data-ds-status="
+                snapshot.status === 'paid'
+                  ? 'Paid'
+                  : snapshot.status === 'partial'
+                    ? 'Partial'
+                    : 'Pending'
+              "
+              :data-ds-admin="String(authStore.isAdmin)"
+              class="flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm"
             >
               <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="flex items-start gap-3">
-                    <label
-                      v-if="snapshot.status !== 'paid' && authStore.isAdmin"
-                      class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl border border-brand-100 bg-brand-50"
-                    >
-                      <input
-                        type="checkbox"
-                        :value="snapshot.id"
-                        v-model="selectedSnapshotIds"
-                        class="h-5 w-5 rounded border-input text-brand-600 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                        :aria-label="`${t('session.groupPaymentBar', { count: 1 })}: ${snapshot.display_name}`"
-                      />
-                    </label>
-                    <div class="min-w-0">
-                      <h3 class="truncate text-base font-bold uppercase text-fg-primary">
-                        {{ snapshot.display_name }}
-                      </h3>
-                      <span
-                        class="mt-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-[14px] font-bold leading-[1.35]"
-                        :class="{
-                          'bg-status-success text-status-success-strong': snapshot.status === 'paid',
-                          'bg-status-warning text-status-warning-strong': snapshot.status === 'partial',
-                          'bg-status-danger text-status-danger-strong': snapshot.status === 'pending',
-                        }"
-                      >
-                        {{
-                          snapshot.status === 'paid'
-                            ? t('payment.paid')
-                            : snapshot.status === 'partial'
-                              ? t('payment.partial')
-                              : t('payment.pending')
-                        }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-bold text-fg-muted">{{ t('session.mustPay') }}</p>
-                  <p class="text-[32px] font-bold leading-[1.05] text-brand-700 tabular-nums">
-                    {{ formatCurrency(snapshot.final_amount) }}
-                  </p>
-                </div>
-              </div>
-
-              <dl class="mt-4 grid grid-cols-1 gap-3 text-sm">
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
-                  <dt class="font-bold text-fg-muted">{{ t('payment.paid') }}</dt>
-                  <dd class="font-bold text-green-600 tabular-nums">
-                    {{ formatCurrency(snapshot.paid_amount) }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
-                  <dt class="font-bold text-fg-muted">{{ t('session.intervalsAbbr') }}</dt>
-                  <dd class="font-bold text-fg-primary tabular-nums">
-                    {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
-                  <dt class="font-bold text-fg-muted">{{ t('session.courtFee') }}</dt>
-                  <dd class="font-bold text-fg-primary tabular-nums">
-                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2">
-                  <dt class="font-bold text-fg-muted">{{ t('session.shuttleFee') }}</dt>
-                  <dd class="font-bold text-fg-primary tabular-nums">
-                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-3 rounded-xl bg-green-50 px-3 py-2">
-                  <dt class="font-bold text-green-800">{{ t('session.surplusFund') }}</dt>
-                  <dd class="font-bold text-green-700 tabular-nums">
-                    {{ formatCurrency(surplus) }}
-                  </dd>
-                </div>
-              </dl>
-
-              <div
-                v-if="snapshot.status !== 'paid'"
-                class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2"
-              >
-                <button
-                  type="button"
-                  @click="openPaymentQR(snapshot, snapshot.display_name)"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-brand-600 px-4 py-2 text-sm font-bold text-brand-600 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-                >
-                  <QrCode class="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  {{ t('payment.qrPay') }}
-                </button>
-                <button
-                  v-if="authStore.isAdmin"
-                  type="button"
-                  @click="openCashPayment(snapshot, snapshot.display_name)"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-green-600 px-4 py-2 text-sm font-bold text-green-600 transition hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
-                >
-                  {{ t('payment.cashPay') }}
-                </button>
-              </div>
-              <div
-                v-else
-                class="mt-4 flex min-h-11 items-center justify-center rounded-xl bg-green-50 text-sm font-bold text-green-600"
-              >
-                <Check class="mr-1.5 h-5 w-5" aria-hidden="true" />
-                {{ t('payment.done') }}
-              </div>
-            </article>
-          </div>
-
-          <div class="hidden overflow-x-auto md:block">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th v-if="authStore.isAdmin" scope="col" class="px-3 py-3 w-10"></th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
+                <div class="flex min-w-0 items-start gap-3">
+                  <label
+                    v-if="snapshot.status !== 'paid' && authStore.isAdmin"
+                    data-ds="Checkbox Tile"
+                    :data-ds-checked="String(selectedSnapshotIds.includes(snapshot.id))"
+                    class="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line-brand-muted bg-surface-brand-subtle"
                   >
-                    {{ t('common.member') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.mustPay') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-3 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.intervalsAbbr') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-4 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.courtFee') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-4 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.shuttleFee') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('payment.paid') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('common.status') }}
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-3 text-center text-sm font-bold text-fg-muted uppercase tracking-wider"
-                  >
-                    {{ t('session.pay') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="snapshot in snapshots" :key="snapshot.id">
-                  <td v-if="authStore.isAdmin" class="px-3 py-4 text-center">
-                    <input
-                      v-if="snapshot.status !== 'paid'"
-                      type="checkbox"
-                      :value="snapshot.id"
+                    <Checkbox
                       v-model="selectedSnapshotIds"
-                      class="h-5 w-5 text-brand-600 border-input rounded focus:ring-brand-500 cursor-pointer"
+                      size="20"
+                      :value="snapshot.id"
+                      :aria-label="`${t('session.groupPaymentBar', { count: 1 })}: ${snapshot.display_name}`"
                     />
-                    <Check v-else class="w-5 h-5 text-green-500 mx-auto" />
-                  </td>
-                  <td
-                    class="px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary uppercase"
-                  >
-                    {{ snapshot.display_name }}
-                  </td>
-                  <td
-                    class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-brand-700"
-                  >
-                    {{ formatCurrency(snapshot.final_amount) }}
-                  </td>
-                  <td class="px-3 py-4 whitespace-nowrap text-sm text-center text-fg-muted">
-                    {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
-                  </td>
-                  <td
-                    class="px-4 py-4 whitespace-nowrap text-[14px] text-right leading-[1.35] text-fg-muted"
-                  >
-                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
-                  </td>
-                  <td
-                    class="px-4 py-4 whitespace-nowrap text-[14px] text-right leading-[1.35] text-fg-muted"
-                  >
-                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
-                  </td>
-                  <td
-                    class="px-6 py-4 whitespace-nowrap text-base text-right text-green-600 font-bold"
-                  >
-                    {{ formatCurrency(snapshot.paid_amount) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[14px] font-bold leading-[1.35]"
-                      :class="{
-                        'bg-status-success text-status-success-strong': snapshot.status === 'paid',
-                        'bg-status-warning text-status-warning-strong': snapshot.status === 'partial',
-                        'bg-status-danger text-status-danger-strong': snapshot.status === 'pending',
-                      }"
+                  </label>
+                  <div class="flex min-w-0 flex-col items-start gap-2">
+                    <h3 class="truncate text-base font-bold uppercase text-fg-primary">
+                      {{ snapshot.display_name }}
+                    </h3>
+                    <Badge
+                      :tone="
+                        snapshot.status === 'paid'
+                          ? 'Success'
+                          : snapshot.status === 'partial'
+                            ? 'Warning'
+                            : 'Danger'
+                      "
+                      data-ds="Payment Status Badge"
+                      :data-ds-status="
+                        snapshot.status === 'paid'
+                          ? 'Paid'
+                          : snapshot.status === 'partial'
+                            ? 'Partial'
+                            : 'Pending'
+                      "
                     >
                       {{
                         snapshot.status === 'paid'
@@ -1970,51 +1842,270 @@ onUnmounted(() => {
                             ? t('payment.partial')
                             : t('payment.pending')
                       }}
-                    </span>
+                    </Badge>
+                  </div>
+                </div>
+                <div class="flex shrink-0 flex-col items-end">
+                  <p class="text-sm font-bold text-fg-muted">{{ t('session.mustPay') }}</p>
+                  <p class="text-3xl font-bold text-fg-brand-strong tabular-nums">
+                    {{ formatCurrency(snapshot.final_amount) }}
+                  </p>
+                </div>
+              </div>
+
+              <dl class="flex flex-col gap-3 text-sm">
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Success"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-fg-muted">{{ t('payment.paid') }}</dt>
+                  <dd class="font-bold text-fg-success tabular-nums">
+                    {{ formatCurrency(snapshot.paid_amount) }}
+                  </dd>
+                </div>
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-fg-muted">{{ t('session.intervalsAbbr') }}</dt>
+                  <dd class="font-bold text-fg-primary tabular-nums">
+                    {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
+                  </dd>
+                </div>
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-fg-muted">{{ t('session.courtFee') }}</dt>
+                  <dd class="font-bold text-fg-primary tabular-nums">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+                  </dd>
+                </div>
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Neutral"
+                  data-ds-value-tone="Primary"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-surface-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-fg-muted">{{ t('session.shuttleFee') }}</dt>
+                  <dd class="font-bold text-fg-primary tabular-nums">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                  </dd>
+                </div>
+                <div
+                  data-ds="Key Value Row"
+                  data-ds-layout="Inline Tinted"
+                  data-ds-tone="Credit"
+                  data-ds-value-tone="Success"
+                  data-ds-align="Left"
+                  class="flex justify-between gap-3 rounded-xl bg-status-success-subtle px-3 py-2"
+                >
+                  <dt class="font-bold text-status-success-strong">
+                    {{ t('session.surplusFund') }}
+                  </dt>
+                  <dd class="font-bold text-fg-success tabular-nums">
+                    {{ formatCurrency(surplus) }}
+                  </dd>
+                </div>
+              </dl>
+
+              <div v-if="snapshot.status !== 'paid'" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  size="Default"
+                  variant="Outline Brand"
+                  :leading-icon="QrCode"
+                  @click="openPaymentQR(snapshot, snapshot.display_name)"
+                >
+                  {{ t('payment.qrPay') }}
+                </Button>
+                <Button
+                  v-if="authStore.isAdmin"
+                  size="Default"
+                  variant="Outline Success"
+                  @click="openCashPayment(snapshot, snapshot.display_name)"
+                >
+                  {{ t('payment.cashPay') }}
+                </Button>
+              </div>
+              <div
+                v-else
+                data-ds="Paid Indicator"
+                data-ds-style="Banner"
+                class="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-status-success-subtle text-sm font-bold text-fg-success"
+              >
+                <Check class="size-5" aria-hidden="true" />
+                {{ t('payment.done') }}
+              </div>
+            </article>
+          </div>
+
+          <div class="hidden overflow-x-auto md:block">
+            <table class="min-w-full">
+              <thead>
+                <tr>
+                  <TableHeaderCell
+                    v-if="authStore.isAdmin"
+                    content="Empty"
+                    density="Compact"
+                    align="Center"
+                    class="w-12"
+                  />
+                  <TableHeaderCell align="Left">{{ t('common.member') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.mustPay') }}</TableHeaderCell>
+                  <TableHeaderCell align="Center" density="Compact">{{
+                    t('session.intervalsAbbr')
+                  }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.courtFee') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('session.shuttleFee') }}</TableHeaderCell>
+                  <TableHeaderCell align="Right">{{ t('payment.paid') }}</TableHeaderCell>
+                  <TableHeaderCell align="Center">{{ t('common.status') }}</TableHeaderCell>
+                  <TableHeaderCell align="Center">{{ t('session.pay') }}</TableHeaderCell>
+                </tr>
+              </thead>
+              <tbody class="bg-surface-card">
+                <tr
+                  v-for="snapshot in snapshots"
+                  :key="snapshot.id"
+                  data-ds="Payment Table Row"
+                  :data-ds-status="
+                    snapshot.status === 'paid'
+                      ? 'Paid'
+                      : snapshot.status === 'partial'
+                        ? 'Partial'
+                        : 'Pending'
+                  "
+                  :data-ds-admin="String(authStore.isAdmin)"
+                  :data-ds-selected="String(selectedSnapshotIds.includes(snapshot.id))"
+                  class="border-b border-line-divider"
+                >
+                  <td v-if="authStore.isAdmin" class="px-3 py-4 whitespace-nowrap text-center">
+                    <Checkbox
+                      v-if="snapshot.status !== 'paid'"
+                      v-model="selectedSnapshotIds"
+                      size="20"
+                      :value="snapshot.id"
+                      :aria-label="`${t('session.groupPaymentBar', { count: 1 })}: ${snapshot.display_name}`"
+                    />
+                    <StatusIcon v-else kind="Check" size="20" :label="t('payment.paid')" />
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary uppercase"
+                  >
+                    {{ snapshot.display_name }}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-base text-right font-bold text-fg-brand-strong"
+                  >
+                    {{ formatCurrency(snapshot.final_amount) }}
+                  </td>
+                  <td class="px-3 py-4 whitespace-nowrap text-base text-center text-fg-muted">
+                    {{ getBreakdown(snapshot.member_id)?.intervals_count || 0 }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-base text-right text-fg-muted">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_court_fee || 0) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-base text-right text-fg-muted">
+                    {{ formatCurrency(getBreakdown(snapshot.member_id)?.total_shuttle_fee || 0) }}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-base text-right text-fg-success font-bold"
+                  >
+                    {{ formatCurrency(snapshot.paid_amount) }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <div class="flex flex-col gap-1.5 items-center">
-                      <button
+                    <Badge
+                      :tone="
+                        snapshot.status === 'paid'
+                          ? 'Success'
+                          : snapshot.status === 'partial'
+                            ? 'Warning'
+                            : 'Danger'
+                      "
+                      data-ds="Payment Status Badge"
+                      :data-ds-status="
+                        snapshot.status === 'paid'
+                          ? 'Paid'
+                          : snapshot.status === 'partial'
+                            ? 'Partial'
+                            : 'Pending'
+                      "
+                    >
+                      {{
+                        snapshot.status === 'paid'
+                          ? t('payment.paid')
+                          : snapshot.status === 'partial'
+                            ? t('payment.partial')
+                            : t('payment.pending')
+                      }}
+                    </Badge>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <div class="flex flex-col items-center gap-1.5">
+                      <Button
                         v-if="snapshot.status !== 'paid'"
-                        type="button"
-                        @click="openPaymentQR(snapshot, snapshot.display_name)"
-                        class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-brand-600 px-3 py-1.5 text-sm font-bold text-brand-600 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+                        size="Small"
+                        variant="Outline Brand"
+                        :leading-icon="QrCode"
+                        class="w-full"
                         :aria-label="`${t('payment.qrPay')}: ${snapshot.display_name}`"
+                        @click="openPaymentQR(snapshot, snapshot.display_name)"
                       >
-                        <QrCode class="w-4 h-4 mr-1.5" aria-hidden="true" />
                         {{ t('payment.qrPay') }}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         v-if="snapshot.status !== 'paid' && authStore.isAdmin"
-                        type="button"
-                        @click="openCashPayment(snapshot, snapshot.display_name)"
-                        class="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-green-600 px-3 py-1.5 text-sm font-bold text-green-600 transition hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+                        size="Small"
+                        variant="Outline Success"
+                        class="w-full"
                         :aria-label="`${t('payment.cashPay')}: ${snapshot.display_name}`"
+                        @click="openCashPayment(snapshot, snapshot.display_name)"
                       >
                         {{ t('payment.cashPay') }}
-                      </button>
+                      </Button>
                       <span
                         v-else-if="snapshot.status === 'paid'"
-                        class="text-green-500 flex items-center justify-center"
+                        data-ds="Paid Indicator"
+                        data-ds-style="Inline"
+                        class="inline-flex h-5 items-center gap-1 text-sm font-bold text-fg-success-soft"
                       >
-                        <Check class="w-5 h-5 mr-1" />
-                        <span class="text-sm font-bold">{{ t('payment.done') }}</span>
+                        <Check class="size-5" aria-hidden="true" />
+                        {{ t('payment.done') }}
                       </span>
                     </div>
                   </td>
                 </tr>
                 <!-- Surplus Row -->
-                <tr class="bg-gray-50 border-t-2 border-divider">
+                <tr
+                  data-ds="Surplus Table Row"
+                  data-ds-table="Payment"
+                  class="border-t-2 border-line-divider bg-surface-subtle"
+                >
                   <td
                     :colspan="authStore.isAdmin ? 6 : 5"
-                    class="px-6 py-4 text-right text-sm font-bold text-fg-secondary"
+                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-fg-primary"
                   >
                     {{ t('session.surplusFund') }}
                   </td>
-                  <td class="px-6 py-4 text-right text-base font-bold text-green-600">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-right text-base font-bold text-fg-success"
+                  >
                     {{ formatCurrency(surplus) }}
                   </td>
-                  <td colspan="2"></td>
+                  <td colspan="2" class="whitespace-nowrap"></td>
                 </tr>
               </tbody>
             </table>
@@ -2038,25 +2129,29 @@ onUnmounted(() => {
         class="session-group-payment-bar fixed left-1/2 z-50 max-w-2xl -translate-x-1/2"
       >
         <div
-          class="bg-brand-600 text-white rounded-xl shadow-2xl p-4 flex items-center justify-between border border-brand-500/50 backdrop-blur-md"
+          data-ds="Floating Selection Bar"
+          data-ds-style="Brand"
+          class="flex items-center justify-between gap-4 rounded-xl border border-line-brand-emphasis bg-surface-brand p-4 shadow-xl"
         >
           <div class="flex flex-col">
-            <span class="text-sm font-bold opacity-90">{{
+            <span class="text-sm font-bold text-fg-on-brand">{{
               t('session.groupPaymentBar', { count: selectedSnapshotIds.length })
             }}</span>
-            <span class="text-[20px] font-bold leading-[1.2]">{{
+            <span class="text-xl font-bold text-fg-on-brand">{{
               t('session.totalSelected', { amount: formatCurrency(totalSelectedAmount) })
             }}</span>
           </div>
-          <button
-            @click="handleCreateGroupPayment"
+          <Button
+            size="Default"
+            variant="Inverse"
+            :leading-icon="QrCode"
+            :loading="isCreatingGroupPayment"
             :disabled="isCreatingGroupPayment"
-            class="flex min-h-11 items-center rounded-xl bg-white px-6 py-2.5 font-bold text-brand-600 shadow-sm transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95 disabled:opacity-50"
+            class="active:scale-95"
+            @click="handleCreateGroupPayment"
           >
-            <Loader2 v-if="isCreatingGroupPayment" class="w-5 h-5 mr-2 animate-spin" />
-            <QrCode v-else class="w-5 h-5 mr-2" />
             {{ t('session.groupPayButton') }}
-          </button>
+          </Button>
         </div>
       </div>
     </Transition>
@@ -2064,7 +2159,11 @@ onUnmounted(() => {
 
   <nav
     v-if="session"
-    class="session-section-ribbon fixed inset-x-0 z-30 overflow-x-auto border-y border-divider bg-white/95 px-4 py-2 shadow-[0_-10px_24px_rgba(15,23,42,0.10)] backdrop-blur md:hidden"
+    data-ds="Section Tab Bar"
+    :data-ds-active="
+      activeSection.charAt(0).toUpperCase() + activeSection.slice(1, activeSection.indexOf('-'))
+    "
+    class="session-section-ribbon fixed inset-x-0 z-30 overflow-x-auto border-y border-line-divider bg-surface-card px-4 py-2 md:hidden"
     :aria-label="t('session.cockpitNavLabel')"
   >
     <div class="flex min-w-max gap-2 pr-6" style="scroll-snap-type: x proximity">
@@ -2074,11 +2173,13 @@ onUnmounted(() => {
         :data-tab-id="tab.id"
         type="button"
         style="scroll-snap-align: start"
-        class="min-h-11 shrink-0 rounded-xl px-4 text-sm font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+        data-ds="Section Tab"
+        :data-ds-state="activeSection === tab.id ? 'Active' : 'Inactive'"
+        class="h-11 shrink-0 rounded-xl px-4 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
         :class="
           activeSection === tab.id
-            ? 'bg-brand-600 text-white shadow-sm'
-            : 'bg-status-neutral text-fg-secondary hover:bg-brand-50 hover:text-brand-700'
+            ? 'bg-surface-brand text-fg-on-brand shadow-sm'
+            : 'bg-status-neutral text-fg-secondary hover:bg-surface-brand-subtle hover:text-fg-brand-strong'
         "
         :aria-label="tab.ariaLabel"
         :aria-controls="tab.id"
@@ -2125,7 +2226,7 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   width: 32px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.95));
+  background: linear-gradient(to right, transparent, var(--color-surface-card));
   pointer-events: none;
 }
 

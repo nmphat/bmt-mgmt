@@ -54,6 +54,19 @@ describe('SectionHeader', () => {
     expect(w.get('button').text()).toBe('Add')
   })
 
+  it('suffix renders a muted span inside the heading', () => {
+    const w = mount(SectionHeader, { props: { title: 'Costs', suffix: '(live)' } })
+    const span = w.get('h2 span')
+    expect(span.text()).toBe('(live)')
+    expect(span.classes()).toEqual(['text-sm', 'font-normal', 'text-fg-muted'])
+    expect(w.get('h2').text()).toBe('Costs (live)')
+    expect(
+      mount(SectionHeader, { props: { title: 'Costs' } })
+        .find('h2 span')
+        .exists(),
+    ).toBe(false)
+  })
+
   it('badge slot renders under the title', () => {
     const w = mount(SectionHeader, {
       props: { title: 'Attendance' },

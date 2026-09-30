@@ -148,7 +148,9 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('member')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(0)
     expect(w.findAll('#payments-section thead th')).toHaveLength(8)
-    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('5')
+    expect(
+      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
+    ).toBe('5')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(false)
   })
 
@@ -156,7 +158,9 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('admin')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(2)
     expect(w.findAll('#payments-section thead th')).toHaveLength(9)
-    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('6')
+    expect(
+      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
+    ).toBe('6')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(true)
   })
 
@@ -733,9 +737,9 @@ describe('SessionDetailView S6 range', () => {
     w.unmount()
     withSession({ status: 'cancelled' })
     const c = await mountDetail('member')
-    expect(
-      c.get('[data-ds="Alert"][data-ds-style="Banner"] svg').attributes('aria-hidden'),
-    ).toBe('true')
+    expect(c.get('[data-ds="Alert"][data-ds-style="Banner"] svg').attributes('aria-hidden')).toBe(
+      'true',
+    )
   })
 
   it('announces the in-session error Alert with role alert and aria-live polite', async () => {
@@ -746,5 +750,340 @@ describe('SessionDetailView S6 range', () => {
     expect(alert.attributes('role')).toBe('alert')
     expect(alert.attributes('aria-live')).toBe('polite')
     expect(alert.text()).toContain(t('session.paymentDataLoadError'))
+  })
+})
+
+// ---- S7: cost summary, payments and the section ribbon ----
+
+const costRow = (id: string, name: string, total: number, extra: number) => ({
+  member_id: id,
+  display_name: name,
+  final_total: total,
+  intervals_count: 2,
+  total_court_fee: 80000,
+  total_shuttle_fee: 40000,
+  total_extra_fee: extra,
+})
+const COSTS = [costRow('m1', 'An', 140000, 20000), costRow('m2', 'Binh', 110000, -10000)]
+const withCosts = (data: any[]) =>
+  vi.mocked(supabase.rpc).mockImplementation(((name: string) =>
+    Promise.resolve({
+      data: name === 'calculate_session_costs' ? data : [],
+      error: null,
+    })) as any)
+
+const snap = (id: string, member_id: string, name: string, status: string, paid = 0) => ({
+  id,
+  session_id: 'session-1',
+  member_id,
+  final_amount: 120000,
+  paid_amount: paid,
+  payment_code: `CL${id}`,
+  status,
+  court_fee_amount: 80000,
+  shuttle_fee_amount: 40000,
+  extra_fee_amount: 0,
+  member: { display_name: name },
+})
+const SNAPSHOTS = [
+  snap('snap-1', 'm1', 'Nguyễn Văn A', 'pending'),
+  snap('snap-2', 'm2', 'Binh', 'partial', 50000),
+  snap('snap-3', 'm3', 'Chi', 'paid', 120000),
+]
+const payCards = (w: ReturnType<typeof mount>) => w.findAll('[data-ds="Payment Card"]')
+const payRows = (w: ReturnType<typeof mount>) => w.findAll('tr[data-ds="Payment Table Row"]')
+const classesOf = (w: { classes: () => string[] }) => w.classes()
+
+describe('SessionDetailView S7 cost summary', () => {
+  it('renders a Tinted SectionHeader with the live suffix inside the h2', async () => {
+    withSession({ status: 'open' })
+    const w = await mountDetail('member')
+    const header = w.get('#costs-section [data-ds="Section Header"]')
+    expect(header.attributes('data-ds-style')).toBe('Tinted')
+    const h2 = header.get('h2')
+    expect(h2.text()).toBe(`${t('session.costSummary')} (${t('session.live')})`)
+    expect(h2.get('span').text()).toBe(`(${t('session.live')})`)
+  })
+
+  it('shows the mobile Amount Panel and Cost Cards while live', async () => {
+    withSession({ status: 'open' })
+    withCosts(COSTS)
+    const w = await mountDetail('member')
+    const panel = w.get('#costs-section [data-ds="Amount Panel"]')
+    expect(panel.attributes('data-ds-tone')).toBe('Success')
+    expect(panel.text()).toContain(t('session.live'))
+    const cards = w.findAll('#costs-section [data-ds="Cost Card"]')
+    expect(cards.map((c) => c.attributes('data-ds-extra'))).toEqual(['Positive', 'Negative'])
+    const extraRows = cards.map(
+      (c) =>
+        c
+          .findAll('[data-ds="Key Value Row"]')
+          .find((r) => r.text().includes(t('session.extraFee')))!,
+    )
+    expect(extraRows.map((r) => r.attributes('data-ds-tone'))).toEqual(['Debt', 'Credit'])
+    expect(extraRows.map((r) => r.attributes('data-ds-value-tone'))).toEqual(['Debt', 'Success'])
+    const last = cards[0]!.findAll('[data-ds="Key Value Row"]').at(-1)!
+    expect(last.attributes('data-ds-tone')).toBe('Credit')
+    expect(last.text()).toContain(t('session.surplusFund'))
+  })
+
+  it('shows the empty text when there are no costs', async () => {
+    withSession({ status: 'open' })
+    const w = await mountDetail('member')
+    expect(w.findAll('#costs-section [data-ds="Cost Card"]')).toHaveLength(0)
+    expect(w.get('#costs-section').text()).toContain(t('session.liveCostsEmpty'))
+  })
+
+  it('renders the desktop cost table with 6 header cells and Cost Table Rows', async () => {
+    withSession({ status: 'open' })
+    withCosts([...COSTS, costRow('m3', 'Chi', 90000, 0)])
+    const w = await mountDetail('member')
+    const heads = w.findAll('#costs-section thead [data-ds="Table Header Cell"]')
+    expect(heads.map((x) => x.attributes('data-ds-align'))).toEqual([
+      'Left',
+      'Right',
+      'Center',
+      'Right',
+      'Right',
+      'Right',
+    ])
+    const rowsEl = w.findAll('#costs-section tr[data-ds="Cost Table Row"]')
+    expect(rowsEl.map((r) => r.attributes('data-ds-extra'))).toEqual([
+      'Positive',
+      'Negative',
+      'Zero',
+    ])
+    expect(rowsEl[2]!.findAll('td').at(-1)!.text()).toBe('—')
+    const surplus = w.get('#costs-section tr[data-ds="Surplus Table Row"]')
+    expect(surplus.attributes('data-ds-table')).toBe('Cost')
+    expect(surplus.get('td').attributes('colspan')).toBe('5')
+    for (const cell of w.findAll('#costs-section td, #costs-section th')) {
+      expect(cell.classes()).toContain('whitespace-nowrap')
+    }
+  })
+
+  it.each(['waiting_for_payment', 'done'])('shows the empty text when %s', async (status) => {
+    withSession({ status })
+    withCosts(COSTS)
+    const w = await mountDetail('member')
+    expect(w.findAll('#costs-section [data-ds="Cost Card"]')).toHaveLength(0)
+    expect(w.get('#costs-section').text()).toContain(t('session.liveCostsEmpty'))
+  })
+})
+
+describe('SessionDetailView S7 payments', () => {
+  const waiting = () =>
+    withSession({ status: 'waiting_for_payment' }, { session_costs_snapshot: SNAPSHOTS })
+
+  it('shows the empty text with no snapshots', async () => {
+    withSession({ status: 'waiting_for_payment' }, { session_costs_snapshot: [] })
+    const w = await mountDetail('member')
+    expect(w.get('#payments-section').text()).toContain(t('session.paymentSnapshotsEmpty'))
+    expect(payCards(w)).toHaveLength(0)
+  })
+
+  it('renders Payment Cards per status and admin gating', async () => {
+    waiting()
+    const w = await mountDetail('admin')
+    const cards = payCards(w)
+    expect(cards.map((c) => c.attributes('data-ds-status'))).toEqual(['Partial', 'Paid', 'Pending'])
+    expect(cards.every((c) => c.attributes('data-ds-admin') === 'true')).toBe(true)
+    expect(w.get('#payments-section [data-ds="Amount Panel"]').attributes('data-ds-tone')).toBe(
+      'Success',
+    )
+    const badges = cards.map((c) => c.get('[data-ds="Payment Status Badge"]'))
+    expect(badges.map((b) => b.attributes('data-ds-status'))).toEqual([
+      'Partial',
+      'Paid',
+      'Pending',
+    ])
+    expect(badges[2]!.classes()).toEqual(
+      expect.arrayContaining(['bg-status-danger', 'text-status-danger-strong']),
+    )
+    expect(badges[0]!.classes()).toContain('bg-status-warning')
+    expect(badges[1]!.classes()).toContain('bg-status-success')
+    // Checkbox Tile only for admin and not paid
+    expect(cards.map((c) => c.find('[data-ds="Checkbox Tile"]').exists())).toEqual([
+      true,
+      false,
+      true,
+    ])
+    // actions
+    const [, paid, pending] = cards
+    const qr = pending!.findAll('[data-ds="Button"]')
+    expect(qr.map((b) => b.attributes('data-ds-style'))).toEqual([
+      'Outline Brand',
+      'Outline Success',
+    ])
+    expect(qr.every((b) => b.attributes('data-ds-size') === 'Default')).toBe(true)
+    expect(qr[0]!.find('svg[class*="lucide-qr-code"]').exists()).toBe(true)
+    const indicator = paid!.get('[data-ds="Paid Indicator"]')
+    expect(indicator.attributes('data-ds-style')).toBe('Banner')
+    expect(indicator.text()).toBe(t('payment.done'))
+    expect(paid!.findAll('[data-ds="Button"]')).toHaveLength(0)
+  })
+
+  it('hides the cash button and the tile from a member', async () => {
+    waiting()
+    const w = await mountDetail('member')
+    const cards = payCards(w)
+    expect(cards.every((c) => c.attributes('data-ds-admin') === 'false')).toBe(true)
+    expect(cards.some((c) => c.find('[data-ds="Checkbox Tile"]').exists())).toBe(false)
+    expect(cards[2]!.findAll('[data-ds="Button"]')).toHaveLength(1)
+    expect(cards[2]!.text()).not.toContain(t('payment.cashPay'))
+  })
+
+  it('renders Payment Table Rows with checkbox or StatusIcon, buttons and inline paid indicator', async () => {
+    waiting()
+    const w = await mountDetail('admin')
+    const rowsEl = payRows(w)
+    expect(rowsEl.map((r) => r.attributes('data-ds-status'))).toEqual([
+      'Partial',
+      'Paid',
+      'Pending',
+    ])
+    expect(rowsEl.every((r) => r.attributes('data-ds-admin') === 'true')).toBe(true)
+    expect(rowsEl.map((r) => r.attributes('data-ds-selected'))).toEqual(['false', 'false', 'false'])
+    const box = rowsEl[2]!.get('input[type="checkbox"]')
+    expect(box.attributes('data-ds-size')).toBe('20')
+    expect(box.attributes('aria-label')).toBe(
+      `${t('session.groupPaymentBar', { count: 1 })}: Nguyễn Văn A`,
+    )
+    const icon = rowsEl[1]!.get('[data-ds="Status Icon"]')
+    expect(icon.attributes('data-ds-kind')).toBe('Check')
+    expect(icon.attributes('data-ds-size')).toBe('20')
+    expect(icon.text()).toBe(t('payment.paid'))
+    const buttons = rowsEl[2]!.findAll('[data-ds="Button"]')
+    expect(buttons.map((b) => b.attributes('data-ds-size'))).toEqual(['Small', 'Small'])
+    expect(buttons.every((b) => b.classes().includes('w-full'))).toBe(true)
+    expect(buttons[0]!.attributes('aria-label')).toBe(`${t('payment.qrPay')}: Nguyễn Văn A`)
+    expect(buttons[1]!.attributes('aria-label')).toBe(`${t('payment.cashPay')}: Nguyễn Văn A`)
+    expect(rowsEl[1]!.get('[data-ds="Paid Indicator"]').attributes('data-ds-style')).toBe('Inline')
+    const surplus = w.get('#payments-section tr[data-ds="Surplus Table Row"]')
+    expect(surplus.attributes('data-ds-table')).toBe('Payment')
+    const heads = w.findAll('#payments-section thead [data-ds="Table Header Cell"]')
+    expect(heads).toHaveLength(9)
+    expect(heads[0]!.attributes('data-ds-content')).toBe('Empty')
+    expect(heads[0]!.classes()).toContain('w-12')
+    for (const cell of w.findAll('#payments-section td, #payments-section th')) {
+      expect(cell.classes()).toContain('whitespace-nowrap')
+    }
+  })
+
+  it('opens the QR and cash modals with the member name', async () => {
+    waiting()
+    const w = await mountDetail('admin')
+    const card = payCards(w)[2]!
+    const [qr, cash] = card.findAll('[data-ds="Button"]')
+    await qr!.trigger('click')
+    expect(w.findComponent({ name: 'PaymentQRModal' }).props()).toMatchObject({
+      show: true,
+      memberName: 'Nguyễn Văn A',
+    })
+    await cash!.trigger('click')
+    expect(w.findComponent({ name: 'ManualPaymentModal' }).props()).toMatchObject({
+      show: true,
+      memberName: 'Nguyễn Văn A',
+    })
+  })
+
+  it('shows the floating bar for a ticked snapshot and hides it at 0', async () => {
+    waiting()
+    const w = await mountDetail('admin')
+    expect(w.find('[data-ds="Floating Selection Bar"]').exists()).toBe(false)
+    const box = w.get('input[type="checkbox"][value="snap-1"]')
+    await box.setValue(true)
+    const bar = w.get('[data-ds="Floating Selection Bar"]')
+    expect(bar.attributes('data-ds-style')).toBe('Brand')
+    expect(bar.text()).toContain(t('session.groupPaymentBar', { count: 1 }))
+    expect(bar.text()).toContain('120.000')
+    const btn = bar.get('[data-ds="Button"]')
+    expect(btn.attributes('data-ds-style')).toBe('Inverse')
+    expect(btn.find('svg[class*="lucide-qr-code"]').exists()).toBe(true)
+    expect(payRows(w)[2]!.attributes('data-ds-selected')).toBe('true')
+    await box.setValue(false)
+    expect(w.find('[data-ds="Floating Selection Bar"]').exists()).toBe(false)
+  })
+
+  it('creates the group payment with the selected ids and shows loading while pending', async () => {
+    waiting()
+    let resolve!: (v: any) => void
+    vi.mocked(supabase.rpc).mockImplementation(((name: string) =>
+      name === 'create_group_payment'
+        ? new Promise((r) => (resolve = r))
+        : Promise.resolve({ data: [], error: null })) as any)
+    const w = await mountDetail('admin')
+    await w.get('input[type="checkbox"][value="snap-1"]').setValue(true)
+    await w.get('[data-ds="Floating Selection Bar"] [data-ds="Button"]').trigger('click')
+    expect(supabase.rpc).toHaveBeenCalledWith('create_group_payment', {
+      p_snapshot_ids: ['snap-1'],
+    })
+    expect(
+      w.get('[data-ds="Floating Selection Bar"] [data-ds="Button"]').attributes('data-ds-state'),
+    ).toBe('Loading')
+    resolve({ data: { group_code: 'G1', total_amount: 120000 }, error: null })
+    await flushPromises()
+  })
+
+  it('toasts the group payment error', async () => {
+    waiting()
+    vi.mocked(supabase.rpc).mockImplementation(((name: string) =>
+      Promise.resolve(
+        name === 'create_group_payment'
+          ? { data: null, error: { message: 'x' } }
+          : { data: [], error: null },
+      )) as any)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const w = await mountDetail('admin')
+    await w.get('input[type="checkbox"][value="snap-1"]').setValue(true)
+    await w.get('[data-ds="Floating Selection Bar"] [data-ds="Button"]').trigger('click')
+    await flushPromises()
+    expect(h.toast.error).toHaveBeenCalledWith(t('session.groupPaymentError'))
+  })
+
+  it('renders the section ribbon with the active tab and scrolls on click', async () => {
+    waiting()
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    const w = await mountDetail('member')
+    const nav = w.get('nav[data-ds="Section Tab Bar"]')
+    // the page renders at the top, so the ribbon starts on Overview whatever the status
+    expect(nav.attributes('data-ds-active')).toBe('Overview')
+    const tabs = nav.findAll('[data-ds="Section Tab"]')
+    expect(tabs).toHaveLength(4)
+    expect(tabs.map((x) => x.attributes('data-ds-state'))).toEqual([
+      'Active',
+      'Inactive',
+      'Inactive',
+      'Inactive',
+    ])
+    expect(tabs[0]!.attributes('aria-current')).toBe('true')
+    // the wrapper is not attached to the document, so resolve the section ids inside it
+    vi.spyOn(document, 'getElementById').mockImplementation(
+      (id) => w.find(`#${id}`).element as HTMLElement,
+    )
+    scroll.mockClear()
+    await tabs[2]!.trigger('click')
+    expect(scroll.mock.contexts).toContain(w.get('#costs-section').element)
+    expect(nav.attributes('data-ds-active')).toBe('Costs')
+    expect(tabs[2]!.attributes('data-ds-state')).toBe('Active')
+    await tabs[3]!.trigger('click')
+    expect(nav.attributes('data-ds-active')).toBe('Payments')
+  })
+})
+
+describe('SessionDetailView S7 range', () => {
+  const s7 = source.slice(source.indexOf('<!-- Cost Summary (Live mode) -->'))
+
+  it('has no palette class and no divider/input alias in the whole file', () => {
+    expect([...source.matchAll(PALETTE_CLASS)].map((m) => m[1])).toEqual([])
+    expect(source).not.toMatch(/(?:bg|text|border|divide|ring)-(?:divider|input)\b/)
+  })
+
+  it('has no native button besides the Select Trigger and the Section Tab, and no input or select', () => {
+    expect(source.match(/<button/g)).toHaveLength(2)
+    expect(s7.match(/<button/g)).toHaveLength(1)
+    expect(s7).toContain('data-ds="Section Tab"')
+    expect(source).not.toMatch(/<input|<select/)
   })
 })

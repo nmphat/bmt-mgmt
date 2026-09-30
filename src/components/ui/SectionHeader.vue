@@ -9,11 +9,13 @@ withDefaults(
   defineProps<{
     variant?: SectionHeaderVariant
     title: string
+    // muted inline note after the title, e.g. "(live)"
+    suffix?: string
     icon?: Component
     // heading element level (keeps the page's current outline)
     level?: 2 | 3
   }>(),
-  { variant: 'Caps', icon: undefined, level: 2 },
+  { variant: 'Caps', suffix: undefined, icon: undefined, level: 2 },
 )
 
 const VARIANTS: Record<SectionHeaderVariant, string> = {
@@ -45,7 +47,12 @@ const TITLES: Record<SectionHeaderVariant, string> = {
           class="size-4 shrink-0 text-fg-disabled"
           aria-hidden="true"
         />
-        <component :is="`h${level}`" :class="TITLES[variant]">{{ title }}</component>
+        <component :is="`h${level}`" :class="TITLES[variant]">
+          {{ title }}
+          <template v-if="suffix">
+            <span class="text-sm font-normal text-fg-muted">{{ suffix }}</span>
+          </template>
+        </component>
       </div>
       <slot name="badge" />
     </div>

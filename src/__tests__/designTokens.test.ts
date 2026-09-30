@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 // Views and components use the semantic tokens of src/assets/tokens.css (generated from the Figma variables), never a
 // palette shade such as `bg-green-600` or `text-gray-500`. Files that still use palette shades are listed below; each
 // B-1 slice migrates its files and removes them from this list, and the last slice leaves it empty.
-const PALETTE_ALLOWED = ['views/SessionDetailView.vue']
+const PALETTE_ALLOWED = []
 
 const PALETTE_CLASS =
   /(?:^|[^a-z-])((?:bg|text|border|ring|divide|from|via|to|outline|fill|stroke|placeholder|decoration|accent|caret)-(?:gray|red|green|amber|blue|emerald|brand|slate|zinc|neutral|stone|orange|yellow|lime|teal|cyan|sky|indigo|violet|purple|fuchsia|pink|rose)-\d+)/g
