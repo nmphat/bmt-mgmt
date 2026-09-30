@@ -1456,7 +1456,7 @@ onUnmounted(() => {
                 :class="{ 'bg-surface-subtle opacity-60': isRegistrationAbsent(reg) }"
               >
                 <td
-                  class="sticky left-0 z-10 whitespace-nowrap border-r border-line-divider bg-surface-card px-6 py-4 text-base font-bold text-fg-primary"
+                  class="sticky left-0 z-10 whitespace-nowrap bg-surface-card after:absolute after:inset-y-0 after:right-0 after:w-px after:bg-line-divider px-6 py-4 text-base font-bold text-fg-primary"
                 >
                   <div class="flex items-center">
                     {{ reg.member?.display_name }}

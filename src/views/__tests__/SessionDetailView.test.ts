@@ -647,7 +647,9 @@ describe('SessionDetailView registrations and presence', () => {
     expect(absent!.attributes('aria-label')).toBe(t('session.markAbsentTooltip'))
     expect(absent!.attributes('data-ds-style')).toBe('Ghost')
     expect(second!.findAll('button')[1]!.attributes('data-ds-style')).toBe('Ghost Danger')
-    expect(first!.get('td').classes()).toEqual(expect.arrayContaining(['sticky', 'left-0']))
+    expect(first!.get('td').classes()).toEqual(
+      expect.arrayContaining(['sticky', 'left-0', 'after:right-0', 'after:bg-line-divider']),
+    )
     expect(w.get('#attendance-section table').classes()).toContain('min-w-full')
     expect(w.get('#attendance-section table').element.parentElement!.classList).toContain(
       'overflow-x-auto',
