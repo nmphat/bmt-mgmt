@@ -62,8 +62,4 @@
 
   /* Radius */
   --radius-control: var(--radius-xl);
-
-  /* legacy names, removed when the app no longer uses them */
-  --color-divider: var(--color-line-divider);
-  --color-input: var(--color-line-input);
 }
