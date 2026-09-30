@@ -7,6 +7,7 @@ import { useLangStore } from '@/stores/lang'
 import { useBankConfig } from '@/composables/useBankConfig'
 import { ref } from 'vue'
 import { useToast } from 'vue-toastification'
+import Button from '@/components/ui/Button.vue'
 
 const route = useRoute()
 const langStore = useLangStore()
@@ -109,99 +110,104 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-gray-900 flex flex-col items-center p-4">
+  <div class="flex min-h-screen flex-col items-center bg-surface-card p-4">
     <div
-      class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl overflow-hidden mt-4 sm:mt-10"
+      data-ds="Payment Page Card"
+      data-ds-style="Default"
+      class="mt-4 w-full max-w-md overflow-hidden rounded-3xl bg-surface-card sm:mt-10"
     >
       <!-- Header -->
-      <div class="p-6 text-center border-b border-divider dark:border-gray-700">
-        <h1 class="text-2xl font-black text-fg-primary dark:text-white uppercase tracking-tight">
+      <div class="flex flex-col items-center gap-1 border-b border-line-divider p-6">
+        <h1 class="text-2xl font-extrabold uppercase tracking-tight text-fg-primary">
           {{ t('payment.qrTitle') }}
         </h1>
-        <p
-          class="text-fg-muted dark:text-fg-disabled mt-1 uppercase text-xs font-bold tracking-widest"
-        >
-          Sân cầu lông
-        </p>
+        <p class="text-xs font-bold uppercase tracking-widest text-fg-muted">Sân cầu lông</p>
       </div>
 
       <!-- QR Section -->
-      <div class="p-8 flex flex-col items-center bg-gray-50/50 dark:bg-gray-900/20">
-        <div class="relative group">
-          <img
-            :src="qrUrl"
-            alt="VietQR"
-            class="w-72 h-72 object-contain border-4 border-white dark:border-gray-700 rounded-xl shadow-xl transition-all duration-300 transform group-hover:scale-[1.02]"
-          />
-          <div class="absolute -bottom-4 left-1/2 -translate-x-1/2">
-            <div
-              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-brand-500 rounded-full text-xs font-black text-brand-600 shadow-lg whitespace-nowrap"
-            >
-              <Loader2 class="w-3.5 h-3.5 animate-spin" />
-              {{ t('payment.waitingTransfer') }}
-            </div>
-          </div>
+      <div class="flex flex-col items-center gap-2 bg-surface-subtle p-8">
+        <img
+          data-ds="QR Image"
+          data-ds-style="Raised"
+          :src="qrUrl"
+          alt="VietQR"
+          class="size-72 rounded-xl border-4 border-line-inverse object-contain shadow-xl"
+        />
+        <div
+          data-ds="Waiting Pill"
+          class="flex items-center gap-2 whitespace-nowrap rounded-full border-2 border-line-brand-emphasis bg-surface-card px-4 py-2 text-xs font-extrabold text-fg-brand shadow-lg"
+        >
+          <Loader2 aria-hidden="true" class="size-3.5 animate-spin" />
+          {{ t('payment.waitingTransfer') }}
         </div>
       </div>
 
       <!-- Details -->
-      <div class="p-8 flex flex-col items-center gap-8">
-        <div class="text-center">
-          <p
-            class="text-sm font-bold text-fg-disabled dark:text-fg-muted uppercase tracking-widest mb-2"
-          >
+      <div class="flex flex-col items-center gap-8 p-8">
+        <div
+          data-ds="Amount Panel"
+          data-ds-style="Hero"
+          class="flex w-full flex-col items-center gap-1 p-4"
+        >
+          <p class="text-sm font-bold uppercase tracking-widest text-fg-disabled">
             {{ t('payment.totalAmount') }}
           </p>
-          <div class="text-4xl font-black text-brand-600 dark:text-brand-400 tracking-tighter">
+          <div class="text-3xl font-bold text-fg-brand-strong">
             {{ formatCurrency(amount) }}
           </div>
         </div>
 
         <!-- Transfer Content -->
-        <div class="w-full flex flex-col gap-3">
-          <p
-            class="text-xs font-bold text-fg-disabled dark:text-fg-muted uppercase tracking-widest text-center"
-          >
+        <div class="flex w-full flex-col gap-3">
+          <p class="text-center text-xs font-bold uppercase tracking-widest text-fg-disabled">
             {{ t('payment.transferContent') }}
           </p>
           <button
-            @click="copyCode"
-            class="group w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 active:scale-[0.98]"
+            type="button"
+            data-ds="Transfer Code Card"
+            data-ds-style="Page"
+            :data-ds-state="copied ? 'Copied' : 'Default'"
+            class="flex w-full items-center justify-between gap-3 rounded-xl border-2 p-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
             :class="
               copied
-                ? 'bg-emerald-50 border-emerald-500'
-                : 'bg-brand-50/30 border-brand-100 hover:border-brand-300 dark:bg-gray-700 dark:border-gray-600'
+                ? 'border-line-success bg-status-success-subtle'
+                : 'border-line-brand-muted bg-surface-brand-subtle'
             "
+            @click="copyCode"
           >
             <span
-              class="text-xl font-black font-mono tracking-widest"
-              :class="copied ? 'text-emerald-700' : 'text-brand-900 dark:text-white'"
+              class="font-mono text-xl font-extrabold tracking-widest"
+              :class="copied ? 'text-fg-success' : 'text-fg-brand-deep'"
             >
               {{ code }}
             </span>
-            <div class="p-2 rounded-xl bg-white dark:bg-gray-600 shadow-sm">
-              <Check v-if="copied" class="w-5 h-5 text-emerald-600" />
-              <Copy v-else class="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            <div
+              data-ds="Icon Tile"
+              :data-ds-style="copied ? 'White Raised Done' : 'White Raised'"
+              class="rounded-xl bg-surface-card p-2 shadow-sm"
+            >
+              <Check v-if="copied" class="size-5 text-fg-success" />
+              <Copy v-else class="size-5 text-fg-brand" />
             </div>
           </button>
         </div>
 
-        <button
-          @click="sharePayment"
+        <Button
+          size="Large"
+          variant="Primary"
+          class="w-full"
+          :leading-icon="Share2"
+          :loading="isSharing"
           :disabled="isSharing"
-          class="w-full py-4 bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white rounded-xl font-black text-lg shadow-xl shadow-brand-100 dark:shadow-none transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+          @click="sharePayment"
         >
-          <Loader2 v-if="isSharing" class="w-6 h-6 animate-spin" />
-          <Share2 v-else class="w-6 h-6" />
           {{ t('payment.share') }}
-        </button>
+        </Button>
       </div>
 
       <!-- Footer Instructions -->
-      <div
-        class="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-divider dark:border-gray-700 text-center"
-      >
-        <p class="text-sm text-fg-muted dark:text-fg-disabled italic">
+      <div class="border-t border-line-divider bg-surface-subtle p-6 text-center">
+        <p class="text-sm italic text-fg-muted">
           {{ t('payment.step3') }}
         </p>
       </div>
@@ -210,16 +216,10 @@ onMounted(() => {
     <!-- Back Button -->
     <router-link
       to="/"
-      class="mt-8 flex items-center gap-2 text-fg-muted hover:text-brand-600 font-bold transition-colors"
+      class="mt-8 inline-flex items-center gap-2 rounded-control font-bold text-fg-muted transition-colors hover:text-fg-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
     >
-      <ArrowLeft class="w-4 h-4" />
+      <ArrowLeft class="size-4" />
       {{ t('common.backToHome') }}
     </router-link>
   </div>
 </template>
-
-<style scoped>
-.font-black {
-  font-weight: 950;
-}
-</style>

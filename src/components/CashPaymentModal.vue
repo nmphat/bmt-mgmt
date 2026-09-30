@@ -3,7 +3,16 @@ import { ref, watch, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useToast } from 'vue-toastification'
 import { useLangStore } from '@/stores/lang'
-import { DollarSign, Loader2, X, CheckCircle, AlertTriangle } from 'lucide-vue-next'
+import { DollarSign, CircleCheckBig, ArrowLeft } from 'lucide-vue-next'
+import ModalPanel from '@/components/ui/ModalPanel.vue'
+import ModalHeader from '@/components/ui/ModalHeader.vue'
+import ModalFooter from '@/components/ui/ModalFooter.vue'
+import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import FormField from '@/components/ui/FormField.vue'
+import Alert from '@/components/ui/Alert.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 
 interface UnpaidSnapshot {
   snapshot_id: string
@@ -117,8 +126,7 @@ async function handleConfirm() {
         continue
       }
 
-      const freshRemaining =
-        (freshSnapshot.final_amount || 0) - (freshSnapshot.paid_amount || 0)
+      const freshRemaining = (freshSnapshot.final_amount || 0) - (freshSnapshot.paid_amount || 0)
       if (freshRemaining <= 0) continue // Already paid by another admin
 
       const payment = Math.min(freshRemaining, remainingInput)
@@ -140,9 +148,7 @@ async function handleConfirm() {
     }
 
     if (failedCount === 0) {
-      toast.success(
-        t.value('payment.cashPaymentSuccess', { count: paidSnapshotIds.length }),
-      )
+      toast.success(t.value('payment.cashPaymentSuccess', { count: paidSnapshotIds.length }))
     } else {
       toast.warning(
         t.value('payment.cashPaymentPartial', {
@@ -184,144 +190,165 @@ function handleClose() {
     >
       <!-- Overlay -->
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        data-ds="Modal Scrim"
+        data-ds-style="Default"
+        class="fixed inset-0 bg-surface-scrim/75 transition-opacity"
         aria-hidden="true"
         @click="handleClose"
       ></div>
 
       <!-- Modal -->
-      <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-xl"
-      >
-        <!-- Header -->
-        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
-          <div class="flex items-start justify-between gap-3">
-            <h3
-              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-fg-primary"
-              id="cash-payment-title"
-            >
-              <DollarSign class="h-6 w-6 text-green-600" />
-              {{ currentStep === 'confirm' ? t('payment.cashAllocationTitle') : t('payment.manualTitle') }}
-            </h3>
-            <button
-              type="button"
-              @click="handleClose"
-              :disabled="isSubmitting"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-            >
-              <X class="h-5 w-5" />
-            </button>
-          </div>
-        </div>
+      <ModalPanel width="md">
+        <template #header>
+          <ModalHeader
+            title-id="cash-payment-title"
+            :title="
+              currentStep === 'confirm'
+                ? t('payment.cashAllocationTitle')
+                : t('payment.manualTitle')
+            "
+            :icon="DollarSign"
+            :close="isSubmitting ? 'Disabled' : 'Default'"
+            :close-label="t('common.cancel')"
+            @close="handleClose"
+          />
+        </template>
 
         <!-- Body -->
-        <div class="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+        <div data-ds="Cash Payment Body" class="py-4">
           <!-- Loading -->
-          <div v-if="loadingSnapshots" class="flex items-center justify-center py-8">
-            <Loader2 class="h-8 w-8 animate-spin text-green-600" />
+          <div v-if="loadingSnapshots" class="flex justify-center py-8">
+            <Spinner size="32" tone="Success" />
           </div>
 
           <!-- No debt -->
-          <div
-            v-else-if="snapshots.length === 0"
-            class="py-8 text-center text-fg-muted"
-          >
+          <EmptyState v-else-if="snapshots.length === 0" variant="Plain">
             {{ t('debt.noDebt') }}
-          </div>
+          </EmptyState>
 
           <!-- Preview step -->
-          <template v-else-if="currentStep === 'preview'">
-            <div class="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800">
-              <strong>{{ memberName }}</strong> — {{ t('debt.totalDebt') }}:
-              <strong class="text-green-700">{{ formatCurrency(totalDebt) }}</strong>
-            </div>
+          <div v-else-if="currentStep === 'preview'" class="flex flex-col gap-4">
+            <Alert tone="Success">
+              <p>
+                <strong>{{ memberName }}</strong> — {{ t('debt.totalDebt') }}:
+                <strong>{{ formatCurrency(totalDebt) }}</strong>
+              </p>
+            </Alert>
 
             <!-- Amount input -->
-            <div class="mb-4">
-              <label class="mb-1 block text-sm font-bold text-fg-secondary">
-                {{ t('payment.amount') }}
-              </label>
-              <input
-                v-model.number="amount"
-                type="number"
-                :min="0"
-                :max="totalDebt"
-                @blur="amount = Math.min(Math.max(0, amount || 0), totalDebt)"
-                class="w-full rounded-lg border border-input px-4 py-3 text-lg font-bold text-fg-primary focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
-              />
-            </div>
+            <FormField :label="t('payment.amount')">
+              <template #default="{ controlProps }">
+                <Input
+                  v-bind="controlProps"
+                  v-model.number="amount"
+                  size="Default"
+                  type="number"
+                  :min="0"
+                  :max="totalDebt"
+                  @blur="amount = Math.min(Math.max(0, amount || 0), totalDebt)"
+                />
+              </template>
+            </FormField>
 
             <!-- Allocation preview -->
-            <div class="mb-2 text-sm font-bold text-fg-secondary">
-              {{ t('payment.cashAllocationSummary', { amount: formatCurrency(totalAllocated), count: snapshots.length }) }}
-            </div>
-            <div class="space-y-2">
+            <div class="flex flex-col gap-2">
+              <div class="text-sm font-bold text-fg-secondary">
+                {{
+                  t('payment.cashAllocationSummary', {
+                    amount: formatCurrency(totalAllocated),
+                    count: snapshots.length,
+                  })
+                }}
+              </div>
               <div
                 v-for="s in allocationPreview"
                 :key="s.snapshot_id"
-                class="flex items-center justify-between rounded-lg border border-divider px-3 py-2 text-sm"
+                data-ds="Amount List Item"
+                data-ds-style="Allocation"
+                class="flex justify-between gap-3 rounded-lg border border-line-divider px-3 py-2"
               >
                 <div class="min-w-0 flex-1">
-                  <div class="truncate font-medium text-fg-primary">{{ s.session_title }}</div>
+                  <div class="truncate text-sm font-medium text-fg-primary">
+                    {{ s.session_title }}
+                  </div>
                   <div class="text-xs text-fg-muted">
                     {{ new Date(s.start_time).toLocaleDateString() }}
                   </div>
                 </div>
-                <div class="ml-3 text-right">
-                  <div class="font-bold text-fg-primary">{{ formatCurrency(s.allocated) }}</div>
-                  <div class="text-xs text-fg-muted">/ {{ formatCurrency(s.remaining_amount) }}</div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-fg-primary">
+                    {{ formatCurrency(s.allocated) }}
+                  </div>
+                  <div class="text-xs text-fg-muted">
+                    / {{ formatCurrency(s.remaining_amount) }}
+                  </div>
                 </div>
               </div>
             </div>
-          </template>
+          </div>
 
           <!-- Confirm step -->
-          <template v-else-if="currentStep === 'confirm'">
-            <div class="space-y-4 py-4 text-center">
-              <CheckCircle class="mx-auto h-12 w-12 text-green-500" />
-              <p class="text-lg font-bold text-fg-primary">
-                {{ t('payment.cashAllocationSummary', { amount: formatCurrency(totalAllocated), count: snapshots.length }) }}
-              </p>
-              <p class="text-sm text-fg-muted">
-                {{ t('payment.cashAllocationTitle') }}
-              </p>
-            </div>
-          </template>
+          <div
+            v-else-if="currentStep === 'confirm'"
+            data-ds="Result State"
+            data-ds-style="Plain"
+            class="flex flex-col items-center gap-4 py-4 text-center"
+          >
+            <CircleCheckBig class="size-12 text-fg-success-soft" />
+            <p class="text-lg font-bold text-fg-primary">
+              {{
+                t('payment.cashAllocationSummary', {
+                  amount: formatCurrency(totalAllocated),
+                  count: snapshots.length,
+                })
+              }}
+            </p>
+            <p class="text-sm text-fg-muted">
+              {{ t('payment.cashAllocationTitle') }}
+            </p>
+          </div>
         </div>
 
         <!-- Footer -->
-        <div class="shrink-0 border-t border-divider bg-white px-4 py-4 sm:px-6">
-          <template v-if="currentStep === 'preview'">
-            <button
-              @click="proceedToConfirm"
-              :disabled="amount <= 0 || snapshots.length === 0"
-              class="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {{ t('payment.confirmCash') }}
-            </button>
-          </template>
-          <template v-else>
-            <div class="flex gap-3">
-              <button
-                @click="currentStep = 'preview'"
-                :disabled="isSubmitting"
-                class="flex-1 rounded-xl border border-input bg-white px-4 py-3 text-base font-bold text-fg-secondary transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+        <template #footer>
+          <ModalFooter v-if="currentStep === 'preview'" background="White" buttons="One">
+            <template #primary>
+              <Button
+                size="Default"
+                variant="Success"
+                :disabled="amount <= 0 || snapshots.length === 0"
+                @click="proceedToConfirm"
               >
-                <AlertTriangle class="mr-1 inline h-4 w-4" />
-                {{ t('common.back') }}
-              </button>
-              <button
-                @click="handleConfirm"
-                :disabled="isSubmitting"
-                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-              >
-                <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
                 {{ t('payment.confirmCash') }}
-              </button>
-            </div>
-          </template>
-        </div>
-      </div>
+              </Button>
+            </template>
+          </ModalFooter>
+          <ModalFooter v-else background="White" buttons="Two">
+            <template #secondary>
+              <Button
+                size="Default"
+                variant="Secondary"
+                :leading-icon="ArrowLeft"
+                :disabled="isSubmitting"
+                @click="currentStep = 'preview'"
+              >
+                {{ t('common.back') }}
+              </Button>
+            </template>
+            <template #primary>
+              <Button
+                size="Default"
+                variant="Success"
+                :loading="isSubmitting"
+                :disabled="isSubmitting"
+                @click="handleConfirm"
+              >
+                {{ t('payment.confirmCash') }}
+              </Button>
+            </template>
+          </ModalFooter>
+        </template>
+      </ModalPanel>
     </div>
   </div>
 </template>

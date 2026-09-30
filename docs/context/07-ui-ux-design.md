@@ -410,3 +410,6 @@ Nằm trong `src/components/ui/`, mỗi file là một component set trong Figma
 - `StatusIcon` — icon trạng thái màu cố định theo loại: `kind` Check/Circle/Cross/Lock/Card (mặc định Check), `size` 16/20 (mặc định 16); `label` bắt buộc, hiển thị `sr-only` (caller truyền key có sẵn nói đúng nghĩa icon ở chỗ đó, ví dụ `payment.paid`, `payment.pending`, `member.activeStatus`, `session.lockedStatusLabel`).
 - `PaymentStatusBadge` — trạng thái thanh toán: `status` Paid/Partial/Pending; bọc Badge Success/Warning/Danger, nhãn từ `payment.paid`/`payment.partial`/`payment.pending`.
 - `MemberActiveBadge` — trạng thái thành viên: `active` boolean (mặc định không có, truyền bắt buộc); bọc Badge Success/Neutral, nhãn từ `member.activeStatus`/`member.inactiveStatus`.
+- `ModalPanel` — bề mặt hộp thoại thanh toán: `width` md/lg (mặc định md); slot `header`, mặc định (thân cuộn), `footer`. Lớp gốc dialog, scrim và khung căn giữa nằm ở từng modal.
+- `ModalHeader` — đầu hộp thoại: `title`, `titleId`, `closeLabel`, `icon` tùy chọn, `close` Default/Disabled (mặc định Default); emit `close`.
+- `ModalFooter` — chân hộp thoại: `background` Gray/White (mặc định Gray), `buttons` One/Two (mặc định One); slot `primary`, `secondary`; Gray xếp primary trước và xếp dọc dưới `sm`, White xếp secondary trước, hai nút cùng rộng.

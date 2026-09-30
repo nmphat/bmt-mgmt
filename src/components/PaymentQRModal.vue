@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch, onUnmounted } from 'vue'
-import { X, Copy, Check } from 'lucide-vue-next'
+import { Copy, Check } from 'lucide-vue-next'
 import type { CostSnapshot, GroupPaymentData } from '@/types'
 import { useLangStore } from '@/stores/lang'
 import { useBankConfigStore } from '@/stores/bankConfig'
 import { supabase } from '@/lib/supabase'
 import { useToast } from 'vue-toastification'
+import ModalPanel from '@/components/ui/ModalPanel.vue'
+import ModalHeader from '@/components/ui/ModalHeader.vue'
+import ModalFooter from '@/components/ui/ModalFooter.vue'
+import Button from '@/components/ui/Button.vue'
+import Alert from '@/components/ui/Alert.vue'
 
 const langStore = useLangStore()
 const bankConfigStore = useBankConfigStore()
@@ -218,175 +223,180 @@ onUnmounted(() => {
     >
       <!-- Background overlay -->
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        data-ds="Modal Scrim"
+        data-ds-style="Default"
+        class="fixed inset-0 bg-surface-scrim/75 transition-opacity"
         aria-hidden="true"
         @click="handleClose"
       ></div>
 
-      <!-- Modal panel -->
-      <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-lg sm:rounded-xl"
-      >
-        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
-          <div class="flex items-start justify-between gap-3">
-            <h3 class="text-[20px] font-bold leading-[1.2] text-fg-primary" id="modal-title">
-              {{
-                isPaid || isPaymentComplete
-                  ? t('payment.paymentSuccess')
-                  : props.groupData
-                    ? t('payment.groupPaymentFor', { count: groupMemberCount })
-                    : t('payment.paymentFor', { name: memberName })
-              }}
-            </h3>
-            <button
-              type="button"
-              @click="handleClose"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500"
-              :aria-label="t('common.cancel')"
-            >
-              <X class="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6">
-          <div v-if="snapshot || groupData" class="flex flex-col items-center">
-            <!-- Paid State -->
-            <div
-              v-if="isPaid || isPaymentComplete"
-              class="flex flex-col items-center py-8 text-center"
-              aria-live="polite"
-            >
-              <div
-                class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-status-success animate-bounce"
-              >
-                <Check class="h-12 w-12 text-green-600 stroke-[3px]" />
-              </div>
-              <p class="mb-2 text-[20px] font-bold leading-[1.2] text-fg-primary">
-                {{ t('payment.thanks') }}
-              </p>
-              <p class="max-w-sm text-fg-secondary">{{ t('payment.qrSuccess') }}</p>
-            </div>
-
-            <!-- Pending State -->
-            <template v-else>
-              <div
-                class="mb-5 w-full rounded-xl border border-brand-100 bg-brand-50/70 p-4 text-center"
-              >
-                <span class="mb-1 block text-sm font-bold text-brand-700">{{
-                  t('payment.amountToPay')
-                }}</span>
-                <span class="text-[32px] font-bold leading-[1.05] text-brand-700 tabular-nums">{{
-                  formatCurrency(remainingAmount)
-                }}</span>
-              </div>
-
-              <div
-                class="relative mb-5 rounded-xl border-2 border-dashed border-divider bg-white p-2 shadow-sm"
-              >
-                <img
-                  :src="qrUrl"
-                  :alt="
-                    props.groupData
-                      ? t('payment.groupPaymentFor', { count: groupMemberCount })
-                      : t('payment.paymentFor', { name: memberName })
-                  "
-                  class="h-64 w-64 max-w-full object-contain"
-                />
-              </div>
-
-              <div class="w-full space-y-4">
-                <div class="rounded-xl border border-brand-100 bg-brand-50 p-4">
-                  <div class="mb-2 flex items-center justify-between gap-3">
-                    <span class="text-sm font-bold text-brand-700">{{
-                      t('payment.transferContent')
-                    }}</span>
-                    <button
-                      type="button"
-                      @click="copyPaymentCode"
-                      class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xl px-3 text-sm font-bold text-brand-600 transition hover:bg-brand-100 hover:text-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      :aria-label="t('payment.copyCode')"
-                    >
-                      <template v-if="!copied">
-                        <Copy class="h-4 w-4" /> {{ t('payment.copyCode') }}
-                      </template>
-                      <template v-else>
-                        <Check class="h-4 w-4 text-green-600" /> {{ t('payment.copied') }}
-                      </template>
-                    </button>
-                  </div>
-                  <p class="break-all font-mono text-[20px] font-bold leading-[1.2] text-brand-900">
-                    {{ paymentInfo }}
-                  </p>
-                  <p class="mt-2 text-sm italic text-brand-700">
-                    <template v-if="props.groupData">
-                      <span
-                        v-html="
-                          t('payment.groupInstructions', {
-                            count: groupMemberCount,
-                            code: props.groupData.group_code,
-                          })
-                        "
-                      ></span>
-                    </template>
-                    <template v-else>
-                      {{ t('payment.keepCodeNote') }}
-                    </template>
-                  </p>
-                </div>
-
-                <!-- Group Members Breakdown -->
-                <div
-                  v-if="props.groupData"
-                  class="rounded-xl border border-divider bg-gray-50 p-3"
-                >
-                  <p class="mb-2 px-1 text-sm font-bold text-fg-muted">
-                    {{ t('session.memberBreakdown') }}
-                  </p>
-                  <div class="max-h-40 space-y-1 overflow-y-auto">
-                    <div
-                      v-for="m in groupMembers"
-                      :key="m.name"
-                      class="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm"
-                    >
-                      <span class="min-w-0 font-bold text-fg-secondary">{{ m.name }}</span>
-                      <span class="shrink-0 font-bold text-fg-primary tabular-nums">{{
-                        formatCurrency(m.amount)
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  class="rounded-xl bg-gray-50 px-4 py-3 text-center text-sm text-fg-secondary"
-                  aria-live="polite"
-                >
-                  <p>{{ t('payment.qrStatusNote') }}</p>
-                </div>
-              </div>
-            </template>
-          </div>
-        </div>
+      <ModalPanel width="lg">
+        <template #header>
+          <ModalHeader
+            title-id="modal-title"
+            :title="
+              isPaid || isPaymentComplete
+                ? t('payment.paymentSuccess')
+                : props.groupData
+                  ? t('payment.groupPaymentFor', { count: groupMemberCount })
+                  : t('payment.paymentFor', { name: memberName })
+            "
+            :close-label="t('common.cancel')"
+            @close="handleClose"
+          />
+        </template>
 
         <div
-          class="qr-modal-footer-safe sticky bottom-0 shrink-0 border-t border-divider bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+          v-if="snapshot || groupData"
+          data-ds="Payment QR Body"
+          class="flex flex-col items-center gap-5 py-5"
         >
-          <button
-            type="button"
-            class="inline-flex min-h-11 w-full justify-center rounded-xl px-6 py-2 text-base font-bold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm"
-            :class="
-              isPaid || isPaymentComplete
-                ? 'bg-green-600 hover:bg-green-700 font-bold'
-                : 'bg-brand-600 hover:bg-brand-700 font-bold'
-            "
-            @click="handleClose"
+          <!-- Paid State -->
+          <div
+            v-if="isPaid || isPaymentComplete"
+            data-ds="Result State"
+            data-ds-style="Circle"
+            class="flex flex-col items-center gap-3 py-8 text-center"
+            aria-live="polite"
           >
-            {{
-              isPaid || isPaymentComplete ? t('payment.confirmAndClose') : t('payment.doneButton')
-            }}
-          </button>
+            <div
+              data-ds="Icon Tile"
+              data-ds-style="Success Circle"
+              class="flex size-20 items-center justify-center rounded-full bg-status-success animate-bounce motion-reduce:animate-none"
+            >
+              <Check aria-hidden="true" class="size-12 stroke-[3px] text-fg-success" />
+            </div>
+            <p class="text-xl font-bold text-fg-primary">
+              {{ t('payment.thanks') }}
+            </p>
+            <p class="max-w-sm text-base text-fg-secondary">{{ t('payment.qrSuccess') }}</p>
+          </div>
+
+          <!-- Pending State -->
+          <template v-else>
+            <div
+              data-ds="Amount Panel"
+              data-ds-style="Brand"
+              class="flex w-full flex-col items-center gap-1 rounded-xl border border-line-brand-muted bg-surface-brand-subtle p-4"
+            >
+              <span class="text-sm font-bold text-fg-brand-strong">{{
+                t('payment.amountToPay')
+              }}</span>
+              <span class="text-3xl font-bold text-fg-brand-strong tabular-nums">{{
+                formatCurrency(remainingAmount)
+              }}</span>
+            </div>
+
+            <div
+              data-ds="QR Image"
+              data-ds-style="Dashed"
+              class="rounded-xl border-2 border-dashed border-line-divider bg-surface-card p-2 shadow-sm"
+            >
+              <img
+                :src="qrUrl"
+                :alt="
+                  props.groupData
+                    ? t('payment.groupPaymentFor', { count: groupMemberCount })
+                    : t('payment.paymentFor', { name: memberName })
+                "
+                class="h-64 w-64 max-w-full object-contain"
+              />
+            </div>
+
+            <div
+              data-ds="Transfer Code Card"
+              data-ds-style="Modal"
+              :data-ds-state="copied ? 'Copied' : 'Default'"
+              class="flex w-full flex-col gap-2 rounded-xl border border-line-brand-muted bg-surface-brand-subtle p-4"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-bold text-fg-brand-strong">{{
+                  t('payment.transferContent')
+                }}</span>
+                <button
+                  type="button"
+                  data-ds="Copy Button"
+                  :data-ds-state="copied ? 'Copied' : 'Default'"
+                  class="inline-flex h-control-md items-center gap-1 rounded-control px-3 text-sm font-bold text-fg-brand transition hover:bg-surface-brand-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus"
+                  :aria-label="t('payment.copyCode')"
+                  @click="copyPaymentCode"
+                >
+                  <template v-if="!copied">
+                    <Copy class="size-4" /> {{ t('payment.copyCode') }}
+                  </template>
+                  <template v-else>
+                    <Check class="size-4 text-fg-success" /> {{ t('payment.copied') }}
+                  </template>
+                </button>
+              </div>
+              <p class="break-all font-mono text-xl font-bold text-fg-brand-deep">
+                {{ paymentInfo }}
+              </p>
+              <p class="text-sm italic text-fg-brand-strong">
+                <template v-if="props.groupData">
+                  <span
+                    v-html="
+                      t('payment.groupInstructions', {
+                        count: groupMemberCount,
+                        code: props.groupData.group_code,
+                      })
+                    "
+                  ></span>
+                </template>
+                <template v-else>
+                  {{ t('payment.keepCodeNote') }}
+                </template>
+              </p>
+            </div>
+
+            <!-- Group Members Breakdown -->
+            <div
+              v-if="props.groupData"
+              class="w-full rounded-xl border border-line-divider bg-surface-subtle p-3"
+            >
+              <p class="mb-2 px-1 text-sm font-bold text-fg-muted">
+                {{ t('session.memberBreakdown') }}
+              </p>
+              <div class="flex max-h-40 flex-col gap-1 overflow-y-auto">
+                <div
+                  v-for="m in groupMembers"
+                  :key="m.name"
+                  data-ds="Amount List Item"
+                  data-ds-style="Simple"
+                  class="flex justify-between gap-3 rounded-lg bg-surface-card px-3 py-2 text-sm"
+                >
+                  <span class="min-w-0 font-bold text-fg-secondary">{{ m.name }}</span>
+                  <span class="shrink-0 font-bold text-fg-primary tabular-nums">{{
+                    formatCurrency(m.amount)
+                  }}</span>
+                </div>
+              </div>
+            </div>
+
+            <Alert tone="Neutral" align="Center" class="w-full" aria-live="polite">
+              <p>{{ t('payment.qrStatusNote') }}</p>
+            </Alert>
+          </template>
         </div>
-      </div>
+
+        <template #footer>
+          <ModalFooter background="Gray" buttons="One" class="qr-modal-footer-safe">
+            <template #primary>
+              <Button
+                size="Default"
+                :variant="isPaid || isPaymentComplete ? 'Success' : 'Primary'"
+                @click="handleClose"
+              >
+                {{
+                  isPaid || isPaymentComplete
+                    ? t('payment.confirmAndClose')
+                    : t('payment.doneButton')
+                }}
+              </Button>
+            </template>
+          </ModalFooter>
+        </template>
+      </ModalPanel>
     </div>
   </div>
 </template>
