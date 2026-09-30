@@ -7,9 +7,6 @@ const PALETTE_ALLOWED = [
   'components/CashPaymentModal.vue',
   'components/ManualPaymentModal.vue',
   'components/PaymentQRModal.vue',
-  'components/SessionExtraCharges.vue',
-  'components/session/CourtBookingEditor.vue',
-  'components/session/ShuttleUsageEditor.vue',
   'views/PaymentView.vue',
   'views/SessionDetailView.vue',
 ]

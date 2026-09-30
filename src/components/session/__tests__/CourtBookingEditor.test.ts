@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
+import { useLangStore } from '@/stores/lang'
 import type { CourtBookingDraft } from '@/types'
 
 const base: CourtBookingDraft[] = [
@@ -138,5 +139,67 @@ describe('CourtBookingEditor', () => {
     await w.get('[data-testid="remove-slot-0"]').trigger('click')
     const emitted = w.emitted('update:bookings')?.at(-1)?.[0] as CourtBookingDraft[]
     expect(emitted).toEqual([twoCourts[1]])
+  })
+})
+
+describe('CourtBookingEditor (I/O matrix)', () => {
+  const t = (key: string) => useLangStore().t(key)
+  const slot = (start_time: string, end_time: string): CourtBookingDraft => ({
+    court_name: 'Sân 1',
+    start_time,
+    end_time,
+    price_per_hour: 120000,
+  })
+
+  // Row: Court slot errors
+  it.each([
+    {
+      name: 'overlap',
+      bookings: [slot('17:00', '18:30'), slot('18:00', '19:00')],
+      error: 'Overlap',
+      tone: 'Danger',
+      key: 'courtBooking.overlapError',
+    },
+    {
+      name: 'end before start',
+      bookings: [slot('19:00', '18:00')],
+      error: 'End Before Start',
+      tone: 'Danger',
+      key: 'courtBooking.endBeforeStartError',
+    },
+    {
+      name: 'out of bounds',
+      bookings: [slot('16:00', '18:00')],
+      error: 'Out Of Bounds',
+      tone: 'Warning',
+      key: 'courtBooking.outOfBoundsError',
+    },
+  ])('$name: Alert Small $tone and row Error $error', ({ bookings, error, tone, key }) => {
+    const w = mountEditor(bookings)
+    const row = w.get('[data-ds="Court Slot Row"]')
+    expect(row.attributes('data-ds-error')).toBe(error)
+    const alert = row.get('[data-ds="Alert"]')
+    expect(alert.attributes('data-ds-tone')).toBe(tone)
+    expect(alert.attributes('data-ds-size')).toBe('Small')
+    expect(alert.attributes('data-ds-style')).toBe('Box')
+    expect(alert.attributes('role')).toBe(tone === 'Danger' ? 'alert' : undefined)
+    expect(alert.text()).toBe(t(key))
+  })
+
+  it('valid slot: row Error None and no Alert', () => {
+    const w = mountEditor([slot('17:00', '18:00')])
+    expect(w.get('[data-ds="Court Slot Row"]').attributes('data-ds-error')).toBe('None')
+    expect(w.find('[data-ds="Alert"]').exists()).toBe(false)
+  })
+
+  it('remove slot is an Icon Button Default Square Ghost labelled removeSlot', () => {
+    const w = mountEditor()
+    const remove = w.get('[data-testid="remove-slot-0"]')
+    expect(remove.attributes('data-ds')).toBe('Icon Button')
+    expect(remove.attributes('data-ds-size')).toBe('Default')
+    expect(remove.attributes('data-ds-shape')).toBe('Square')
+    expect(remove.attributes('data-ds-style')).toBe('Ghost')
+    expect(remove.attributes('aria-label')).toBe(t('courtBooking.removeSlot'))
+    expect(remove.attributes('title')).toBe(t('courtBooking.removeSlot'))
   })
 })

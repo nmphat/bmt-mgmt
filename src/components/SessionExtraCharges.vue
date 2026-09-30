@@ -3,8 +3,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useLangStore } from '@/stores/lang'
 import { useToast } from 'vue-toastification'
-import { Trash2, Plus, Loader2 } from 'lucide-vue-next'
+import { Trash2, Plus, Receipt } from 'lucide-vue-next'
 import type { ExtraCharge, Member } from '@/types'
+import Button from '@/components/ui/Button.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import FormField from '@/components/ui/FormField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import Input from '@/components/ui/Input.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
+import Select from '@/components/ui/Select.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import TableHeaderCell from '@/components/ui/TableHeaderCell.vue'
 
 const props = defineProps<{
   sessionId: string
@@ -132,229 +141,228 @@ defineExpose({ fetchCharges })
 </script>
 
 <template>
-  <div class="rounded-xl border border-divider bg-white shadow-sm">
+  <div class="rounded-xl border border-line-divider bg-surface-card shadow-sm">
     <!-- ── Header ── -->
-    <div
-      class="px-4 md:px-6 py-4 border-b border-divider bg-gray-50 flex justify-between items-center"
-    >
-      <h2 class="text-lg md:text-xl font-semibold text-fg-primary">
-        {{ t('extraCharge.title') }}
-      </h2>
-      <button
-        v-if="isAdmin && !isReadOnly"
-        @click="showForm = !showForm"
-        class="flex items-center text-sm text-brand-600 hover:text-brand-800 font-medium transition"
-      >
-        <Plus class="w-4 h-4 mr-1" />
-        {{ showForm ? t('common.close') : t('extraCharge.addCharge') }}
-      </button>
-    </div>
+    <SectionHeader variant="Tinted" :title="t('extraCharge.title')">
+      <template #actions>
+        <Button
+          v-if="isAdmin && !isReadOnly"
+          size="Default"
+          variant="Ghost"
+          :leading-icon="Plus"
+          :aria-expanded="showForm"
+          @click="showForm = !showForm"
+        >
+          {{ showForm ? t('common.close') : t('extraCharge.addCharge') }}
+        </Button>
+      </template>
+    </SectionHeader>
 
     <!-- ── Add Charge Form ── -->
-    <div
-      v-if="showForm && isAdmin"
-      class="px-4 md:px-6 py-4 border-b border-divider bg-brand-50/50"
-    >
+    <div v-if="showForm && isAdmin">
       <!-- Mobile: stacked layout -->
-      <form @submit.prevent="addCharge" class="space-y-3 md:hidden">
-        <div>
-          <label class="block text-xs font-medium text-fg-secondary mb-1">
-            {{ t('extraCharge.member') }}
-          </label>
-          <select
-            v-model="chargeForm.memberId"
-            required
-            class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
-          >
+      <form
+        data-ds="Extra Charge Form"
+        data-ds-viewport="Mobile"
+        class="space-y-3 border-b border-line-divider bg-surface-brand-subtle px-4 py-4 md:hidden"
+        @submit.prevent="addCharge"
+      >
+        <FormField
+          :label="t('extraCharge.member')"
+          control="Select"
+          label-style="Small"
+          v-slot="{ controlProps }"
+        >
+          <Select v-model="chargeForm.memberId" v-bind="controlProps" size="Small" required>
             <option value="" disabled>{{ t('session.selectMembers') }}</option>
             <option v-for="m in members" :key="m.id" :value="m.id">
               {{ m.display_name }}
             </option>
-          </select>
-        </div>
+          </Select>
+        </FormField>
         <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-medium text-fg-secondary mb-1">
-              {{ t('extraCharge.amount') }}
-            </label>
-            <input
+          <FormField :label="t('extraCharge.amount')" label-style="Small" v-slot="{ controlProps }">
+            <Input
               v-model.number="chargeForm.amount"
+              v-bind="controlProps"
+              size="Small"
               type="number"
               required
               step="1000"
-              class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
             />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-fg-secondary mb-1">
-              {{ t('extraCharge.note') }}
-            </label>
-            <input
+          </FormField>
+          <FormField :label="t('extraCharge.note')" label-style="Small" v-slot="{ controlProps }">
+            <Input
               v-model="chargeForm.note"
+              v-bind="controlProps"
+              size="Small"
               type="text"
               :placeholder="t('extraCharge.note')"
-              class="block w-full rounded-lg border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm border px-3 py-2"
             />
-          </div>
+          </FormField>
         </div>
-        <button
+        <Button
           type="submit"
+          size="Small"
+          variant="Primary"
+          :leading-icon="Plus"
+          :loading="submitting"
           :disabled="submitting || !chargeForm.memberId || chargeForm.amount === 0"
-          class="w-full flex items-center justify-center px-4 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
+          class="w-full"
         >
-          <Loader2 v-if="submitting" class="w-4 h-4 mr-1.5 animate-spin" />
-          <Plus v-else class="w-4 h-4 mr-1.5" />
           {{ t('extraCharge.addCharge') }}
-        </button>
+        </Button>
       </form>
 
       <!-- Desktop: horizontal layout -->
-      <form @submit.prevent="addCharge" class="hidden md:flex md:items-end md:gap-3">
-        <div class="flex-1 min-w-[150px]">
-          <label class="block text-xs font-medium text-fg-secondary mb-1">
-            {{ t('extraCharge.member') }}
-          </label>
-          <select
-            v-model="chargeForm.memberId"
-            required
-            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
-          >
+      <form
+        data-ds="Extra Charge Form"
+        data-ds-viewport="Desktop"
+        class="hidden border-b border-line-divider bg-surface-brand-subtle px-6 py-4 md:flex md:items-end md:gap-3"
+        @submit.prevent="addCharge"
+      >
+        <FormField
+          :label="t('extraCharge.member')"
+          control="Select"
+          label-style="Small"
+          class="min-w-[150px] flex-1"
+          v-slot="{ controlProps }"
+        >
+          <Select v-model="chargeForm.memberId" v-bind="controlProps" size="Small" required>
             <option value="" disabled>{{ t('session.selectMembers') }}</option>
             <option v-for="m in members" :key="m.id" :value="m.id">
               {{ m.display_name }}
             </option>
-          </select>
-        </div>
-        <div class="w-32">
-          <label class="block text-xs font-medium text-fg-secondary mb-1">
-            {{ t('extraCharge.amount') }}
-          </label>
-          <input
+          </Select>
+        </FormField>
+        <FormField
+          :label="t('extraCharge.amount')"
+          label-style="Small"
+          class="w-32"
+          v-slot="{ controlProps }"
+        >
+          <Input
             v-model.number="chargeForm.amount"
+            v-bind="controlProps"
+            size="Small"
             type="number"
             required
             step="1000"
-            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
           />
-        </div>
-        <div class="flex-1 min-w-[120px]">
-          <label class="block text-xs font-medium text-fg-secondary mb-1">
-            {{ t('extraCharge.note') }}
-          </label>
-          <input
-            v-model="chargeForm.note"
-            type="text"
-            class="block w-full rounded-md border-input shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm border px-3 py-1.5"
-          />
-        </div>
-        <button
-          type="submit"
-          :disabled="submitting || !chargeForm.memberId || chargeForm.amount === 0"
-          class="flex items-center px-4 py-1.5 bg-brand-600 text-white rounded-md hover:bg-brand-700 transition disabled:opacity-50 text-sm font-medium shadow-sm"
+        </FormField>
+        <FormField
+          :label="t('extraCharge.note')"
+          label-style="Small"
+          class="min-w-[120px] flex-1"
+          v-slot="{ controlProps }"
         >
-          <Loader2 v-if="submitting" class="w-4 h-4 mr-1 animate-spin" />
+          <Input v-model="chargeForm.note" v-bind="controlProps" size="Small" type="text" />
+        </FormField>
+        <Button
+          type="submit"
+          size="Small"
+          variant="Primary"
+          :loading="submitting"
+          :disabled="submitting || !chargeForm.memberId || chargeForm.amount === 0"
+        >
           {{ t('extraCharge.addCharge') }}
-        </button>
+        </Button>
       </form>
     </div>
 
     <!-- ── Loading ── -->
     <div v-if="loading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+      <Spinner size="32" />
     </div>
 
     <!-- ── Empty State ── -->
-    <div v-else-if="charges.length === 0" class="px-4 py-8 text-center">
-      <svg
-        class="w-8 h-8 mx-auto mb-2 text-gray-300"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
-          d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
-        />
-      </svg>
-      <p class="text-sm text-fg-disabled">{{ t('extraCharge.noCharges') }}</p>
-    </div>
+    <EmptyState
+      v-else-if="charges.length === 0"
+      variant="Plain"
+      align="Center"
+      size="Small"
+      :icon="Receipt"
+    >
+      {{ t('extraCharge.noCharges') }}
+    </EmptyState>
 
     <!-- ── Mobile Cards (< md) ── -->
-    <div v-else class="divide-y divide-gray-100 md:hidden">
-      <div v-for="charge in charges" :key="charge.id" class="p-4 flex items-center justify-between">
-        <div class="flex flex-col min-w-0 mr-3">
-          <span class="font-semibold text-fg-primary truncate">{{ charge.display_name }}</span>
-          <span v-if="charge.note" class="text-xs text-fg-muted truncate">{{ charge.note }}</span>
+    <div v-else class="md:hidden">
+      <div
+        v-for="charge in charges"
+        :key="charge.id"
+        data-ds="Extra Charge Item"
+        :data-ds-sign="charge.amount >= 0 ? 'Charge' : 'Refund'"
+        class="flex items-center justify-between gap-3 border-b border-line-subtle p-4 last:border-b-0"
+      >
+        <div class="flex min-w-0 flex-col">
+          <span class="truncate text-base font-semibold text-fg-primary">{{
+            charge.display_name
+          }}</span>
+          <span v-if="charge.note" class="truncate text-xs text-fg-muted">{{ charge.note }}</span>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex shrink-0 items-center gap-2">
           <span
-            class="font-bold text-base"
-            :class="charge.amount >= 0 ? 'text-red-600' : 'text-green-600'"
+            class="text-base font-bold"
+            :class="charge.amount >= 0 ? 'text-fg-danger' : 'text-fg-success'"
           >
             {{ charge.amount >= 0 ? '+' : '' }}{{ formatCurrency(charge.amount) }}
           </span>
-          <button
+          <IconButton
             v-if="isAdmin && !isReadOnly"
+            :icon="Trash2"
+            :label="t('common.delete')"
+            size="Small"
+            shape="Square"
+            variant="Ghost"
             @click="deleteCharge(charge.id)"
-            class="text-fg-disabled hover:text-status-danger-action transition p-1"
-          >
-            <Trash2 class="w-4 h-4" />
-          </button>
+          />
         </div>
       </div>
     </div>
 
     <!-- ── Desktop Table (≥ md) ── -->
-    <div v-if="charges.length > 0" class="hidden md:block overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div v-if="charges.length > 0" class="hidden overflow-x-auto md:block">
+      <table class="min-w-full">
+        <thead>
           <tr>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
-            >
-              {{ t('extraCharge.member') }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-right text-sm font-bold text-fg-muted uppercase tracking-wider"
-            >
-              {{ t('extraCharge.amount') }}
-            </th>
-            <th
-              scope="col"
-              class="px-6 py-3 text-left text-sm font-bold text-fg-muted uppercase tracking-wider"
-            >
-              {{ t('extraCharge.note') }}
-            </th>
-            <th v-if="isAdmin && !isReadOnly" scope="col" class="px-4 py-3 w-12">
+            <TableHeaderCell align="Left">{{ t('extraCharge.member') }}</TableHeaderCell>
+            <TableHeaderCell align="Right">{{ t('extraCharge.amount') }}</TableHeaderCell>
+            <TableHeaderCell align="Left">{{ t('extraCharge.note') }}</TableHeaderCell>
+            <TableHeaderCell v-if="isAdmin && !isReadOnly" density="Compact" class="w-16">
               <span class="sr-only">{{ t('common.actions') }}</span>
-            </th>
+            </TableHeaderCell>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          <tr v-for="charge in charges" :key="charge.id">
-            <td class="px-6 py-4 whitespace-nowrap text-base font-bold text-fg-primary">
+        <tbody class="bg-surface-card">
+          <tr
+            v-for="charge in charges"
+            :key="charge.id"
+            data-ds="Extra Charge Table Row"
+            :data-ds-sign="charge.amount >= 0 ? 'Charge' : 'Refund'"
+            class="border-b border-line-divider last:border-b-0"
+          >
+            <td class="whitespace-nowrap px-6 py-4 text-base font-bold text-fg-primary">
               {{ charge.display_name }}
             </td>
             <td
-              class="px-6 py-4 whitespace-nowrap text-base text-right font-bold"
-              :class="charge.amount >= 0 ? 'text-red-600' : 'text-green-600'"
+              class="whitespace-nowrap px-6 py-4 text-right text-base font-bold"
+              :class="charge.amount >= 0 ? 'text-fg-danger' : 'text-fg-success'"
             >
               {{ charge.amount >= 0 ? '+' : '' }}{{ formatCurrency(charge.amount) }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-base text-fg-muted">
+            <td class="whitespace-nowrap px-6 py-4 text-base text-fg-muted">
               {{ charge.note || '—' }}
             </td>
-            <td v-if="isAdmin && !isReadOnly" class="px-4 py-4 whitespace-nowrap text-center">
-              <button
+            <td v-if="isAdmin && !isReadOnly" class="whitespace-nowrap px-3 py-4 text-center">
+              <IconButton
+                :icon="Trash2"
+                :label="t('common.delete')"
+                size="Small"
+                shape="Square"
+                variant="Ghost"
                 @click="deleteCharge(charge.id)"
-                class="text-fg-disabled hover:text-status-danger-action transition focus:outline-none"
-              >
-                <Trash2 class="w-4 h-4" />
-              </button>
+              />
             </td>
           </tr>
         </tbody>
