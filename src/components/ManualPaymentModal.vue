@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { X, Loader2, DollarSign, CheckCircle, Info, ArrowLeft } from 'lucide-vue-next'
+import { DollarSign, CircleCheckBig, Info, ArrowLeft } from 'lucide-vue-next'
+import ModalPanel from '@/components/ui/ModalPanel.vue'
+import ModalHeader from '@/components/ui/ModalHeader.vue'
+import ModalFooter from '@/components/ui/ModalFooter.vue'
+import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FieldLabel from '@/components/ui/FieldLabel.vue'
+import Alert from '@/components/ui/Alert.vue'
 import { supabase } from '@/lib/supabase'
 import type { CostSnapshot } from '@/types'
 import { useToast } from 'vue-toastification'
@@ -124,185 +132,194 @@ async function handleConfirm() {
     >
       <!-- Background overlay -->
       <div
-        class="fixed inset-0 bg-gray-500/75 transition-opacity"
+        data-ds="Modal Scrim"
+        data-ds-style="Default"
+        class="fixed inset-0 bg-surface-scrim/75 transition-opacity"
         aria-hidden="true"
         @click="handleClose"
       ></div>
 
-      <!-- Modal panel -->
-      <div
-        class="relative z-10 flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white text-left align-bottom shadow-xl transition-all sm:max-w-md sm:rounded-xl"
-      >
-        <div class="shrink-0 border-b border-divider bg-white px-4 py-4 sm:px-6">
-          <div class="flex items-start justify-between gap-3">
-            <h3
-              class="flex items-center gap-2 text-[20px] font-bold leading-[1.2] text-fg-primary"
-              id="manual-payment-title"
-            >
-              <DollarSign class="h-6 w-6 text-green-600" />
-              {{
-                currentStep === 'review' ? t('payment.cashReviewTitle') : t('payment.manualTitle')
-              }}
-            </h3>
-            <button
-              type="button"
-              @click="handleClose"
-              :disabled="isSubmitting"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-fg-muted hover:bg-gray-100 hover:text-fg-secondary focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
-              :aria-label="t('common.cancel')"
-            >
-              <X class="h-6 w-6" />
-            </button>
-          </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto bg-white px-4 py-5 sm:px-6">
-          <div v-if="snapshot" class="space-y-4">
-            <template v-if="currentStep === 'entry'">
-              <div class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3">
-                <Info class="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
-                <div
-                  class="text-sm text-blue-800"
-                  v-html="t('payment.amountReceived', { name: memberName })"
-                ></div>
-              </div>
-
-              <div class="space-y-4 pt-2">
-                <div>
-                  <label class="mb-1 block text-sm font-bold text-fg-secondary">{{
-                    t('payment.reviewMember')
-                  }}</label>
-                  <div
-                    class="rounded-xl border border-divider bg-gray-50 px-3 py-3 font-bold uppercase text-fg-primary"
-                  >
-                    {{ memberName }}
-                  </div>
-                </div>
-
-                <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
-                  <p class="text-sm font-bold text-amber-800">{{ t('payment.debtLabel') }}</p>
-                  <p class="mt-1 text-[32px] font-bold leading-[1.05] text-amber-900 tabular-nums">
-                    {{ formatCurrency(remainingDebt) }}
-                  </p>
-                </div>
-
-                <div>
-                  <label for="amount" class="mb-1 block text-sm font-bold text-fg-secondary">{{
-                    t('payment.amountCollected')
-                  }}</label>
-                  <div class="relative rounded-xl shadow-sm">
-                    <input
-                      id="amount"
-                      v-model.number="amount"
-                      type="number"
-                      step="1000"
-                      min="0"
-                      class="block min-h-11 w-full rounded-xl border border-input py-2 pl-3 pr-12 text-[16px] font-bold leading-[1.5] text-brand-700 focus:border-brand-500 focus:ring-brand-500"
-                      :placeholder="t('payment.amountToPay') + '...'"
-                      @keyup.enter="proceedToReview"
-                    />
-                    <div
-                      class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"
-                    >
-                      <span class="text-fg-muted sm:text-sm">₫</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label for="note" class="mb-1 block text-sm font-bold text-fg-secondary">{{
-                    t('payment.note')
-                  }}</label>
-                  <input
-                    id="note"
-                    v-model="note"
-                    type="text"
-                    class="block min-h-11 w-full rounded-xl border border-input px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                    :placeholder="t('payment.note') + '...'"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <template v-else>
-              <div
-                class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
-              >
-                {{ t('payment.cashReviewTitle') }}
-              </div>
-
-              <dl class="divide-y divide-gray-100 rounded-xl border border-divider bg-white">
-                <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewMember') }}</dt>
-                  <dd class="text-right text-sm font-bold text-fg-primary">{{ memberName }}</dd>
-                </div>
-                <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewAmount') }}</dt>
-                  <dd class="text-right text-sm font-bold text-brand-700">
-                    {{ formatCurrency(amount) }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-fg-muted">
-                    {{ t('payment.reviewRemainingDebt') }}
-                  </dt>
-                  <dd class="text-right text-sm font-bold text-fg-primary">
-                    {{ formatCurrency(remainingDebt) }}
-                  </dd>
-                </div>
-                <div class="flex justify-between gap-4 px-4 py-3">
-                  <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewNote') }}</dt>
-                  <dd class="text-right text-sm text-fg-primary">{{ note || '—' }}</dd>
-                </div>
-              </dl>
-            </template>
-          </div>
-        </div>
+      <ModalPanel width="md">
+        <template #header>
+          <ModalHeader
+            title-id="manual-payment-title"
+            :title="
+              currentStep === 'review' ? t('payment.cashReviewTitle') : t('payment.manualTitle')
+            "
+            :icon="DollarSign"
+            :close="isSubmitting ? 'Disabled' : 'Default'"
+            :close-label="t('common.cancel')"
+            @close="handleClose"
+          />
+        </template>
 
         <div
-          class="manual-payment-footer-safe sticky bottom-0 shrink-0 border-t border-divider bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
+          v-if="snapshot"
+          data-ds="Manual Payment Body"
+          :data-ds-step="currentStep === 'entry' ? 'Entry' : 'Review'"
+          class="flex flex-col gap-4 bg-surface-card py-5"
         >
           <template v-if="currentStep === 'entry'">
-            <button
-              @click="proceedToReview"
-              type="button"
-              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-brand-500 sm:ml-3 sm:w-auto sm:text-sm"
+            <Alert tone="Info" :icon="Info">
+              <div v-html="t('payment.amountReceived', { name: memberName })"></div>
+            </Alert>
+
+            <div class="flex flex-col gap-1">
+              <FieldLabel>{{ t('payment.reviewMember') }}</FieldLabel>
+              <div
+                data-ds="Read-only Field"
+                data-ds-size="Default"
+                class="flex h-control-md items-center rounded-control border border-line-divider bg-surface-subtle px-3 text-base font-bold uppercase text-fg-primary"
+              >
+                {{ memberName }}
+              </div>
+            </div>
+
+            <div
+              data-ds="Amount Panel"
+              data-ds-tone="Warning"
+              class="flex flex-col gap-1 rounded-xl border border-status-warning-border bg-status-warning-subtle p-4"
             >
-              <CheckCircle class="mr-2 h-4 w-4" />
-              {{ t('payment.confirmCash') }}
-            </button>
-            <button
-              @click="handleClose"
-              type="button"
-              class="mt-3 inline-flex min-h-11 w-full justify-center rounded-xl border border-input bg-white px-4 py-2 text-base font-bold text-fg-secondary shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              {{ t('common.cancel') }}
-            </button>
+              <p class="text-sm font-bold text-status-warning-strong">
+                {{ t('payment.debtLabel') }}
+              </p>
+              <p class="text-3xl font-bold text-status-warning-strong tabular-nums">
+                {{ formatCurrency(remainingDebt) }}
+              </p>
+            </div>
+
+            <FormField control-id="amount" :label="t('payment.amountCollected')">
+              <template #default="{ controlProps }">
+                <Input
+                  v-bind="controlProps"
+                  v-model.number="amount"
+                  size="Default"
+                  type="number"
+                  step="1000"
+                  min="0"
+                  suffix="₫"
+                  :placeholder="t('payment.amountToPay') + '...'"
+                  @keyup.enter="proceedToReview"
+                />
+              </template>
+            </FormField>
+
+            <FormField control-id="note" :label="t('payment.note')">
+              <template #default="{ controlProps }">
+                <Input
+                  v-bind="controlProps"
+                  v-model="note"
+                  size="Default"
+                  type="text"
+                  :placeholder="t('payment.note') + '...'"
+                />
+              </template>
+            </FormField>
           </template>
 
           <template v-else>
-            <button
-              @click="handleConfirm"
-              :disabled="isSubmitting"
-              type="button"
-              class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-transparent bg-green-600 px-4 py-2 text-base font-bold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              <Loader2 v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin" />
-              <CheckCircle v-else class="mr-2 h-4 w-4" />
-              {{ t('payment.confirmCash') }}
-            </button>
-            <button
-              @click="currentStep = 'entry'"
-              :disabled="isSubmitting"
-              type="button"
-              class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-input bg-white px-4 py-2 text-base font-bold text-fg-secondary shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            >
-              <ArrowLeft class="mr-2 h-4 w-4" />
-              {{ t('payment.backToEdit') }}
-            </button>
+            <Alert tone="Warning">
+              {{ t('payment.cashReviewTitle') }}
+            </Alert>
+
+            <dl class="overflow-hidden rounded-xl border border-line-divider bg-surface-card">
+              <div
+                data-ds="Key Value Row"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
+                data-ds-value-tone="Primary"
+                class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
+              >
+                <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewMember') }}</dt>
+                <dd class="text-right text-sm font-bold text-fg-primary">{{ memberName }}</dd>
+              </div>
+              <div
+                data-ds="Key Value Row"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
+                data-ds-value-tone="Brand"
+                class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
+              >
+                <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewAmount') }}</dt>
+                <dd class="text-right text-sm font-bold text-fg-brand-strong">
+                  {{ formatCurrency(amount) }}
+                </dd>
+              </div>
+              <div
+                data-ds="Key Value Row"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
+                data-ds-value-tone="Primary"
+                class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
+              >
+                <dt class="text-sm font-bold text-fg-muted">
+                  {{ t('payment.reviewRemainingDebt') }}
+                </dt>
+                <dd class="text-right text-sm font-bold text-fg-primary">
+                  {{ formatCurrency(remainingDebt) }}
+                </dd>
+              </div>
+              <div
+                data-ds="Key Value Row"
+                data-ds-layout="Inline Divided"
+                data-ds-tone="Neutral"
+                data-ds-align="Left"
+                data-ds-value-tone="Regular"
+                class="flex justify-between gap-3 border-b border-line-subtle px-4 py-3 last:border-b-0"
+              >
+                <dt class="text-sm font-bold text-fg-muted">{{ t('payment.reviewNote') }}</dt>
+                <dd class="text-right text-sm text-fg-primary">{{ note || '—' }}</dd>
+              </div>
+            </dl>
           </template>
         </div>
-      </div>
+
+        <template #footer>
+          <ModalFooter background="Gray" buttons="Two" class="manual-payment-footer-safe">
+            <template v-if="currentStep === 'entry'" #primary>
+              <Button
+                size="Default"
+                variant="Success"
+                :leading-icon="CircleCheckBig"
+                @click="proceedToReview"
+              >
+                {{ t('payment.confirmCash') }}
+              </Button>
+            </template>
+            <template v-else #primary>
+              <Button
+                size="Default"
+                variant="Success"
+                :leading-icon="CircleCheckBig"
+                :loading="isSubmitting"
+                :disabled="isSubmitting"
+                @click="handleConfirm"
+              >
+                {{ t('payment.confirmCash') }}
+              </Button>
+            </template>
+            <template v-if="currentStep === 'entry'" #secondary>
+              <Button size="Default" variant="Secondary" @click="handleClose">
+                {{ t('common.cancel') }}
+              </Button>
+            </template>
+            <template v-else #secondary>
+              <Button
+                size="Default"
+                variant="Secondary"
+                :leading-icon="ArrowLeft"
+                :disabled="isSubmitting"
+                @click="currentStep = 'entry'"
+              >
+                {{ t('payment.backToEdit') }}
+              </Button>
+            </template>
+          </ModalFooter>
+        </template>
+      </ModalPanel>
     </div>
   </div>
 </template>
