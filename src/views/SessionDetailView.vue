@@ -1796,7 +1796,7 @@ onUnmounted(() => {
                     ? 'Partial'
                     : 'Pending'
               "
-              :data-ds-admin="String(authStore.isAdmin)"
+              :data-ds-admin="String(authStore.isAdmin && snapshot.status !== 'paid')"
               class="flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm"
             >
               <div class="flex items-start justify-between gap-3">

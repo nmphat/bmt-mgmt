@@ -148,9 +148,7 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('member')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(0)
     expect(w.findAll('#payments-section thead th')).toHaveLength(8)
-    expect(
-      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
-    ).toBe('5')
+    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('5')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(false)
   })
 
@@ -158,9 +156,7 @@ describe('SessionDetailView payment table admin gating', () => {
     const w = await mountDetail('admin')
     expect(w.findAll('input[type="checkbox"][value="snap-1"]')).toHaveLength(2)
     expect(w.findAll('#payments-section thead th')).toHaveLength(9)
-    expect(
-      w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan'),
-    ).toBe('6')
+    expect(w.find('#payments-section tbody tr:last-child td:first-child').attributes('colspan')).toBe('6')
     expect(w.findComponent(SessionExtraCharges).props('isAdmin')).toBe(true)
   })
 
@@ -737,9 +733,9 @@ describe('SessionDetailView S6 range', () => {
     w.unmount()
     withSession({ status: 'cancelled' })
     const c = await mountDetail('member')
-    expect(c.get('[data-ds="Alert"][data-ds-style="Banner"] svg').attributes('aria-hidden')).toBe(
-      'true',
-    )
+    expect(
+      c.get('[data-ds="Alert"][data-ds-style="Banner"] svg').attributes('aria-hidden'),
+    ).toBe('true')
   })
 
   it('announces the in-session error Alert with role alert and aria-live polite', async () => {
@@ -887,7 +883,7 @@ describe('SessionDetailView S7 payments', () => {
     const w = await mountDetail('admin')
     const cards = payCards(w)
     expect(cards.map((c) => c.attributes('data-ds-status'))).toEqual(['Partial', 'Paid', 'Pending'])
-    expect(cards.every((c) => c.attributes('data-ds-admin') === 'true')).toBe(true)
+    expect(cards.map((c) => c.attributes('data-ds-admin'))).toEqual(['true', 'false', 'true'])
     expect(w.get('#payments-section [data-ds="Amount Panel"]').attributes('data-ds-tone')).toBe(
       'Success',
     )
@@ -996,8 +992,12 @@ describe('SessionDetailView S7 payments', () => {
     const bar = w.get('[data-ds="Floating Selection Bar"]')
     expect(bar.attributes('data-ds-style')).toBe('Brand')
     expect(bar.text()).toContain(t('session.groupPaymentBar', { count: 1 }))
-    expect(bar.text()).toContain('120.000')
+    const amount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+      120000,
+    )
+    expect(bar.text()).toContain(t('session.totalSelected', { amount }))
     const btn = bar.get('[data-ds="Button"]')
+    expect(btn.attributes('data-ds-size')).toBe('Default')
     expect(btn.attributes('data-ds-style')).toBe('Inverse')
     expect(btn.find('svg[class*="lucide-qr-code"]').exists()).toBe(true)
     expect(payRows(w)[2]!.attributes('data-ds-selected')).toBe('true')
@@ -1044,7 +1044,8 @@ describe('SessionDetailView S7 payments', () => {
   it('renders the section ribbon with the active tab and scrolls on click', async () => {
     waiting()
     const scroll = vi.fn()
-    Element.prototype.scrollIntoView = scroll
+    if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {}
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(scroll)
     const w = await mountDetail('member')
     const nav = w.get('nav[data-ds="Section Tab Bar"]')
     // the page renders at the top, so the ribbon starts on Overview whatever the status
