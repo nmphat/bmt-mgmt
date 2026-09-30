@@ -1799,7 +1799,7 @@ onUnmounted(() => {
               :data-ds-admin="String(authStore.isAdmin && snapshot.status !== 'paid')"
               class="flex flex-col gap-4 rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm"
             >
-              <div class="flex items-start justify-between gap-3">
+              <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="flex min-w-0 items-start gap-3">
                   <label
                     v-if="snapshot.status !== 'paid' && authStore.isAdmin"
@@ -1815,7 +1815,7 @@ onUnmounted(() => {
                     />
                   </label>
                   <div class="flex min-w-0 flex-col items-start gap-2">
-                    <h3 class="truncate text-base font-bold uppercase text-fg-primary">
+                    <h3 class="max-w-full truncate text-base font-bold uppercase text-fg-primary">
                       {{ snapshot.display_name }}
                     </h3>
                     <Badge
@@ -1845,7 +1845,7 @@ onUnmounted(() => {
                     </Badge>
                   </div>
                 </div>
-                <div class="flex shrink-0 flex-col items-end">
+                <div class="ml-auto flex shrink-0 flex-col items-end">
                   <p class="text-sm font-bold text-fg-muted">{{ t('session.mustPay') }}</p>
                   <p class="text-3xl font-bold text-fg-brand-strong tabular-nums">
                     {{ formatCurrency(snapshot.final_amount) }}
