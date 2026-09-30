@@ -154,7 +154,10 @@ async function handleSave() {
         class="mt-2 text-sm text-status-warning-strong"
       >
         {{ t('shuttle.noActiveTypes') }}
-        <RouterLink to="/settings" class="font-bold underline underline-offset-2">
+        <RouterLink
+          to="/settings"
+          class="rounded-sm font-bold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2"
+        >
           {{ t('shuttle.goToSettings') }}
         </RouterLink>
       </p>

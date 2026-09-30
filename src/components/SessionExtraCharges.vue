@@ -158,15 +158,12 @@ defineExpose({ fetchCharges })
     </SectionHeader>
 
     <!-- ── Add Charge Form ── -->
-    <div
-      v-if="showForm && isAdmin"
-      class="border-b border-line-divider bg-surface-brand-subtle px-4 py-4 md:px-6"
-    >
+    <div v-if="showForm && isAdmin">
       <!-- Mobile: stacked layout -->
       <form
         data-ds="Extra Charge Form"
         data-ds-viewport="Mobile"
-        class="space-y-3 md:hidden"
+        class="space-y-3 border-b border-line-divider bg-surface-brand-subtle px-4 py-4 md:hidden"
         @submit.prevent="addCharge"
       >
         <FormField
@@ -220,7 +217,7 @@ defineExpose({ fetchCharges })
       <form
         data-ds="Extra Charge Form"
         data-ds-viewport="Desktop"
-        class="hidden md:flex md:items-end md:gap-3"
+        class="hidden border-b border-line-divider bg-surface-brand-subtle px-6 py-4 md:flex md:items-end md:gap-3"
         @submit.prevent="addCharge"
       >
         <FormField
