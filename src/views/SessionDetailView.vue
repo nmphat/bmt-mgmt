@@ -1274,7 +1274,6 @@ onUnmounted(() => {
                   data-ds="Select Trigger"
                   :data-ds-content="selectedMemberIds.length === 0 ? 'Placeholder' : 'Selected'"
                   :data-ds-open="String(showMemberDropdown)"
-                  aria-haspopup="listbox"
                   :aria-expanded="showMemberDropdown"
                   @click="showMemberDropdown = !showMemberDropdown"
                   class="flex h-control-md w-full cursor-pointer items-center justify-between rounded-control border border-line-input bg-surface-card px-4 text-left text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-line-focus focus-visible:ring-offset-2 sm:w-80"

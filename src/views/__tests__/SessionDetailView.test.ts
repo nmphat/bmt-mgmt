@@ -459,7 +459,7 @@ describe('SessionDetailView attendance header and member select', () => {
     expect(trigger().attributes('data-ds-content')).toBe('Placeholder')
     expect(trigger().attributes('data-ds-open')).toBe('false')
     expect(trigger().attributes('aria-expanded')).toBe('false')
-    expect(trigger().attributes('aria-haspopup')).toBe('listbox')
+    expect(trigger().attributes('aria-haspopup')).toBeUndefined()
     expect(trigger().find('svg[class*="lucide-chevron-down"]').exists()).toBe(true)
     expect(trigger().find('svg[class*="lucide-chevron-left"]').exists()).toBe(false)
 
