@@ -7,8 +7,15 @@ import { useToast } from 'vue-toastification'
 import { shuttleTotal } from '@/utils/courtCost'
 import { formatCurrency } from '@/utils/formatters'
 import type { ShuttleUsageEntry } from '@/types'
-import { Plus, Minus, Save, Loader2 } from 'lucide-vue-next'
+import { Plus, Minus, Save, X } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
+import Button from '@/components/ui/Button.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import FieldMessage from '@/components/ui/FieldMessage.vue'
+import FormField from '@/components/ui/FormField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import Input from '@/components/ui/Input.vue'
+import Select from '@/components/ui/Select.vue'
 
 const props = defineProps<{
   sessionId: string
@@ -132,22 +139,22 @@ async function handleSave() {
 </script>
 
 <template>
-  <div class="rounded-xl border border-divider bg-white p-4 shadow-sm sm:p-6">
-    <h3 class="mb-4 text-[20px] font-bold leading-[1.2] text-fg-primary">
+  <div class="rounded-xl border border-line-divider bg-surface-card p-4 shadow-sm sm:p-6">
+    <h3 class="mb-4 text-xl font-bold text-fg-primary">
       {{ t('shuttle.title') }}
     </h3>
-    <p v-if="loadError" class="text-sm text-status-danger-action">{{ t('shuttle.loadError') }}</p>
+    <FieldMessage v-if="loadError" tone="Error">{{ t('shuttle.loadError') }}</FieldMessage>
     <template v-else>
-      <div v-if="rows.length === 0" class="py-4 text-center text-sm text-fg-muted">
+      <EmptyState v-if="rows.length === 0" variant="Plain" align="Center" size="Small">
         {{ t('shuttle.empty') }}
-      </div>
+      </EmptyState>
 
-      <p v-if="!disabled && activeTypes.length === 0" class="mt-2 text-sm text-amber-700">
+      <p
+        v-if="!disabled && activeTypes.length === 0"
+        class="mt-2 text-sm text-status-warning-strong"
+      >
         {{ t('shuttle.noActiveTypes') }}
-        <RouterLink
-          to="/settings"
-          class="font-bold underline underline-offset-2 hover:text-amber-900"
-        >
+        <RouterLink to="/settings" class="font-bold underline underline-offset-2">
           {{ t('shuttle.goToSettings') }}
         </RouterLink>
       </p>
@@ -156,77 +163,100 @@ async function handleSave() {
         <div
           v-for="(row, i) in rows"
           :key="i"
-          class="flex flex-col gap-2 rounded-xl border border-divider bg-gray-50 p-3 sm:flex-row sm:items-end"
+          data-ds="Shuttle Usage Row"
+          class="flex flex-col gap-2 rounded-xl border border-line-divider bg-surface-subtle p-3"
         >
-          <div class="min-w-0 flex-1">
-            <label class="mb-1 block text-xs text-fg-muted">{{ t('shuttle.type') }}</label>
-            <select
-              :value="row.type_id"
-              :disabled="disabled"
-              class="block min-h-11 w-full rounded-xl border border-input px-2 text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
-              @change="changeType(i, ($event.target as HTMLSelectElement).value)"
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <FormField
+              :label="t('shuttle.type')"
+              control="Select"
+              label-style="Muted"
+              class="min-w-0 flex-1"
+              v-slot="{ controlProps }"
             >
-              <option v-for="type in activeTypes" :key="type.id" :value="type.id">
-                {{ type.name }} ({{ formatCurrency(type.tube_price) }}/{{ type.per_tube }})
-              </option>
-            </select>
-          </div>
-          <div class="flex items-center gap-1">
-            <button
-              type="button"
-              :disabled="disabled || row.used <= 0"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-input text-fg-secondary transition hover:bg-gray-100 disabled:opacity-30"
-              :data-testid="`dec-${i}`"
-              @click="decrement(i)"
+              <Select
+                v-bind="controlProps"
+                :model-value="row.type_id"
+                :disabled="disabled"
+                size="Default"
+                @change="changeType(i, ($event.target as HTMLSelectElement).value)"
+              >
+                <option v-for="type in activeTypes" :key="type.id" :value="type.id">
+                  {{ type.name }} ({{ formatCurrency(type.tube_price) }}/{{ type.per_tube }})
+                </option>
+              </Select>
+            </FormField>
+            <div
+              data-ds="Stepper"
+              :data-ds-state="disabled ? 'Disabled' : row.used <= 0 ? 'Min' : 'Default'"
+              class="flex items-center gap-1"
             >
-              <Minus class="h-4 w-4" />
-            </button>
-            <input
-              :value="row.used"
-              :disabled="disabled"
-              type="number"
-              min="0"
-              :data-testid="`used-${i}`"
-              class="block w-16 min-h-11 rounded-xl border border-input px-2 text-center text-sm focus:border-brand-500 focus:ring-brand-500 disabled:opacity-50"
-              @change="setUsed(i, Number(($event.target as HTMLInputElement).value))"
+              <IconButton
+                :icon="Minus"
+                :label="t('shuttle.decrease')"
+                :disabled="disabled || row.used <= 0"
+                :data-testid="`dec-${i}`"
+                size="Default"
+                shape="Square"
+                variant="Outline"
+                @click="decrement(i)"
+              />
+              <div class="w-16">
+                <!-- :value falls through so the native input keeps its value attribute; .capture reads the raw
+                     value before Input's inner v-model casts it to a number on change (as the native input did) -->
+                <Input
+                  :model-value="row.used"
+                  :value="row.used"
+                  :disabled="disabled"
+                  type="number"
+                  min="0"
+                  :data-testid="`used-${i}`"
+                  size="Default"
+                  @change.capture="setUsed(i, Number(($event.target as HTMLInputElement).value))"
+                />
+              </div>
+              <IconButton
+                :icon="Plus"
+                :label="t('shuttle.increase')"
+                :disabled="disabled"
+                :data-testid="`inc-${i}`"
+                size="Default"
+                shape="Square"
+                variant="Outline"
+                @click="increment(i)"
+              />
+            </div>
+            <div
+              class="text-sm font-bold text-fg-primary sm:flex sm:h-11 sm:w-28 sm:items-center sm:justify-end"
+            >
+              {{ formatCurrency(shuttleTotal([row])) }}
+            </div>
+            <IconButton
+              v-if="!disabled"
+              :icon="X"
+              :label="t('common.remove')"
+              size="Default"
+              shape="Square"
+              variant="Ghost"
+              @click="removeRow(i)"
             />
-            <button
-              type="button"
-              :disabled="disabled"
-              class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-input text-fg-secondary transition hover:bg-gray-100 disabled:opacity-30"
-              :data-testid="`inc-${i}`"
-              @click="increment(i)"
-            >
-              <Plus class="h-4 w-4" />
-            </button>
           </div>
-          <div class="text-sm font-bold text-fg-secondary sm:w-28 sm:text-right">
-            {{ formatCurrency(shuttleTotal([row])) }}
-          </div>
-          <button
-            v-if="!disabled"
-            type="button"
-            class="inline-flex min-h-11 items-center justify-center rounded-xl px-2 text-fg-disabled transition hover:text-status-danger-action"
-            @click="removeRow(i)"
-          >
-            &times;
-          </button>
         </div>
       </div>
 
       <div class="mt-4 flex items-center justify-between">
-        <button
+        <Button
           v-if="!disabled"
-          type="button"
           :disabled="activeTypes.length === 0"
           :title="activeTypes.length === 0 ? t('shuttle.noActiveTypes') : undefined"
-          class="inline-flex min-h-11 items-center gap-1 rounded-xl border border-brand-200 px-3 text-sm font-bold text-brand-600 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          size="Default"
+          variant="Outline Brand"
+          :leading-icon="Plus"
           data-testid="add-row"
           @click="addRow"
         >
-          <Plus class="h-4 w-4" />
           {{ t('shuttle.addType') }}
-        </button>
+        </Button>
         <div class="text-right">
           <span class="text-sm text-fg-muted">{{ t('shuttle.total') }}:</span>
           <span class="ml-2 text-lg font-bold text-fg-primary" data-testid="shuttle-total">
@@ -235,18 +265,18 @@ async function handleSave() {
         </div>
       </div>
 
-      <div v-if="!disabled" class="mt-4 flex justify-end border-t border-divider pt-4">
-        <button
-          type="button"
-          class="flex min-h-11 items-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-50"
-          data-testid="save"
+      <div v-if="!disabled" class="mt-4 flex justify-end border-t border-line-divider pt-4">
+        <Button
+          size="Default"
+          variant="Primary"
+          :leading-icon="Save"
+          :loading="saving"
           :disabled="saving"
+          data-testid="save"
           @click="handleSave"
         >
-          <Save v-if="!saving" class="w-4 h-4 mr-2" />
-          <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
           {{ t('common.save') }}
-        </button>
+        </Button>
       </div>
     </template>
   </div>

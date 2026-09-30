@@ -366,6 +366,8 @@ export const messages = {
       addError: 'Không thêm được loại cầu',
       noActiveTypes: 'Chưa có loại cầu nào trong danh mục.',
       goToSettings: 'Vào Cài đặt để thêm loại cầu',
+      decrease: 'Giảm số quả',
+      increase: 'Tăng số quả',
     },
     profile: {
       myDebt: 'Công nợ của tôi',
@@ -759,6 +761,8 @@ export const messages = {
       addError: 'Error adding shuttle type',
       noActiveTypes: 'No shuttle types in the catalogue yet.',
       goToSettings: 'Go to Settings to add a shuttle type',
+      decrease: 'Decrease',
+      increase: 'Increase',
     },
     profile: {
       myDebt: 'My debt',
