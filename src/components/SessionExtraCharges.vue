@@ -150,6 +150,7 @@ defineExpose({ fetchCharges })
           size="Default"
           variant="Ghost"
           :leading-icon="Plus"
+          :aria-expanded="showForm"
           @click="showForm = !showForm"
         >
           {{ showForm ? t('common.close') : t('extraCharge.addCharge') }}

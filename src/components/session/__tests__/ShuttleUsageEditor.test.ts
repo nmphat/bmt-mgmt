@@ -131,6 +131,7 @@ describe('ShuttleUsageEditor (I/O matrix)', () => {
     expect(three.get('[data-testid="dec-0"]').attributes('disabled')).toBeUndefined()
     expect(three.get('[data-testid="dec-0"]').attributes('aria-label')).toBe(t('shuttle.decrease'))
     expect(three.get('[data-testid="inc-0"]').attributes('aria-label')).toBe(t('shuttle.increase'))
+    expect(three.get('[data-testid="used-0"]').attributes('aria-label')).toBe(t('shuttle.used'))
 
     const off = await mountEditor(usage, true)
     expect(off.get('[data-ds="Stepper"]').attributes('data-ds-state')).toBe('Disabled')

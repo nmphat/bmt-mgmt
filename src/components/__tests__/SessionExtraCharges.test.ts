@@ -147,10 +147,12 @@ describe('SessionExtraCharges (I/O matrix)', () => {
     const toggle = addToggle(w)!
     expect(toggle.attributes('data-ds-style')).toBe('Ghost')
     expect(toggle.text()).toBe(t('extraCharge.addCharge'))
+    expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(w.find('[data-ds="Extra Charge Form"]').exists()).toBe(false)
 
     await toggle.trigger('click')
     expect(addToggle(w)!.text()).toBe(t('common.close'))
+    expect(addToggle(w)!.attributes('aria-expanded')).toBe('true')
     const forms = w.findAll('[data-ds="Extra Charge Form"]')
     expect(forms.map((f) => f.attributes('data-ds-viewport'))).toEqual(['Mobile', 'Desktop'])
 

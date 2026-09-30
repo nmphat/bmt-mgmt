@@ -214,6 +214,7 @@ async function handleSave() {
                   type="number"
                   min="0"
                   :data-testid="`used-${i}`"
+                  :aria-label="t('shuttle.used')"
                   size="Default"
                   @change.capture="setUsed(i, Number(($event.target as HTMLInputElement).value))"
                 />
