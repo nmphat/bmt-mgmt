@@ -152,11 +152,12 @@ function removeSlot(index: number) {
           <Input
             v-bind="controlProps"
             :model-value="group.court_name"
+            :model-modifiers="{ lazy: true }"
             :disabled="disabled"
             :data-testid="`court-name-${group.court_name}`"
             size="Default"
             type="text"
-            @change="renameCourt(group.court_name, ($event.target as HTMLInputElement).value)"
+            @update:model-value="renameCourt(group.court_name, $event as string)"
           />
         </FormField>
         <Button
@@ -239,18 +240,16 @@ function removeSlot(index: number) {
               <Input
                 v-bind="controlProps"
                 :model-value="row.booking.price_per_hour"
+                :model-modifiers="{ lazy: true }"
                 :disabled="disabled"
                 :data-testid="`price-${row.index}`"
                 size="Default"
                 type="number"
                 min="0"
                 step="1000"
-                @change="
+                @update:model-value="
                   patchBooking(row.index, {
-                    price_per_hour: Math.max(
-                      0,
-                      Number(($event.target as HTMLInputElement).value) || 0,
-                    ),
+                    price_per_hour: Math.max(0, Number($event) || 0),
                   })
                 "
               />

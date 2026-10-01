@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Input from '@/components/ui/Input.vue'
+
+// Types into the field: sets the value and fires only `input` (VTU's setValue also fires `change`).
+async function type(
+  w: { element: Element; trigger: (e: string) => Promise<void> },
+  value: string | number,
+) {
+  ;(w.element as HTMLInputElement).value = String(value)
+  await w.trigger('input')
+}
 
 describe('Input', () => {
   it.each([
@@ -65,6 +74,72 @@ describe('Input', () => {
     expect(input.attributes('required')).toBeDefined()
     expect(input.attributes('aria-invalid')).toBe('true')
     expect(w.attributes('id')).toBeUndefined()
+  })
+
+  function controlled(props: Record<string, unknown> = {}, attrs: Record<string, unknown> = {}) {
+    const w = mount(Input, {
+      props: {
+        modelValue: 3,
+        'onUpdate:modelValue': vi.fn(),
+        ...props,
+      },
+      attrs,
+    })
+    return w
+  }
+
+  it('emits on every input event, also during composition', async () => {
+    const w = mount(Input, { props: { modelValue: '' } })
+    const input = w.get('input')
+    await input.trigger('compositionstart')
+    await type(input, 'a')
+    await type(input, 'an')
+    expect(w.emitted('update:modelValue')).toEqual([['a'], ['an']])
+  })
+
+  it('casts to a number for type="number"', async () => {
+    const w = controlled({}, { type: 'number' })
+    await w.get('input').setValue('5')
+    expect(w.emitted('update:modelValue')).toEqual([[5]])
+  })
+
+  it('writes the model back when the caller keeps or clamps the value', async () => {
+    const w = controlled({ modelValue: 0 }, { type: 'number' })
+    await w.get('input').setValue('-2')
+    expect(w.get('input').element.value).toBe('0')
+  })
+
+  it('does not rewrite an equal number typed in another form', async () => {
+    const w = controlled({ modelValue: 1 }, { type: 'number' })
+    await w.get('input').setValue('1.0')
+    expect(w.get('input').element.value).toBe('1.0')
+  })
+
+  it('does not write back while composing', async () => {
+    const w = controlled({ modelValue: 'a' }, { type: 'text' })
+    const input = w.get('input')
+    await input.trigger('compositionstart')
+    await type(input, 'an')
+    expect(input.element.value).toBe('an')
+  })
+
+  it('lazy emits on change only', async () => {
+    const w = controlled({ modelValue: 'a', modelModifiers: { lazy: true } }, { type: 'text' })
+    const input = w.get('input')
+    await type(input, 'abc')
+    expect(w.emitted('update:modelValue')).toBeUndefined()
+    expect(input.element.value).toBe('abc')
+    await input.trigger('change')
+    expect(w.emitted('update:modelValue')).toEqual([['abc']])
+  })
+
+  it('hides the native spinner only for type="number"', () => {
+    expect(controlled({}, { type: 'number' }).get('input').classes()).toContain(
+      '[appearance:textfield]',
+    )
+    expect(controlled({}, { type: 'text' }).get('input').classes()).not.toContain(
+      '[appearance:textfield]',
+    )
   })
 
   it('shows a suffix', () => {

@@ -205,18 +205,16 @@ async function handleSave() {
                 @click="decrement(i)"
               />
               <div class="w-16">
-                <!-- :value falls through so the native input keeps its value attribute; .capture reads the raw
-                     value before Input's inner v-model casts it to a number on change (as the native input did) -->
                 <Input
                   :model-value="row.used"
-                  :value="row.used"
+                  :model-modifiers="{ lazy: true }"
                   :disabled="disabled"
                   type="number"
                   min="0"
                   :data-testid="`used-${i}`"
                   :aria-label="t('shuttle.used')"
                   size="Default"
-                  @change.capture="setUsed(i, Number(($event.target as HTMLInputElement).value))"
+                  @update:model-value="setUsed(i, Number($event))"
                 />
               </div>
               <IconButton
