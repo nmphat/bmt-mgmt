@@ -7,6 +7,15 @@ import { supabase } from '@/lib/supabase'
 import { useLangStore } from '@/stores/lang'
 import type { ShuttleUsageEntry } from '@/types'
 
+// Types into the field: sets the value and fires only `input` (VTU's setValue also fires `change`).
+async function type(
+  w: { element: Element; trigger: (e: string) => Promise<void> },
+  value: string | number,
+) {
+  ;(w.element as HTMLInputElement).value = String(value)
+  await w.trigger('input')
+}
+
 const catalogue = [
   { id: 'a', name: 'Vina', tube_price: 315000, per_tube: 12, is_active: true },
   { id: 'b', name: 'Victor', tube_price: 360000, per_tube: 12, is_active: true },
@@ -58,6 +67,9 @@ async function mountEditor(u = usage, disabled = false) {
   return w
 }
 
+const valueOf = (w: Awaited<ReturnType<typeof mountEditor>>) =>
+  (w.get('[data-testid="used-0"]').element as HTMLInputElement).value
+
 describe('ShuttleUsageEditor', () => {
   it('shows the running total', async () => {
     const w = await mountEditor()
@@ -73,25 +85,56 @@ describe('ShuttleUsageEditor', () => {
   it('never goes below zero', async () => {
     const w = await mountEditor([{ ...usage[0]!, used: 0 }])
     await w.get('[data-testid="dec-0"]').trigger('click')
-    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('0')
+    expect(valueOf(w)).toBe('0')
   })
 
   it('falls back to 0 instead of NaN on a non-numeric used input', async () => {
     const w = await mountEditor()
     const input = w.get('[data-testid="used-0"]')
-    ;(input.element as HTMLInputElement).value = '12abc'
+    await type(input, 'abc')
     await input.trigger('change')
-    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('0')
+    expect(valueOf(w)).toBe('0')
+  })
+
+  it('shows and stores a typed count', async () => {
+    const w = await mountEditor()
+    const input = w.get('[data-testid="used-0"]')
+    await type(input, '5')
+    expect(valueOf(w)).toBe('5')
+    await input.trigger('change')
+    expect(valueOf(w)).toBe('5')
+    expect(w.get('[data-testid="shuttle-total"]').text()).toContain('131.250')
+    await w.get('[data-testid="save"]').trigger('click')
+    expect(supabase.rpc).toHaveBeenCalledWith('set_session_shuttle_usage', {
+      p_session_id: 's1',
+      p_usage: [{ type_id: 'a', name: 'Vina', tube_price: 315000, per_tube: 12, used: 5 }],
+    })
+  })
+
+  it('clamps a negative count to 0 and writes it back', async () => {
+    const w = await mountEditor([{ ...usage[0]!, used: 0 }])
+    const input = w.get('[data-testid="used-0"]')
+    await type(input, '-2')
+    await input.trigger('change')
+    expect(valueOf(w)).toBe('0')
+  })
+
+  it('shows 0 after the count is cleared', async () => {
+    const w = await mountEditor()
+    const input = w.get('[data-testid="used-0"]')
+    await type(input, '')
+    await input.trigger('change')
+    expect(valueOf(w)).toBe('0')
   })
 
   it('steppers recover from an already-NaN used value instead of propagating it', async () => {
     const w = await mountEditor([{ ...usage[0]!, used: NaN }])
     await w.get('[data-testid="inc-0"]').trigger('click')
-    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('1')
+    expect(valueOf(w)).toBe('1')
 
     const w2 = await mountEditor([{ ...usage[0]!, used: NaN }])
     await w2.get('[data-testid="dec-0"]').trigger('click')
-    expect(w2.get('[data-testid="used-0"]').attributes('value')).toBe('0')
+    expect(valueOf(w2)).toBe('0')
   })
 
   it('shows an empty state when nothing is recorded', async () => {
@@ -113,7 +156,7 @@ describe('ShuttleUsageEditor', () => {
     await w.setProps({ usage })
     await flushPromises()
 
-    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('3')
+    expect(valueOf(w)).toBe('3')
     expect(w.get('[data-testid="shuttle-total"]').text()).toContain('78.750')
   })
 })
@@ -155,7 +198,7 @@ describe('ShuttleUsageEditor (I/O matrix)', () => {
 
     await remove.trigger('click')
     expect(w.findAll('[data-ds="Shuttle Usage Row"]')).toHaveLength(1)
-    expect(w.get('[data-testid="used-0"]').attributes('value')).toBe('1')
+    expect(valueOf(w)).toBe('1')
     expect(w.get('[data-testid="shuttle-total"]').text()).toContain('30.000')
   })
 

@@ -390,7 +390,7 @@ Nằm trong `src/components/ui/`, mỗi file là một component set trong Figma
 
 - `Button` — nút chữ và link dạng nút: `size` Small/Default/Large (36/44/48, mặc định Small), `variant` 9 kiểu; `loading` (spinner + `aria-busy`, không tự disable), `pressed` (Outline Danger), `leadingIcon`/`trailingIcon`, `as` (`button`, `a`, `RouterLink`).
 - `IconButton` — nút chỉ có icon: `size` Small 32/Default 44 (mặc định Small), `shape` Round/Square, `variant` Ghost…/Outline; `label` bắt buộc (`aria-label`).
-- `Input` — ô nhập, `v-model`: `size` Small/Default/Large (mặc định Small), `suffix`; thuộc tính native (`id`, `type`, `min`, …) đi thẳng vào `<input>`.
+- `Input` — ô nhập, `v-model`: `size` Small/Default/Large (mặc định Small), `suffix`; thuộc tính native (`id`, `type`, `min`, …) đi thẳng vào `<input>`. Hợp đồng: `Input` là controlled, chỉ nhận giá trị qua `v-model` / `:model-value` + `@update:model-value`; không truyền `:value`, `@input` hay `@change` để đọc/ghi giá trị của `<input>` bên trong. Emit `update:modelValue` ở mọi sự kiện `input` (kể cả khi đang gõ IME; `type="number"` ép sang số), hoặc ở `change` khi có modifier `lazy` (`:model-modifiers="{ lazy: true }"`); nếu caller giữ hoặc kẹp giá trị thì `Input` ghi lại `modelValue` vào ô (không ghi lại khi đang gõ IME). `type="number"` ẩn nút spinner native.
 - `Select` — `<select>` native với chevron, `v-model`, `size` Small/Default/Large (mặc định Small), slot = các `<option>`.
 - `Checkbox` — checkbox native, `v-model` (boolean hoặc mảng + `value`), `size` 16/20/24 (mặc định 16).
 - `FieldLabel` — nhãn trên control: `variant` Default/Small/Caps/Muted.

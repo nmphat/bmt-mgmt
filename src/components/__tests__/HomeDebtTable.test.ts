@@ -6,6 +6,15 @@ import HomeDebtTable from '@/components/HomeDebtTable.vue'
 import { useLangStore } from '@/stores/lang'
 import type { MemberDebtSummary } from '@/types'
 
+// Types into the field: sets the value and fires only `input` (VTU's setValue also fires `change`).
+async function type(
+  w: { element: Element; trigger: (e: string) => Promise<void> },
+  value: string | number,
+) {
+  ;(w.element as HTMLInputElement).value = String(value)
+  await w.trigger('input')
+}
+
 const t = (key: string, params?: Record<string, unknown>) => useLangStore().t(key, params as any)
 
 const m1: MemberDebtSummary = {
@@ -230,8 +239,17 @@ describe('HomeDebtTable (I/O matrix)', () => {
     expect(input.attributes('type')).toBe('search')
     expect(w.get('[data-ds="Input"]').attributes('data-ds-size')).toBe('Large')
     expect(w.get('label[for="debt-search"]').classes()).toContain('sr-only')
-    await input.setValue('an')
+    await type(input, 'an')
     expect(w.emitted('update:search')).toEqual([['an']])
+  })
+
+  it('search: emits on every input event during IME composition', async () => {
+    const w = await mountTable({ members: [m1] })
+    const input = w.get('input#debt-search')
+    await input.trigger('compositionstart')
+    await type(input, 'a')
+    await type(input, 'an')
+    expect(w.emitted('update:search')).toEqual([['a'], ['an']])
   })
 
   it('error: Alert Danger with the message', async () => {

@@ -5,6 +5,15 @@ import CourtBookingEditor from '@/components/session/CourtBookingEditor.vue'
 import { useLangStore } from '@/stores/lang'
 import type { CourtBookingDraft } from '@/types'
 
+// Types into the field: sets the value and fires only `input` (VTU's setValue also fires `change`).
+async function type(
+  w: { element: Element; trigger: (e: string) => Promise<void> },
+  value: string | number,
+) {
+  ;(w.element as HTMLInputElement).value = String(value)
+  await w.trigger('input')
+}
+
 const base: CourtBookingDraft[] = [
   { court_name: 'Sân 1', start_time: '17:00', end_time: '18:00', price_per_hour: 120000 },
   { court_name: 'Sân 1', start_time: '18:00', end_time: '19:00', price_per_hour: 130000 },
@@ -97,10 +106,36 @@ describe('CourtBookingEditor', () => {
     })
   })
 
+  it('clamps a negative price to the stored 0 and writes it back', async () => {
+    const w = mountEditor([{ ...base[0]!, price_per_hour: 0 }, base[1]!, base[2]!])
+    const price = w.get('[data-testid="price-0"]')
+    await type(price, '-5000')
+    await price.trigger('change')
+    expect((price.element as HTMLInputElement).value).toBe('0')
+    const emitted = w.emitted('update:bookings')?.at(-1)?.[0] as CourtBookingDraft[]
+    expect(emitted[0]).toMatchObject({ price_per_hour: 0 })
+  })
+
+  it('renames a court once on change, not per keystroke', async () => {
+    const w = mountEditor()
+    const name = w.get('[data-testid="court-name-Sân 1"]')
+    await type(name, 'Sân')
+    await type(name, 'Sân A')
+    expect(w.emitted('update:bookings')).toBeUndefined()
+    await name.trigger('change')
+    expect(w.emitted('update:bookings')).toHaveLength(1)
+    const emitted = w.emitted('update:bookings')![0]![0] as CourtBookingDraft[]
+    expect(emitted[0]).toMatchObject({ court_name: 'Sân A' })
+  })
+
   it('emits an updated price on the right row and recomputes the displayed total', async () => {
     const w = mountEditor()
-    await w.get('[data-testid="price-0"]').setValue(150000)
+    const price = w.get('[data-testid="price-0"]')
+    await type(price, 150000)
+    await price.trigger('change')
     const emitted = w.emitted('update:bookings')?.at(-1)?.[0] as CourtBookingDraft[]
+    await w.setProps({ bookings: emitted })
+    expect((price.element as HTMLInputElement).value).toBe('150000')
     expect(emitted[0]).toMatchObject({ price_per_hour: 150000 })
     expect(emitted[1]).toEqual(base[1])
     expect(emitted[2]).toEqual(base[2])
